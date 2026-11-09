@@ -128,6 +128,9 @@ public class ThirdPersonCamera : MonoBehaviour
         {
             FindPlayerTarget();
             if (target == null) return;
+            currentYaw = target.eulerAngles.y;
+            currentPitch = 15f;
+            SnapToTarget();
         }
 
         // 1. Mouse orbit (putar kamera mengelilingi pemain jika tombol mouse ditekan)
@@ -202,10 +205,10 @@ public class ThirdPersonCamera : MonoBehaviour
     /// </summary>
     public void FindPlayerTarget()
     {
-        GameObject playerObj = GameObject.FindWithTag("Player");
-        if (playerObj != null)
+        GameObject trucker = GameObject.Find("SimplePeople_Trucker_Black");
+        if (trucker != null)
         {
-            target = playerObj.transform;
+            target = trucker.transform;
             return;
         }
 
@@ -216,10 +219,10 @@ public class ThirdPersonCamera : MonoBehaviour
             return;
         }
 
-        GameObject tourist = GameObject.Find("SimpleCitizens_Tourist_Brown");
-        if (tourist != null)
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj != null)
         {
-            target = tourist.transform;
+            target = playerObj.transform;
             return;
         }
 

@@ -88,6 +88,11 @@ Area Parkir (Pak Beni) ──▶ Coffee Shop (Clara) ──▶ Drug Store (Pak J
   Final Selesai ◀── Gedung Apartemen (Naya) ◀── Cari Paket Jatuh (Petugas Parkir) ◀───┘
 ```
 
+### Karakter Utama:
+- **Rian (`SimplePeople_Trucker_Black`) — The Determined Rookie (Pemain):**
+  Kurir muda tekun yang mengenakan topi trucker biru-putih, kaos singlet putih dengan suspender merah, dan celana panjang abu-abu robek (persis sesuai foto referensi pemain). Dikendalikan dengan tombol `[W, A, S, D]`, sprint `[Shift]`, lompat `[Spasi]`, serta kamera orang ketiga (*Third-Person Follow Camera*) yang selalu mengunci dan mengikuti Rian dari belakang secara dinamis.
+
+### Karakter Pendukung (6 Karakter):
 1. **Pak Beni (`SimplePeople_Sheriff_Black`) — Petugas Pengiriman (Area Parkir):**
    - Memberikan 5 paket kiriman dan pengarahan batas waktu 10 menit. Menjadi titik lapor akhir pengiriman.
 2. **Clara (`SimplePeople_Waitress_White`) — Pegawai Coffee Shop (Paket 1):**
