@@ -160,8 +160,8 @@ public class DeliveryHUD : MonoBehaviour
         dbRT.anchorMin = new Vector2(0f, 1f);
         dbRT.anchorMax = new Vector2(0f, 1f);
         dbRT.pivot = new Vector2(0f, 1f);
-        dbRT.anchoredPosition = new Vector2(24f, -20f);
-        dbRT.sizeDelta = new Vector2(380f, 160f);
+        dbRT.anchoredPosition = new Vector2(25f, -25f);
+        dbRT.sizeDelta = new Vector2(420f, 185f);
 
         Image bg = dashboardObj.AddComponent<Image>();
         bg.color = new Color(0.05f, 0.08f, 0.16f, 0.94f);
@@ -176,8 +176,9 @@ public class DeliveryHUD : MonoBehaviour
         RectTransform stripRT = strip.AddComponent<RectTransform>();
         stripRT.anchorMin = new Vector2(0f, 1f);
         stripRT.anchorMax = new Vector2(1f, 1f);
-        stripRT.sizeDelta = new Vector2(0f, 3f);
+        stripRT.pivot = new Vector2(0.5f, 1f);
         stripRT.anchoredPosition = Vector2.zero;
+        stripRT.sizeDelta = new Vector2(0f, 4f);
         Image stripImg = strip.AddComponent<Image>();
         stripImg.color = new Color(0.25f, 0.8f, 1f, 1f);
 
@@ -186,35 +187,39 @@ public class DeliveryHUD : MonoBehaviour
         timerGo.transform.SetParent(dashboardObj.transform, false);
         RectTransform timerRT = timerGo.AddComponent<RectTransform>();
         timerRT.anchorMin = new Vector2(0f, 1f);
-        timerRT.anchorMax = new Vector2(0.55f, 1f);
+        timerRT.anchorMax = new Vector2(0f, 1f);
         timerRT.pivot = new Vector2(0f, 1f);
-        timerRT.anchoredPosition = new Vector2(16f, -10f);
-        timerRT.sizeDelta = new Vector2(180f, 36f);
+        timerRT.anchoredPosition = new Vector2(20f, -14f);
+        timerRT.sizeDelta = new Vector2(200f, 32f);
 
         timerText = timerGo.AddComponent<Text>();
         timerText.font = mainFont;
-        timerText.fontSize = 24;
+        timerText.fontSize = 22;
         timerText.fontStyle = FontStyle.Bold;
         timerText.color = Color.white;
         timerText.alignment = TextAnchor.MiddleLeft;
+        timerText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        timerText.verticalOverflow = VerticalWrapMode.Overflow;
         timerText.text = "⏱ 10:00";
 
         // Package Counter Text
         GameObject pkgGo = new GameObject("PackageCounterText");
         pkgGo.transform.SetParent(dashboardObj.transform, false);
         RectTransform pkgRT = pkgGo.AddComponent<RectTransform>();
-        pkgRT.anchorMin = new Vector2(0.55f, 1f);
+        pkgRT.anchorMin = new Vector2(1f, 1f);
         pkgRT.anchorMax = new Vector2(1f, 1f);
         pkgRT.pivot = new Vector2(1f, 1f);
-        pkgRT.anchoredPosition = new Vector2(-16f, -10f);
-        pkgRT.sizeDelta = new Vector2(160f, 36f);
+        pkgRT.anchoredPosition = new Vector2(-20f, -14f);
+        pkgRT.sizeDelta = new Vector2(170f, 32f);
 
         packageProgressText = pkgGo.AddComponent<Text>();
         packageProgressText.font = mainFont;
-        packageProgressText.fontSize = 17;
+        packageProgressText.fontSize = 16;
         packageProgressText.fontStyle = FontStyle.Bold;
         packageProgressText.color = new Color(1f, 0.85f, 0.2f, 1f);
         packageProgressText.alignment = TextAnchor.MiddleRight;
+        packageProgressText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        packageProgressText.verticalOverflow = VerticalWrapMode.Overflow;
         packageProgressText.text = "📦 Paket: 0 / 5";
 
         // Mission Title Text
@@ -222,56 +227,60 @@ public class DeliveryHUD : MonoBehaviour
         titleGo.transform.SetParent(dashboardObj.transform, false);
         RectTransform titleRT = titleGo.AddComponent<RectTransform>();
         titleRT.anchorMin = new Vector2(0f, 1f);
-        titleRT.anchorMax = new Vector2(1f, 1f);
+        titleRT.anchorMax = new Vector2(0f, 1f);
         titleRT.pivot = new Vector2(0f, 1f);
-        titleRT.anchoredPosition = new Vector2(16f, -48f);
-        titleRT.sizeDelta = new Vector2(-32f, 26f);
+        titleRT.anchoredPosition = new Vector2(20f, -50f);
+        titleRT.sizeDelta = new Vector2(380f, 26f);
 
         missionTitleText = titleGo.AddComponent<Text>();
         missionTitleText.font = mainFont;
-        missionTitleText.fontSize = 16;
+        missionTitleText.fontSize = 15;
         missionTitleText.fontStyle = FontStyle.Bold;
         missionTitleText.color = new Color(0.35f, 0.85f, 1f, 1f);
         missionTitleText.alignment = TextAnchor.MiddleLeft;
+        missionTitleText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        missionTitleText.verticalOverflow = VerticalWrapMode.Overflow;
         missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman";
 
         // Mission Clue Text
         GameObject clueGo = new GameObject("MissionClueText");
         clueGo.transform.SetParent(dashboardObj.transform, false);
         RectTransform clueRT = clueGo.AddComponent<RectTransform>();
-        clueRT.anchorMin = new Vector2(0f, 0f);
-        clueRT.anchorMax = new Vector2(1f, 1f);
-        clueRT.pivot = new Vector2(0f, 0f);
-        clueRT.offsetMin = new Vector2(16f, 30f);
-        clueRT.offsetMax = new Vector2(-16f, -76f);
+        clueRT.anchorMin = new Vector2(0f, 1f);
+        clueRT.anchorMax = new Vector2(0f, 1f);
+        clueRT.pivot = new Vector2(0f, 1f);
+        clueRT.anchoredPosition = new Vector2(20f, -80f);
+        clueRT.sizeDelta = new Vector2(380f, 65f);
 
         missionClueText = clueGo.AddComponent<Text>();
         missionClueText.font = mainFont;
         missionClueText.fontSize = 13;
         missionClueText.fontStyle = FontStyle.Normal;
-        missionClueText.color = new Color(0.9f, 0.92f, 0.95f, 0.9f);
+        missionClueText.color = new Color(0.9f, 0.92f, 0.95f, 0.95f);
         missionClueText.alignment = TextAnchor.UpperLeft;
         missionClueText.lineSpacing = 1.15f;
         missionClueText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        missionClueText.verticalOverflow = VerticalWrapMode.Truncate;
-        missionClueText.text = "Ambil 5 paket terakhir dan dengarkan batas waktu pengiriman malam ini.";
+        missionClueText.verticalOverflow = VerticalWrapMode.Overflow;
+        missionClueText.text = "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.";
 
         // Map Hint Footer
         GameObject mapHintGo = new GameObject("MapHintText");
         mapHintGo.transform.SetParent(dashboardObj.transform, false);
         RectTransform mhRT = mapHintGo.AddComponent<RectTransform>();
-        mhRT.anchorMin = new Vector2(0f, 0f);
-        mhRT.anchorMax = new Vector2(1f, 0f);
-        mhRT.pivot = new Vector2(0f, 0f);
-        mhRT.anchoredPosition = new Vector2(16f, 6f);
-        mhRT.sizeDelta = new Vector2(-32f, 20f);
+        mhRT.anchorMin = new Vector2(0f, 1f);
+        mhRT.anchorMax = new Vector2(0f, 1f);
+        mhRT.pivot = new Vector2(0f, 1f);
+        mhRT.anchoredPosition = new Vector2(20f, -152f);
+        mhRT.sizeDelta = new Vector2(380f, 22f);
 
         Text mapHintText = mapHintGo.AddComponent<Text>();
         mapHintText.font = mainFont;
         mapHintText.fontSize = 12;
         mapHintText.fontStyle = FontStyle.Bold;
-        mapHintText.color = new Color(0.6f, 0.75f, 0.95f, 0.8f);
+        mapHintText.color = new Color(0.6f, 0.75f, 0.95f, 0.85f);
         mapHintText.alignment = TextAnchor.MiddleLeft;
+        mapHintText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        mapHintText.verticalOverflow = VerticalWrapMode.Overflow;
         mapHintText.text = "Tekan [M] untuk melihat Denah Kota";
 
         // Penalty Flash Text (Overlay Notifikasi)
@@ -282,7 +291,7 @@ public class DeliveryHUD : MonoBehaviour
         penRT.anchorMax = new Vector2(0.5f, 0.5f);
         penRT.pivot = new Vector2(0.5f, 0.5f);
         penRT.anchoredPosition = Vector2.zero;
-        penRT.sizeDelta = new Vector2(300f, 40f);
+        penRT.sizeDelta = new Vector2(340f, 40f);
 
         penaltyFlashText = penGo.AddComponent<Text>();
         penaltyFlashText.font = mainFont;
@@ -290,6 +299,8 @@ public class DeliveryHUD : MonoBehaviour
         penaltyFlashText.fontStyle = FontStyle.Bold;
         penaltyFlashText.color = new Color(1f, 0.2f, 0.2f, 1f);
         penaltyFlashText.alignment = TextAnchor.MiddleCenter;
+        penaltyFlashText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        penaltyFlashText.verticalOverflow = VerticalWrapMode.Overflow;
         penaltyFlashText.text = "";
         penaltyFlashText.gameObject.SetActive(false);
     }
