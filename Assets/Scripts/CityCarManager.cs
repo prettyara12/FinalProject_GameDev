@@ -80,6 +80,19 @@ public static class CityCarManager
                 mover = car.AddComponent<CityCarMover>();
             }
 
+            // Pasang pendeteksi senggolan/tabrakan rintangan mobil (CarHazardTrigger)
+            CarHazardTrigger hazard = car.GetComponent<CarHazardTrigger>();
+            if (hazard == null) hazard = car.AddComponent<CarHazardTrigger>();
+
+            // Pastikan ada collider trigger pada mobil
+            Collider carCol = car.GetComponent<Collider>();
+            if (carCol == null)
+            {
+                BoxCollider bc = car.AddComponent<BoxCollider>();
+                bc.isTrigger = true;
+                bc.size = new Vector3(2.5f, 1.5f, 4.5f);
+            }
+
             // Cek apakah mobil ini adalah mobil merah yang diminta belok ke jalan pertokoan
             string carNameLower = car.name.ToLower();
             bool isRedCar = carNameLower.Contains("red") || (configuredCount == 1 && !carNameLower.Contains("truck"));

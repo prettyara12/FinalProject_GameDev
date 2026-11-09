@@ -92,6 +92,23 @@ public static class PlayerBootstrap
         }
     }
 
+    [MenuItem("Tools/⭐ Setup Game Kurir Terakhir (Final Project)", false, 0)]
+    public static void MenuSetupKurirTerakhir()
+    {
+        SetupGameProject();
+        MarkSceneDirtySafe();
+
+        EditorUtility.DisplayDialog("Game Kurir Terakhir Siap Dimainkan!",
+            "Game 'Kurir Terakhir' berhasil dikonfigurasi lengkap:\n\n" +
+            "1. RIAN (PLAYER): Memulai di Area Parkir (WASD, Shift Sprint, Spasi Lompat, [E] Interaksi, [M] Peta Kota).\n" +
+            "2. 6 NPC PENERIMA / PETUNJUK: Pak Beni, Clara, Pak Joko, Dimas, Petugas Parkir, dan Naya.\n" +
+            "3. COUNTDOWN TIMER: 10 Menit dengan penalti salah kirim (-20s) dan senggolan mobil (-5s).\n" +
+            "4. PAKET JATUH: Tersedia di sela mobil parkir pada Misi 4.\n" +
+            "5. 3 ENDING: Kurir Terpercaya, Pengiriman Terlambat, dan Gagal Bertugas.\n\n" +
+            "Klik tombol Play (▶) untuk langsung memulai petualangan pengiriman!",
+            "OK");
+    }
+
     [MenuItem("Tools/⭐ Setup Game (1 Player WASD + Minimal 2 NPC)", false, 1)]
     public static void MenuSetupGameProject()
     {
@@ -368,6 +385,22 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// <summary>
     /// Digunakan untuk menjalankan setup otomatis via Unity batchmode di command line.
     /// </summary>
+    public static void BatchSetupKurirTerakhir()
+    {
+        Debug.Log("[PlayerBootstrap] Memulai BatchSetupKurirTerakhir...");
+        var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Module 2.unity");
+        if (scene.IsValid())
+        {
+            SetupGameProject();
+            UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+            Debug.Log("[PlayerBootstrap] BatchSetupKurirTerakhir sukses dan scene Module 2 berhasil disimpan!");
+        }
+        else
+        {
+            Debug.LogError("[PlayerBootstrap] Gagal membuka scene Assets/Module 2.unity!");
+        }
+    }
+
     public static void BatchSetupCutscene()
     {
         Debug.Log("[PlayerBootstrap] Memulai BatchSetupCutscene...");
@@ -430,41 +463,382 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         }
         NPCDialogueOverlay.EnsureInstance();
 
-        // 8. Setup Quizmaster Steve & ExitPortal Transisi Level (Modul 7)
-        EnsureSteveAndPortal();
+        // 8. Setup Game Inti Kurir Terakhir (Final Project)
+        SetupKurirTerakhirGame(playerGo);
 
-        // 9. Setup 2 Mobil Manual Buatan Pengguna agar Berjalan di Jalan Kota
+        Debug.Log("[PlayerBootstrap] Berhasil mengonfigurasi 1 Player (WASD) dan Game 'Kurir Terakhir'!");
+    }
+
+    /// <summary>
+    /// Konfigurasi Utama Game "Kurir Terakhir" (Final Project):
+    /// - Menempatkan Rian di Area Parkir (302.0, 0.02, -12.0) menghadap ke Pak Beni.
+    /// - Mengonfigurasi 6 Karakter Penerima/Pemberi Petunjuk (Pak Beni, Clara, Pak Joko, Dimas, Petugas Parkir, Naya).
+    /// - Memasang paket fisik yang terjatuh di sela mobil parkir (294.5, 0.05, -8.0).
+    /// - Memasang CarHazardTrigger pada mobil-mobil berjalan di kota.
+    /// - Mengaktifkan DeliveryGameManager dan DeliveryHUD.
+    /// - Membersihkan/menonaktifkan objek tugas modul lama (Steve, Portal, Cutscene Donut Shop).
+    /// </summary>
+    public static void SetupKurirTerakhirGame(GameObject playerGo)
+    {
+        // 1. Bersihkan elemen tugas modul lama
+        CleanupLegacyModuleObjects();
+
+        // 2. Posisikan Rian (Player) di Area Parkir
+        if (playerGo != null)
+        {
+            playerGo.transform.position = new Vector3(302.0f, 0.02f, -12.0f);
+            playerGo.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            PlayerController pc = playerGo.GetComponent<PlayerController>();
+            if (pc != null)
+            {
+                pc.SetMovementFrozen(false);
+            }
+        }
+
+        // 3. Setup 6 Karakter Utama dengan DeliveryRecipient
+        SetupKurirRecipients(playerGo);
+
+        // 4. Setup Objek Paket Jatuh di Area Parkir (Misi 4)
+        SetupDroppedPackageItem();
+
+        // 5. Setup Mobil Berjalan & Hazard Tabrakan
         try
         {
             CityCarManager.SetupUserManualCars();
         }
         catch (System.Exception ex)
         {
-            Debug.LogWarning($"[PlayerBootstrap] Peringatan saat setup mobil manual: {ex.Message}");
+            Debug.LogWarning($"[PlayerBootstrap] Peringatan saat setup mobil: {ex.Message}");
         }
 
-        // 10. Setup Multi-Scene Manager (Modul 6)
-        try
+        // 6. Setup DeliveryGameManager & DeliveryHUD
+        GameObject gmGo = GameObject.Find("DeliveryGameManager");
+        if (gmGo == null)
         {
-            EnsureSubSceneManager(playerGo);
+            gmGo = new GameObject("DeliveryGameManager");
         }
-        catch (System.Exception ex)
+        DeliveryGameManager gm = gmGo.GetComponent<DeliveryGameManager>();
+        if (gm == null) gm = gmGo.AddComponent<DeliveryGameManager>();
+
+        DeliveryHUD.EnsureInstance();
+        NPCDialogueOverlay.EnsureInstance();
+
+        Debug.Log("[PlayerBootstrap] ⭐ Game 'Kurir Terakhir' Berhasil Dikonfigurasi Lengkap!");
+    }
+
+    private static void CleanupLegacyModuleObjects()
+    {
+        string[] oldNames = new string[]
         {
-            Debug.LogWarning($"[PlayerBootstrap] Peringatan saat setup SubSceneManager: {ex.Message}");
+            "Quizmaster Steve",
+            "ExitPortal",
+            "CutsceneTriggerZone_DonutShop",
+            "Cutscene_Manager",
+            "Canvas_CutsceneIntro",
+            "Canvas_FadeTransition",
+            "UI_CutsceneBanner",
+            "DollyTrack_DonutShop",
+            "CM_vcam_Wide",
+            "CM_vcam_Dolly",
+            "CM_vcam_Waitress"
+        };
+
+        foreach (var name in oldNames)
+        {
+            GameObject go = GameObject.Find(name);
+            while (go != null)
+            {
+                go.SetActive(false);
+                go.name = "_LegacyDisabled_" + name;
+                go = GameObject.Find(name);
+            }
         }
 
-        // 11. Setup Cinematography & Cutscene (Modul 8)
-        try
+        GameObject ssm = GameObject.Find("SubSceneManager");
+        if (ssm != null)
         {
-            EnsureCutsceneSystem(playerGo);
+            ssm.SetActive(false);
         }
-        catch (System.Exception ex)
+    }
+
+    private static void SetupKurirRecipients(GameObject playerGo)
+    {
+        // 1. PAK BENI (Area Parkir, samping mobil pengiriman)
+        EnsureRecipientNPC(
+            "NPC_PakBeni",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab",
+            new Vector3(304.5f, 0.02f, -12.0f),
+            Quaternion.Euler(0f, -90f, 0f),
+            "Pak Beni (Pusat Pengiriman)",
+            DeliveryRecipient.RecipientType.PakBeni,
+            DeliveryMissionState.Prolog,
+            new string[]
+            {
+                "Rian! Ini lima paket terakhir untuk malam ini. Semua toko dan apartemen akan segera tutup.",
+                "Label alamat beberapa paket agak basah terkena air hujan. Kamu harus membaca papan nama toko dan bertanya pada warga sekitar.",
+                "Waktumu 10 menit! Paket pertama harus sampai ke pegawai kedai kopi (Coffee Shop) di trotoar timur sebelum mereka tutup."
+            },
+            new string[]
+            {
+                "Luar biasa Rian! Semua lima paket telah berhasil diantarkan tepat waktu.",
+                "Kamu telah membuktikan kerja keras, kecepatan, dan tanggung jawabmu malam ini.",
+                "Mulai besok, kamu resmi dipercaya menjadi kurir tetap kami!"
+            },
+            new string[]
+            {
+                "Rian, cepat selesaikan pengiriman paket-paket itu sebelum batas waktumu habis!"
+            },
+            playerGo
+        );
+
+        // 2. CLARA (Coffee Shop - Trotoar Timur)
+        EnsureRecipientNPC(
+            "NPC_Clara",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Waitress_White.prefab",
+            new Vector3(316.0f, 0.02f, 14.0f),
+            Quaternion.Euler(0f, -140f, 0f),
+            "Clara (Coffee Shop)",
+            DeliveryRecipient.RecipientType.Clara,
+            DeliveryMissionState.Package1_CoffeeShop,
+            new string[]
+            {
+                "Selamat datang di Coffee Shop! Apakah kamu membawa paket biji kopi pesanan kami?"
+            },
+            new string[]
+            {
+                "Halo! Akhirnya paket biji kopi pesananku sampai juga tepat sebelum kedai kami tutup. Terima kasih banyak ya, Mas Rian!",
+                "Oh ya, tadi kulihat Pak Joko pemilik Drug Store sedang menunggu kiriman obat di sudut deretan pertokoan barat jalan ini."
+            },
+            new string[]
+            {
+                "Maaf mas, ini kedai kopi (Coffee Shop). Saya tidak memesan paket ini! Coba periksa papan nama toko lain."
+            },
+            playerGo
+        );
+
+        // 3. PAK JOKO (Drug Store - Sudut Pertokoan Barat)
+        EnsureRecipientNPC(
+            "NPC_PakJoko",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Pimp_Brown.prefab",
+            new Vector3(320.0f, 0.02f, 5.0f),
+            Quaternion.Euler(0f, -90f, 0f),
+            "Pak Joko (Drug Store)",
+            DeliveryRecipient.RecipientType.PakJoko,
+            DeliveryMissionState.Package2_DrugStore,
+            new string[]
+            {
+                "Halo anak muda, saya Pak Joko pemilik Drug Store. Sedang mencari toko obat?"
+            },
+            new string[]
+            {
+                "Terima kasih banyak, Mas Rian! Pasokan obat dan vitamin ini sangat ditunggu warga untuk besok pagi.",
+                "Kalau kamu mencari toko perlengkapan (Hardware Store), Dimas ada di toko deretan sebelah barat jalan pertokoan ini."
+            },
+            new string[]
+            {
+                "Maaf mas, ini Drug Store. Saya tidak memesan perkakas atau paket ini! Jangan sampai salah alamat."
+            },
+            playerGo
+        );
+
+        // 4. DIMAS (Hardware Store)
+        EnsureRecipientNPC(
+            "NPC_Dimas",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab",
+            new Vector3(308.0f, 0.02f, 7.0f),
+            Quaternion.Euler(0f, 0f, 0f),
+            "Dimas (Hardware Store)",
+            DeliveryRecipient.RecipientType.Dimas,
+            DeliveryMissionState.Package3_HardwareStore,
+            new string[]
+            {
+                "Halo kurir! Selamat datang di Hardware Store perlengkapan teknik."
+            },
+            new string[]
+            {
+                "Wah pas sekali, mur dan perkakas pesanan bengkel sudah tiba. Terima kasih kurir!",
+                "Gawat Rian! Tadi kulihat ada satu kotak paketmu yang terjatuh di sela-sela mobil area parkir saat kamu menghindari mobil melintas!",
+                "Cepat kembali ke area parkir dan tanya Petugas Parkir di sana untuk mencari paketmu yang hilang!"
+            },
+            new string[]
+            {
+                "Maaf mas, ini Hardware Store perkakas toko. Cari toko yang sesuai dengan pesanan paketmu!"
+            },
+            playerGo
+        );
+
+        // 5. PETUGAS PARKIR (Area Parkir)
+        EnsureRecipientNPC(
+            "NPC_PetugasParkir",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Police_White.prefab",
+            new Vector3(298.0f, 0.02f, -5.0f),
+            Quaternion.Euler(0f, 45f, 0f),
+            "Petugas Parkir",
+            DeliveryRecipient.RecipientType.PetugasParkir,
+            DeliveryMissionState.Package4_DroppedPackage,
+            new string[]
+            {
+                "Hei kurir! Paketmu tadi terlempar ke sela-sela mobil van di ujung parkiran saat kamu menghindari sedan yang melintas.",
+                "Cepat cari di antara barisan mobil parkir dan ambil dengan tombol [E] sebelum kendaraan lain melindasnya!"
+            },
+            new string[]
+            {
+                "Bagus, kamu sudah menemukan paket yang jatuh itu! Segera antarkan ke alamat berikutnya sebelum toko tutup."
+            },
+            new string[]
+            {
+                "Saya petugas parkir, tugas saya mengatur jalur keluar masuk kendaraan di sini, bukan menerima paket!"
+            },
+            playerGo
+        );
+
+        // 6. NAYA (Penghuni Apartemen - Ujung Kawasan)
+        EnsureRecipientNPC(
+            "NPC_Naya",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Waitress_White.prefab",
+            new Vector3(288.0f, 0.02f, 18.0f),
+            Quaternion.Euler(0f, 90f, 0f),
+            "Naya (Penghuni Apartemen)",
+            DeliveryRecipient.RecipientType.Naya,
+            DeliveryMissionState.Package5_Apartment,
+            new string[]
+            {
+                "Halo, ada yang bisa kubantu? Aku sedang menunggu paket kiriman penting di depan apartemen ini."
+            },
+            new string[]
+            {
+                "Halo Mas Rian! Syukurlah paket dokumen pentingku sampai malam ini juga. Terima kasih banyak atas kerja kerasmu!",
+                "Semua paketmu sudah selesai terkirim! Sekarang cepatlah kembali ke Pak Beni di area parkir sebelum batas waktu 10 menitmu habis!"
+            },
+            new string[]
+            {
+                "Maaf mas, saya Naya penghuni apartemen. Saya hanya menunggu kiriman dokumen penting keluarga saya!"
+            },
+            playerGo
+        );
+    }
+
+    private static GameObject EnsureRecipientNPC(
+        string objectName,
+        string prefabPath,
+        Vector3 position,
+        Quaternion rotation,
+        string displayName,
+        DeliveryRecipient.RecipientType type,
+        DeliveryMissionState missionState,
+        string[] introLines,
+        string[] successLines,
+        string[] wrongLines,
+        GameObject playerGo)
+    {
+        GameObject npcGo = GameObject.Find(objectName);
+        if (npcGo == null)
         {
-            Debug.LogWarning($"[PlayerBootstrap] Peringatan saat setup Cutscene Modul 8: {ex.Message}");
+#if UNITY_EDITOR
+            GameObject pref = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (pref == null)
+            {
+                pref = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab");
+            }
+            if (pref != null)
+            {
+                npcGo = Object.Instantiate(pref);
+                npcGo.name = objectName;
+            }
+#endif
         }
 
+        if (npcGo == null) return null;
 
-        Debug.Log("[PlayerBootstrap] Berhasil mengonfigurasi 1 Player (WASD), NPC Mandiri, Quizmaster Steve & Portal Transition, 2 Mobil Manual Berjalan, dan Multi-Scene Manager (Modul 6)!");
+        npcGo.SetActive(true);
+        npcGo.tag = "Untagged";
+        npcGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        npcGo.transform.position = position;
+        npcGo.transform.rotation = rotation;
+
+        PlayerController pc = npcGo.GetComponent<PlayerController>();
+        if (pc != null) DestroyComponentSafe(pc);
+
+        EnsureCorrectCharacterMesh(npcGo);
+        AutoEnsureCharacterMaterial(npcGo);
+
+        Rigidbody rb = npcGo.GetComponent<Rigidbody>();
+        if (rb == null) rb = npcGo.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        CapsuleCollider col = npcGo.GetComponent<CapsuleCollider>();
+        if (col == null) col = npcGo.AddComponent<CapsuleCollider>();
+        col.height = 1.8f;
+        col.center = new Vector3(0f, 0.9f, 0f);
+        col.radius = 0.35f;
+
+        Animator anim = npcGo.GetComponent<Animator>();
+        if (anim == null) anim = npcGo.AddComponent<Animator>();
+        anim.applyRootMotion = false;
+#if UNITY_EDITOR
+        if (anim.runtimeAnimatorController == null)
+        {
+            RuntimeAnimatorController ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
+            if (ctrl != null) anim.runtimeAnimatorController = ctrl;
+        }
+#endif
+        anim.SetInteger("Animation_int", 0);
+        anim.SetFloat("Speed_f", 0f);
+
+        DeliveryRecipient recipient = npcGo.GetComponent<DeliveryRecipient>();
+        if (recipient == null) recipient = npcGo.AddComponent<DeliveryRecipient>();
+        recipient.characterName = displayName;
+        recipient.recipientType = type;
+        recipient.targetForMission = missionState;
+        recipient.introDialogueLines = introLines;
+        recipient.successDialogueLines = successLines;
+        recipient.wrongDeliveryLines = wrongLines;
+        recipient.interactionRadius = 2.0f;
+
+        NPCWalker walker = npcGo.GetComponent<NPCWalker>();
+        if (walker != null)
+        {
+            walker.enablePlayerInteraction = false;
+            walker.navMode = NPCWalker.NavigationMode.Stationary;
+            walker.walkSpeed = 0f;
+            walker.runSpeed = 0f;
+        }
+
+        return npcGo;
+    }
+
+    private static void SetupDroppedPackageItem()
+    {
+        GameObject pkgGo = GameObject.Find("DroppedPackage_Mission4");
+        if (pkgGo == null)
+        {
+            pkgGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            pkgGo.name = "DroppedPackage_Mission4";
+            pkgGo.transform.localScale = new Vector3(0.28f, 0.22f, 0.32f);
+
+            Renderer rend = pkgGo.GetComponent<Renderer>();
+            if (rend != null)
+            {
+                Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+                mat.color = new Color(0.72f, 0.48f, 0.24f, 1f);
+                rend.material = mat;
+            }
+        }
+
+        pkgGo.transform.position = new Vector3(294.5f, 0.12f, -8.0f);
+        BoxCollider bc = pkgGo.GetComponent<BoxCollider>();
+        if (bc == null) bc = pkgGo.AddComponent<BoxCollider>();
+        bc.isTrigger = true;
+        bc.size = new Vector3(2.0f, 2.0f, 2.0f);
+
+        DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
+        if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();
+        drop.interactionRadius = 2.0f;
+
+        pkgGo.SetActive(false);
+    }
     }
 
     /// <summary>
