@@ -178,8 +178,8 @@ public class DeliveryHUD : MonoBehaviour
         dbRT.anchorMin = new Vector2(0f, 1f);
         dbRT.anchorMax = new Vector2(0f, 1f);
         dbRT.pivot = new Vector2(0f, 1f);
-        dbRT.anchoredPosition = new Vector2(30f, -30f);
-        dbRT.sizeDelta = new Vector2(430f, 195f);
+        dbRT.anchoredPosition = new Vector2(80f, -60f);
+        dbRT.sizeDelta = new Vector2(380f, 160f);
 
         Image bg = dashboardObj.AddComponent<Image>();
         bg.color = new Color(0.05f, 0.08f, 0.16f, 0.94f);
@@ -196,7 +196,7 @@ public class DeliveryHUD : MonoBehaviour
         stripRT.anchorMax = new Vector2(1f, 1f);
         stripRT.pivot = new Vector2(0.5f, 1f);
         stripRT.anchoredPosition = Vector2.zero;
-        stripRT.sizeDelta = new Vector2(0f, 4f);
+        stripRT.sizeDelta = new Vector2(0f, 3f);
         Image stripImg = strip.AddComponent<Image>();
         stripImg.color = new Color(0.25f, 0.8f, 1f, 1f);
 
@@ -207,12 +207,12 @@ public class DeliveryHUD : MonoBehaviour
         timerRT.anchorMin = new Vector2(0f, 1f);
         timerRT.anchorMax = new Vector2(0f, 1f);
         timerRT.pivot = new Vector2(0f, 1f);
-        timerRT.anchoredPosition = new Vector2(20f, -14f);
-        timerRT.sizeDelta = new Vector2(200f, 32f);
+        timerRT.anchoredPosition = new Vector2(16f, -10f);
+        timerRT.sizeDelta = new Vector2(170f, 26f);
 
         timerText = timerGo.AddComponent<Text>();
         timerText.font = mainFont;
-        timerText.fontSize = 22;
+        timerText.fontSize = 19;
         timerText.fontStyle = FontStyle.Bold;
         timerText.color = Color.white;
         timerText.alignment = TextAnchor.MiddleLeft;
@@ -227,12 +227,12 @@ public class DeliveryHUD : MonoBehaviour
         pkgRT.anchorMin = new Vector2(1f, 1f);
         pkgRT.anchorMax = new Vector2(1f, 1f);
         pkgRT.pivot = new Vector2(1f, 1f);
-        pkgRT.anchoredPosition = new Vector2(-20f, -14f);
-        pkgRT.sizeDelta = new Vector2(170f, 32f);
+        pkgRT.anchoredPosition = new Vector2(-16f, -10f);
+        pkgRT.sizeDelta = new Vector2(150f, 26f);
 
         packageProgressText = pkgGo.AddComponent<Text>();
         packageProgressText.font = mainFont;
-        packageProgressText.fontSize = 16;
+        packageProgressText.fontSize = 14;
         packageProgressText.fontStyle = FontStyle.Bold;
         packageProgressText.color = new Color(1f, 0.85f, 0.2f, 1f);
         packageProgressText.alignment = TextAnchor.MiddleRight;
@@ -247,12 +247,12 @@ public class DeliveryHUD : MonoBehaviour
         titleRT.anchorMin = new Vector2(0f, 1f);
         titleRT.anchorMax = new Vector2(0f, 1f);
         titleRT.pivot = new Vector2(0f, 1f);
-        titleRT.anchoredPosition = new Vector2(20f, -52f);
-        titleRT.sizeDelta = new Vector2(390f, 26f);
+        titleRT.anchoredPosition = new Vector2(16f, -40f);
+        titleRT.sizeDelta = new Vector2(348f, 24f);
 
         missionTitleText = titleGo.AddComponent<Text>();
         missionTitleText.font = mainFont;
-        missionTitleText.fontSize = 15;
+        missionTitleText.fontSize = 13;
         missionTitleText.fontStyle = FontStyle.Bold;
         missionTitleText.color = new Color(0.35f, 0.85f, 1f, 1f);
         missionTitleText.alignment = TextAnchor.MiddleLeft;
@@ -267,16 +267,16 @@ public class DeliveryHUD : MonoBehaviour
         clueRT.anchorMin = new Vector2(0f, 1f);
         clueRT.anchorMax = new Vector2(0f, 1f);
         clueRT.pivot = new Vector2(0f, 1f);
-        clueRT.anchoredPosition = new Vector2(20f, -82f);
-        clueRT.sizeDelta = new Vector2(390f, 68f);
+        clueRT.anchoredPosition = new Vector2(16f, -66f);
+        clueRT.sizeDelta = new Vector2(348f, 56f);
 
         missionClueText = clueGo.AddComponent<Text>();
         missionClueText.font = mainFont;
-        missionClueText.fontSize = 13;
+        missionClueText.fontSize = 12;
         missionClueText.fontStyle = FontStyle.Normal;
         missionClueText.color = new Color(0.9f, 0.92f, 0.95f, 0.95f);
         missionClueText.alignment = TextAnchor.UpperLeft;
-        missionClueText.lineSpacing = 1.15f;
+        missionClueText.lineSpacing = 1.1f;
         missionClueText.horizontalOverflow = HorizontalWrapMode.Wrap;
         missionClueText.verticalOverflow = VerticalWrapMode.Overflow;
         missionClueText.text = "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.";
@@ -288,12 +288,12 @@ public class DeliveryHUD : MonoBehaviour
         mhRT.anchorMin = new Vector2(0f, 1f);
         mhRT.anchorMax = new Vector2(0f, 1f);
         mhRT.pivot = new Vector2(0f, 1f);
-        mhRT.anchoredPosition = new Vector2(20f, -158f);
-        mhRT.sizeDelta = new Vector2(390f, 22f);
+        mhRT.anchoredPosition = new Vector2(16f, -130f);
+        mhRT.sizeDelta = new Vector2(348f, 20f);
 
         Text mapHintText = mapHintGo.AddComponent<Text>();
         mapHintText.font = mainFont;
-        mapHintText.fontSize = 12;
+        mapHintText.fontSize = 11;
         mapHintText.fontStyle = FontStyle.Bold;
         mapHintText.color = new Color(0.6f, 0.75f, 0.95f, 0.85f);
         mapHintText.alignment = TextAnchor.MiddleLeft;
@@ -309,11 +309,11 @@ public class DeliveryHUD : MonoBehaviour
         penRT.anchorMax = new Vector2(0.5f, 0.5f);
         penRT.pivot = new Vector2(0.5f, 0.5f);
         penRT.anchoredPosition = Vector2.zero;
-        penRT.sizeDelta = new Vector2(340f, 40f);
+        penRT.sizeDelta = new Vector2(320f, 36f);
 
         penaltyFlashText = penGo.AddComponent<Text>();
         penaltyFlashText.font = mainFont;
-        penaltyFlashText.fontSize = 20;
+        penaltyFlashText.fontSize = 18;
         penaltyFlashText.fontStyle = FontStyle.Bold;
         penaltyFlashText.color = new Color(1f, 0.2f, 0.2f, 1f);
         penaltyFlashText.alignment = TextAnchor.MiddleCenter;
