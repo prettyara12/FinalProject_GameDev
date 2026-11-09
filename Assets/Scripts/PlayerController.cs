@@ -37,6 +37,13 @@ public class PlayerController : MonoBehaviour
     private static readonly int ParamJumpB = Animator.StringToHash("Jump_b");
     private static readonly int ParamAnimationInt = Animator.StringToHash("Animation_int");
 
+    private bool hasParamSpeedF = false;
+    private bool hasParamGrounded = false;
+    private bool hasParamGroundedB = false;
+    private bool hasParamStaticB = false;
+    private bool hasParamJumpB = false;
+    private bool hasParamAnimationInt = false;
+
     [Header("=== Collision & Obstacle Settings ===")]
     [Tooltip("Radius kapsul tabrakan badan karakter.")]
     public float bodyRadius = 0.035f;
@@ -132,6 +139,19 @@ public class PlayerController : MonoBehaviour
         if (animator != null)
         {
             animator.applyRootMotion = false;
+
+            if (animator.runtimeAnimatorController != null)
+            {
+                foreach (var p in animator.parameters)
+                {
+                    if (p.nameHash == ParamSpeedF) hasParamSpeedF = true;
+                    else if (p.nameHash == ParamGrounded) hasParamGrounded = true;
+                    else if (p.nameHash == ParamGroundedB) hasParamGroundedB = true;
+                    else if (p.nameHash == ParamStaticB) hasParamStaticB = true;
+                    else if (p.nameHash == ParamJumpB) hasParamJumpB = true;
+                    else if (p.nameHash == ParamAnimationInt) hasParamAnimationInt = true;
+                }
+            }
         }
 
         // Sesuaikan parameter kecepatan dan ukuran jika di skala normal (lossyScale ~ 1.0)
@@ -155,9 +175,9 @@ public class PlayerController : MonoBehaviour
 
         if (animator != null)
         {
-            animator.SetBool(ParamGrounded, true);
-            animator.SetBool(ParamGroundedB, true);
-            animator.SetBool(ParamStaticB, true);
+            if (hasParamGrounded) animator.SetBool(ParamGrounded, true);
+            if (hasParamGroundedB) animator.SetBool(ParamGroundedB, true);
+            if (hasParamStaticB) animator.SetBool(ParamStaticB, true);
         }
     }
 
@@ -354,9 +374,9 @@ public class PlayerController : MonoBehaviour
         // 11. Update Animator parameters (Speed_f controls Walk & Run)
         if (animator != null)
         {
-            animator.SetBool(ParamGrounded, isGrounded);
-            animator.SetBool(ParamGroundedB, isGrounded);
-            animator.SetBool(ParamStaticB, true);
+            if (hasParamGrounded) animator.SetBool(ParamGrounded, isGrounded);
+            if (hasParamGroundedB) animator.SetBool(ParamGroundedB, isGrounded);
+            if (hasParamStaticB) animator.SetBool(ParamStaticB, true);
 
             float animSpeed = 0f;
             if (inputMagnitude > 0.05f)
@@ -364,7 +384,7 @@ public class PlayerController : MonoBehaviour
                 animSpeed = isSprinting ? 1.0f : 0.45f;
             }
 
-            animator.SetFloat(ParamSpeedF, animSpeed);
+            if (hasParamSpeedF) animator.SetFloat(ParamSpeedF, animSpeed);
         }
     }
 

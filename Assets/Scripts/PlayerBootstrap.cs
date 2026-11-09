@@ -839,7 +839,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         pkgGo.SetActive(false);
     }
-    }
 
     /// <summary>
     /// Menyiapkan karakter Player yang dikendalikan keyboard (W, A, S, D).

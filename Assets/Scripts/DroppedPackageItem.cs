@@ -69,3 +69,4 @@ public class DroppedPackageItem : MonoBehaviour
         gameObject.SetActive(false);
     }
 }
+
