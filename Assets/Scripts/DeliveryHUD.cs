@@ -53,7 +53,6 @@ public class DeliveryHUD : MonoBehaviour
 
     public static void EnsureInstance()
     {
-        if (instance != null) return;
         GameObject go = GameObject.Find("DeliveryHUDSystem");
         if (go == null)
         {
@@ -64,6 +63,10 @@ public class DeliveryHUD : MonoBehaviour
         {
             instance = go.GetComponent<DeliveryHUD>();
             if (instance == null) instance = go.AddComponent<DeliveryHUD>();
+            if (instance.timerText == null || instance.missionTitleText == null || instance.dashboardObj == null)
+            {
+                instance.BuildUI();
+            }
         }
     }
 
@@ -130,7 +133,21 @@ public class DeliveryHUD : MonoBehaviour
     {
         mainFont = GetBestFont();
 
-        // 1. Setup Canvas ScreenSpaceOverlay
+        // 1. Bersihkan UI anak lama jika ada agar tidak ada panel duplikat/usang
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Transform ch = transform.GetChild(i);
+            if (Application.isPlaying)
+            {
+                Destroy(ch.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(ch.gameObject);
+            }
+        }
+
+        // 2. Setup Canvas ScreenSpaceOverlay
         canvas = GetComponent<Canvas>();
         if (canvas == null) canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -140,6 +157,7 @@ public class DeliveryHUD : MonoBehaviour
         if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1280, 720);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
         scaler.dynamicPixelsPerUnit = 2.0f;
 
@@ -153,15 +171,15 @@ public class DeliveryHUD : MonoBehaviour
 
     private void BuildDashboardPanel()
     {
-        dashboardObj = new GameObject("DeliveryDashboard");
+        dashboardObj = new GameObject("DeliveryDashboard", typeof(RectTransform));
         dashboardObj.transform.SetParent(transform, false);
 
-        RectTransform dbRT = dashboardObj.AddComponent<RectTransform>();
+        RectTransform dbRT = dashboardObj.GetComponent<RectTransform>();
         dbRT.anchorMin = new Vector2(0f, 1f);
         dbRT.anchorMax = new Vector2(0f, 1f);
         dbRT.pivot = new Vector2(0f, 1f);
-        dbRT.anchoredPosition = new Vector2(25f, -25f);
-        dbRT.sizeDelta = new Vector2(420f, 185f);
+        dbRT.anchoredPosition = new Vector2(30f, -30f);
+        dbRT.sizeDelta = new Vector2(430f, 195f);
 
         Image bg = dashboardObj.AddComponent<Image>();
         bg.color = new Color(0.05f, 0.08f, 0.16f, 0.94f);
@@ -171,9 +189,9 @@ public class DeliveryHUD : MonoBehaviour
         outline.effectDistance = new Vector2(1.5f, -1.5f);
 
         // Header Strip (Cyan)
-        GameObject strip = new GameObject("HeaderStrip");
+        GameObject strip = new GameObject("HeaderStrip", typeof(RectTransform));
         strip.transform.SetParent(dashboardObj.transform, false);
-        RectTransform stripRT = strip.AddComponent<RectTransform>();
+        RectTransform stripRT = strip.GetComponent<RectTransform>();
         stripRT.anchorMin = new Vector2(0f, 1f);
         stripRT.anchorMax = new Vector2(1f, 1f);
         stripRT.pivot = new Vector2(0.5f, 1f);
@@ -183,9 +201,9 @@ public class DeliveryHUD : MonoBehaviour
         stripImg.color = new Color(0.25f, 0.8f, 1f, 1f);
 
         // Timer Text (Besar & Tegas)
-        GameObject timerGo = new GameObject("TimerText");
+        GameObject timerGo = new GameObject("TimerText", typeof(RectTransform));
         timerGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform timerRT = timerGo.AddComponent<RectTransform>();
+        RectTransform timerRT = timerGo.GetComponent<RectTransform>();
         timerRT.anchorMin = new Vector2(0f, 1f);
         timerRT.anchorMax = new Vector2(0f, 1f);
         timerRT.pivot = new Vector2(0f, 1f);
@@ -203,9 +221,9 @@ public class DeliveryHUD : MonoBehaviour
         timerText.text = "⏱ 10:00";
 
         // Package Counter Text
-        GameObject pkgGo = new GameObject("PackageCounterText");
+        GameObject pkgGo = new GameObject("PackageCounterText", typeof(RectTransform));
         pkgGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform pkgRT = pkgGo.AddComponent<RectTransform>();
+        RectTransform pkgRT = pkgGo.GetComponent<RectTransform>();
         pkgRT.anchorMin = new Vector2(1f, 1f);
         pkgRT.anchorMax = new Vector2(1f, 1f);
         pkgRT.pivot = new Vector2(1f, 1f);
@@ -223,14 +241,14 @@ public class DeliveryHUD : MonoBehaviour
         packageProgressText.text = "📦 Paket: 0 / 5";
 
         // Mission Title Text
-        GameObject titleGo = new GameObject("MissionTitleText");
+        GameObject titleGo = new GameObject("MissionTitleText", typeof(RectTransform));
         titleGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform titleRT = titleGo.AddComponent<RectTransform>();
+        RectTransform titleRT = titleGo.GetComponent<RectTransform>();
         titleRT.anchorMin = new Vector2(0f, 1f);
         titleRT.anchorMax = new Vector2(0f, 1f);
         titleRT.pivot = new Vector2(0f, 1f);
-        titleRT.anchoredPosition = new Vector2(20f, -50f);
-        titleRT.sizeDelta = new Vector2(380f, 26f);
+        titleRT.anchoredPosition = new Vector2(20f, -52f);
+        titleRT.sizeDelta = new Vector2(390f, 26f);
 
         missionTitleText = titleGo.AddComponent<Text>();
         missionTitleText.font = mainFont;
@@ -243,14 +261,14 @@ public class DeliveryHUD : MonoBehaviour
         missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman";
 
         // Mission Clue Text
-        GameObject clueGo = new GameObject("MissionClueText");
+        GameObject clueGo = new GameObject("MissionClueText", typeof(RectTransform));
         clueGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform clueRT = clueGo.AddComponent<RectTransform>();
+        RectTransform clueRT = clueGo.GetComponent<RectTransform>();
         clueRT.anchorMin = new Vector2(0f, 1f);
         clueRT.anchorMax = new Vector2(0f, 1f);
         clueRT.pivot = new Vector2(0f, 1f);
-        clueRT.anchoredPosition = new Vector2(20f, -80f);
-        clueRT.sizeDelta = new Vector2(380f, 65f);
+        clueRT.anchoredPosition = new Vector2(20f, -82f);
+        clueRT.sizeDelta = new Vector2(390f, 68f);
 
         missionClueText = clueGo.AddComponent<Text>();
         missionClueText.font = mainFont;
@@ -264,14 +282,14 @@ public class DeliveryHUD : MonoBehaviour
         missionClueText.text = "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.";
 
         // Map Hint Footer
-        GameObject mapHintGo = new GameObject("MapHintText");
+        GameObject mapHintGo = new GameObject("MapHintText", typeof(RectTransform));
         mapHintGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform mhRT = mapHintGo.AddComponent<RectTransform>();
+        RectTransform mhRT = mapHintGo.GetComponent<RectTransform>();
         mhRT.anchorMin = new Vector2(0f, 1f);
         mhRT.anchorMax = new Vector2(0f, 1f);
         mhRT.pivot = new Vector2(0f, 1f);
-        mhRT.anchoredPosition = new Vector2(20f, -152f);
-        mhRT.sizeDelta = new Vector2(380f, 22f);
+        mhRT.anchoredPosition = new Vector2(20f, -158f);
+        mhRT.sizeDelta = new Vector2(390f, 22f);
 
         Text mapHintText = mapHintGo.AddComponent<Text>();
         mapHintText.font = mainFont;
@@ -284,9 +302,9 @@ public class DeliveryHUD : MonoBehaviour
         mapHintText.text = "Tekan [M] untuk melihat Denah Kota";
 
         // Penalty Flash Text (Overlay Notifikasi)
-        GameObject penGo = new GameObject("PenaltyFlashText");
+        GameObject penGo = new GameObject("PenaltyFlashText", typeof(RectTransform));
         penGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform penRT = penGo.AddComponent<RectTransform>();
+        RectTransform penRT = penGo.GetComponent<RectTransform>();
         penRT.anchorMin = new Vector2(0.5f, 0.5f);
         penRT.anchorMax = new Vector2(0.5f, 0.5f);
         penRT.pivot = new Vector2(0.5f, 0.5f);
