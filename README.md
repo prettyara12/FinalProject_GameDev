@@ -18,7 +18,7 @@
 
 ## 📖 Kisah & Latar Belakang (Story)
 
-Di sebuah kawasan perkotaan yang ramai dengan apartemen bertingkat, deretan pertokoan, *coffee shop*, *drug store*, *hardware store*, dan area parkir, seorang kurir muda bernama **Rian** (*The Determined Rookie*) menerima tugas penting: mengantarkan lima paket terakhir sebelum toko-toko menutup pintunya. Jika semua paket berhasil sampai kepada penerima yang tepat sebelum batas waktu berakhir, Rian akan resmi diangkat menjadi kurir tetap.
+Di sebuah kawasan perkotaan yang ramai dengan apartemen bertingkat, deretan pertokoan, *coffee shop*, *drug store*, *fire station*, dan area parkir, seorang kurir muda bernama **Rian** (*The Determined Rookie*) menerima tugas penting: mengantarkan lima paket terakhir sebelum toko-toko menutup pintunya. Jika semua paket berhasil sampai kepada penerima yang tepat sebelum batas waktu berakhir, Rian akan resmi diangkat menjadi kurir tetap.
 
 Namun, label alamat pada paket terkena air hujan sehingga nama penerima dan nomor tujuan tidak terbaca jelas. Berbekal peta denah kota sederhana dan informasi singkat, Rian harus aktif mengamati lingkungan, membaca papan nama bangunan, dan berbicara dengan warga untuk mengurai petunjuk. Di tengah perjalanan, Rian juga harus menghindari lalu lalang kendaraan serta menyelamatkan paket yang sempat terjatuh di area parkir!
 
@@ -55,7 +55,7 @@ Namun, label alamat pada paket terkena air hujan sehingga nama penerima dan nomo
 - Kontrol karakter pemain dibekukan (*frozen*) otomatis selama berdialog agar fokus menyerap petunjuk.
 
 ### 3. 🗺️ Denah Kawasan Kota ([M])
-- Pemain dapat menekan tombol **[M]** kapan saja untuk membuka peta denah sederhana yang menandai lokasi Area Parkir, Coffee Shop, Drug Store, Hardware Store, dan Gedung Apartemen.
+- Pemain dapat menekan tombol **[M]** kapan saja untuk membuka peta denah sederhana yang menandai lokasi Area Parkir, Coffee Shop, Drug Store, Fire Station (Pos Pemadam), dan Gedung Apartemen.
 - Tidak menggunakan panah GPS mengambang di atas target agar pemain aktif membaca papan nama toko sesuai esensi dokumen cerita.
 
 ### 4. 📦 Penyelamatan Paket Jatuh (Misi 4)
@@ -82,7 +82,7 @@ Namun, label alamat pada paket terkena air hujan sehingga nama penerima dan nomo
 ## 👥 Daftar Karakter & Alur Misi 1 s/d 5
 
 ```text
-Area Parkir (Pak Beni) ──▶ Coffee Shop (Clara) ──▶ Drug Store (Pak Joko) ──▶ Hardware Store (Dimas)
+Area Parkir (Pak Beni) ──▶ Coffee Shop (Clara) ──▶ Drug Store (Pak Joko) ──▶ Fire Station (Dimas)
          ▲                                                                            │
          │                                                                            ▼
   Final Selesai ◀── Gedung Apartemen (Naya) ◀── Cari Paket Jatuh (Petugas Parkir) ◀───┘
@@ -93,9 +93,9 @@ Area Parkir (Pak Beni) ──▶ Coffee Shop (Clara) ──▶ Drug Store (Pak J
 2. **Clara (Pegawai Coffee Shop) — Paket 1:**
    - Menunggu kiriman biji kopi di kedai kopi trotoar timur sebelum toko tutup. Memberi petunjuk lokasi Drug Store.
 3. **Pak Joko (Pemilik Drug Store) — Paket 2:**
-   - Menunggu pasokan obat di sudut pertokoan barat. Memberi petunjuk lokasi Hardware Store.
-4. **Dimas (Pegawai Hardware Store) — Paket 3:**
-   - Menunggu perkakas pesanan bengkel di deretan toko barat. Mengabarkan adanya paket kurir yang terjatuh di area parkir.
+   - Menunggu pasokan obat di sudut pertokoan barat. Memberi petunjuk lokasi Fire Station.
+4. **Dimas (Pegawai Fire Station) — Paket 3:**
+   - Menunggu kiriman perlengkapan darurat di pos Fire Station sebelah barat. Mengabarkan adanya paket kurir yang terjatuh di area parkir.
 5. **Petugas Parkir — Petunjuk Misi 4:**
    - Mengatur kendaraan di area parkir. Memberitahu bahwa paket terlempar di sela mobil van parkir.
 6. **Naya (Penghuni Apartemen) — Paket 5:**
