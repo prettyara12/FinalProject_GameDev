@@ -26,7 +26,7 @@ public class DeliveryRecipient : MonoBehaviour
     public DeliveryMissionState targetForMission = DeliveryMissionState.Prolog;
 
     [Tooltip("Radius jarak agar pemain dapat berinteraksi dengan tombol [E].")]
-    public float interactionRadius = 2.0f;
+    public float interactionRadius = 3.5f;
 
     [Header("=== Dialog Percakapan ===")]
     [TextArea(2, 4)]
@@ -74,6 +74,13 @@ public class DeliveryRecipient : MonoBehaviour
         if (pc != null)
         {
             playerTransform = pc.transform;
+            return;
+        }
+
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (playerGo != null)
+        {
+            playerTransform = playerGo.transform;
         }
     }
 
@@ -98,7 +105,11 @@ public class DeliveryRecipient : MonoBehaviour
             if (playerTransform == null) return;
         }
 
-        float dist = Vector3.Distance(transform.position, playerTransform.position);
+        // Gunakan jarak horizontal 2D (XZ) agar perbedaan elevasi trotoar tidak menghalangi interaksi
+        float dist = Vector2.Distance(
+            new Vector2(transform.position.x, transform.position.z),
+            new Vector2(playerTransform.position.x, playerTransform.position.z)
+        );
         if (dist <= interactionRadius)
         {
             // Jangan trigger jika dialog berurutan sedang aktif

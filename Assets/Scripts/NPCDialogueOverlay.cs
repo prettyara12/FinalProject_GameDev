@@ -394,7 +394,7 @@ public class NPCDialogueOverlay : MonoBehaviour
 
         if (isSequentialActive)
         {
-            if (sequentialAdvanceCooldown <= 0f && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space)))
+            if (sequentialAdvanceCooldown <= 0f && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0)))
             {
                 AdvanceSequentialDialogue();
             }
@@ -442,7 +442,7 @@ public class NPCDialogueOverlay : MonoBehaviour
         {
             subtitleContinuePromptText.gameObject.SetActive(true);
             bool isLast = currentSequentialIndex == currentSequentialLines.Length - 1;
-            subtitleContinuePromptText.text = isLast ? "Tekan [E] atau [Spasi] Selesai ✔" : "Tekan [E] atau [Spasi] Lanjut ▶";
+            subtitleContinuePromptText.text = isLast ? "Tekan [E] / [Spasi] / Klik Selesai ✔" : "Tekan [E] / [Spasi] / Klik Lanjut ▶";
         }
     }
 

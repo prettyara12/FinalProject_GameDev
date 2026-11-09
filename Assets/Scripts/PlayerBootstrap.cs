@@ -754,9 +754,24 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 1. Cari di antara semua GameObject di scene (termasuk yang sedang nonaktif)
         GameObject[] all = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
 
-        // a. Prioritas 1: Cocokkan nama spesifik yang diberikan atau dinamai manual oleh pengguna
-        // Pass 0: Khusus root GameObject yang ditaruh langsung di scene (transform.parent == null)
-        // Pass 1: Fallback jika berada di dalam hirarki
+        // a. Prioritas 0: Cocokkan nama persis sceneSearchName atau objectName pada root scene
+        foreach (var go in all)
+        {
+            if (go == null || go.transform.parent != null) continue;
+            if (go.CompareTag("Player") || go.GetComponent<PlayerController>() != null) continue;
+            string n = go.name;
+            if ((!string.IsNullOrEmpty(sceneSearchName) && n.Equals(sceneSearchName, System.StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(objectName) && n.Equals(objectName, System.StringComparison.OrdinalIgnoreCase)))
+            {
+                return go;
+            }
+        }
+
+        // b. Prioritas 1: Cocokkan nama spesifik yang diberikan atau dinamai manual oleh pengguna
+        // Jika ada beberapa yang cocok, pilih yang paling dekat dengan defaultPosition
+        GameObject bestNamed = null;
+        float bestNamedDist = float.MaxValue;
+
         for (int pass = 0; pass < 2; pass++)
         {
             foreach (var go in all)
@@ -774,9 +789,11 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 switch (type)
                 {
                     case DeliveryRecipient.RecipientType.Clara:
-                        match = n.Equals("Clara", System.StringComparison.OrdinalIgnoreCase) ||
+                        match = (n.Equals("Clara", System.StringComparison.OrdinalIgnoreCase) ||
                                 n.Contains("Clara") ||
-                                n.Contains("Waitress");
+                                n.Equals("SimplePeople_Waitress_White", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Waitress_White") ||
+                                (n.Contains("Waitress") && !n.Contains("Sarah")));
                         break;
                     case DeliveryRecipient.RecipientType.PakBeni:
                         match = n.Equals("Pak Beni", System.StringComparison.OrdinalIgnoreCase) ||
@@ -788,20 +805,18 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                         match = n.Equals("Pak Joko", System.StringComparison.OrdinalIgnoreCase) ||
                                 n.Equals("PakJoko", System.StringComparison.OrdinalIgnoreCase) ||
                                 n.Contains("Joko") ||
-                                n.Contains("Prostitute");
+                                n.Contains("Prostitute_Brown");
                         break;
                     case DeliveryRecipient.RecipientType.Dimas:
                         match = n.Equals("Dimas", System.StringComparison.OrdinalIgnoreCase) ||
                                 n.Contains("Dimas") ||
-                                n.Contains("StreetMan_Brown") ||
-                                n.Contains("StreetMan");
+                                n.Contains("StreetMan_Brown");
                         break;
                     case DeliveryRecipient.RecipientType.PetugasParkir:
                         match = n.Equals("Petugas Parkir", System.StringComparison.OrdinalIgnoreCase) ||
                                 n.Equals("PetugasParkir", System.StringComparison.OrdinalIgnoreCase) ||
                                 n.Contains("Parkir") ||
-                                n.Contains("RoadWorker") ||
-                                n.Contains("Roadworker");
+                                n.Contains("RoadWorker");
                         break;
                     case DeliveryRecipient.RecipientType.Naya:
                         match = n.Equals("Naya", System.StringComparison.OrdinalIgnoreCase) ||
@@ -810,11 +825,21 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                         break;
                 }
 
-                if (match) return go;
+                if (match)
+                {
+                    float d = Vector3.Distance(go.transform.position, defaultPosition);
+                    if (d < bestNamedDist)
+                    {
+                        bestNamedDist = d;
+                        bestNamed = go;
+                    }
+                }
             }
+
+            if (bestNamed != null) return bestNamed;
         }
 
-        // b. Prioritas 2: Cari objek karakter di dekat posisi target (radius 5.0m)
+        // c. Prioritas 2: Cari objek karakter di dekat posisi target (radius 5.0m)
         GameObject closest = null;
         float minDist = 5.0f;
         foreach (var go in all)
@@ -842,7 +867,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         if (closest != null) return closest;
 
-        // c. Fallback ke objectName atau sceneSearchName
+        // d. Fallback ke objectName atau sceneSearchName
         GameObject fallback = GameObject.Find(objectName);
         if (fallback == null && !string.IsNullOrEmpty(sceneSearchName))
         {
@@ -960,6 +985,16 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             anim.Update(0f);
         }
 
+        // Bersihkan DeliveryRecipient yang salah pasang pada objek lain untuk tipe penerima yang sama
+        DeliveryRecipient[] allRecipients = Object.FindObjectsByType<DeliveryRecipient>(FindObjectsInactive.Include);
+        foreach (var r in allRecipients)
+        {
+            if (r != null && r.gameObject != npcGo && r.recipientType == type)
+            {
+                DestroyComponentSafe(r);
+            }
+        }
+
         DeliveryRecipient recipient = npcGo.GetComponent<DeliveryRecipient>();
         if (recipient == null) recipient = npcGo.AddComponent<DeliveryRecipient>();
         recipient.characterName = displayName;
@@ -968,7 +1003,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         recipient.introDialogueLines = introLines;
         recipient.successDialogueLines = successLines;
         recipient.wrongDeliveryLines = wrongLines;
-        recipient.interactionRadius = 2.5f;
+        recipient.interactionRadius = 3.5f;
 
         return npcGo;
     }
@@ -2810,11 +2845,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         // 3. Setup Sarah (Waitress) di depan konter Donut Shop
         GameObject sarahGo = GameObject.Find("NPC_Sarah_Waitress");
-        if (sarahGo == null)
-        {
-            sarahGo = GameObject.Find("SimplePeople_Waitress_White");
-            if (sarahGo != null && sarahGo.scene.name != "Module 2") sarahGo = null;
-        }
         if (sarahGo == null)
         {
 #if UNITY_EDITOR

@@ -33,6 +33,7 @@ public class DeliveryHUD : MonoBehaviour
     private Text interactPromptText;
     private bool hasInteractableThisFrame = false;
     private string currentInteractableText = "";
+    private System.Action currentInteractCallback;
 
     // Peta Kota Sederhana (Modal [M])
     private GameObject mapModalObj;
@@ -341,6 +342,12 @@ public class DeliveryHUD : MonoBehaviour
         ipOutline.effectColor = new Color(0.2f, 0.8f, 1f, 0.8f);
         ipOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
+        Button ipBtn = interactPromptObj.AddComponent<Button>();
+        ipBtn.onClick.AddListener(() =>
+        {
+            currentInteractCallback?.Invoke();
+        });
+
         GameObject ipTextGo = new GameObject("PromptText");
         ipTextGo.transform.SetParent(interactPromptObj.transform, false);
         RectTransform txtRT = ipTextGo.AddComponent<RectTransform>();
@@ -633,6 +640,7 @@ public class DeliveryHUD : MonoBehaviour
     {
         hasInteractableThisFrame = true;
         currentInteractableText = actionLabel;
+        currentInteractCallback = onInteract;
     }
 
     public void ToggleMap()
