@@ -1,29 +1,26 @@
-# 🏙️ A Day in City
-> **Tugas Praktikum / Proyek Mata Kuliah: Introduction to Game Development**  
-> Proyek simulasi dan eksplorasi lingkungan kota 3D dengan karakter pemain sudut pandang orang ketiga (*Third-Person*), NPC otonom mandiri dengan kecerdasan buatan (*AI Obstacle Avoidance*), serta sistem balon dialog dan subtitle beresolusi tinggi.
+# 📦 KURIR TERAKHIR (A City Delivery Adventure Game)
+> **Final Project — Mata Kuliah: Introduction to Game Development**  
+> Game petualangan 3D eksplorasi perkotaan dan manajemen waktu (*Third-Person Delivery Adventure*) yang dikembangkan persis mengikuti dokumen narasi dan rancangan `History_Game_Kurir_Terakhir.docx`.
 
 ---
 
 ## 📌 Daftar Isi
-1. [Tentang Proyek](#-tentang-proyek)
+1. [Kisah & Latar Belakang (Story)](#-kisah--latar-belakang-story)
 2. [Spesifikasi Teknis](#-spesifikasi-teknis)
-3. [Fitur Utama](#-fitur-utama)
+3. [Fitur & Mekanisme Gameplay](#-fitur--mekanisme-gameplay)
 4. [Panduan Kontrol Pemain](#-panduan-kontrol-pemain)
-5. [Daftar Karakter & Perilaku NPC](#-daftar-karakter--perilaku-npc)
-6. [Arsitektur Kode & Struktur Skrip](#-arsitektur-kode--struktur-skrip)
-7. [Sistem UI & Ketajaman Teks Dialog](#-sistem-ui--ketajaman-teks-dialog)
-8. [Panduan Menjalankan Proyek (Getting Started)](#-panduan-menjalankan-proyek-getting-started)
-9. [Menu Editor & Otomasi Setup](#-menu-editor--otomasi-setup)
-10. [Troubleshooting & Optimasi](#-troubleshooting--optimasi)
+5. [Daftar Karakter & Alur Misi 1 s/d 5](#-daftar-karakter--alur-misi-1-sd-5)
+6. [Sistem 3 Variasi Ending](#-sistem-3-variasi-ending)
+7. [Arsitektur Kode & Struktur Skrip](#-arsitektur-kode--struktur-skrip)
+8. [Panduan Menjalankan Game (Quick Start)](#-panduan-menjalankan-game-quick-start)
 
 ---
 
-## 📖 Tentang Proyek
-Proyek ini dikembangkan sebagai bagian dari pembelajaran mata kuliah **Introduction to Game Development**. Fokus utama proyek ini meliputi:
-- **Pengembangan Karakter Utama (Player Controller):** Kendali pergerakan 3D yang halus mencakup berjalan, berlari, melompat, serta duduk di fasilitas kota (bangku taman).
-- **Kamera Cerdas (Third-Person Follow Camera):** Kamera dinamis yang mengikuti arah belakang pemain (*rear follow*), mendukung rotasi bebas dengan mouse, zoom dinamis dengan scroll wheel, serta fitur pendeteksi tabrakan dinding (*collision obstruction damping*).
-- **Kecerdasan Buatan NPC (Autonomous AI):** NPC yang beraktivitas secara otonom di trotoar kota tanpa campur tangan pemain, dilengkapi sensor *raycast* anti-tabrakan (*obstacle avoidance*) dan kemampuan interaksi responsif saat pemain mendekat.
-- **Sistem Dialog Modern (Screen-Space Dialogue Overlay):** Dialog dwitampilan berupa balon percakapan melayang yang mengikuti kepala karakter secara dinamis di layar (*3D-to-2D projection*) dan panel subtitle sinematik di bawah layar dengan tipografi vektor tebal (*Roboto-Bold*) beresolusi tinggi.
+## 📖 Kisah & Latar Belakang (Story)
+
+Di sebuah kawasan perkotaan yang ramai dengan apartemen bertingkat, deretan pertokoan, *coffee shop*, *drug store*, *hardware store*, dan area parkir, seorang kurir muda bernama **Rian** (*The Determined Rookie*) menerima tugas penting: mengantarkan lima paket terakhir sebelum toko-toko menutup pintunya. Jika semua paket berhasil sampai kepada penerima yang tepat sebelum batas waktu berakhir, Rian akan resmi diangkat menjadi kurir tetap.
+
+Namun, label alamat pada paket terkena air hujan sehingga nama penerima dan nomor tujuan tidak terbaca jelas. Berbekal peta denah kota sederhana dan informasi singkat, Rian harus aktif mengamati lingkungan, membaca papan nama bangunan, dan berbicara dengan warga untuk mengurai petunjuk. Di tengah perjalanan, Rian juga harus menghindari lalu lalang kendaraan serta menyelamatkan paket yang sempat terjatuh di area parkir!
 
 ---
 
@@ -33,48 +30,37 @@ Proyek ini dikembangkan sebagai bagian dari pembelajaran mata kuliah **Introduct
 |---|---|
 | **Game Engine** | Unity 6 (`6000.6.2f1`) |
 | **Bahasa Pemrograman** | C# (.NET Standard / Unity Core) |
-| **Render Pipeline** | Universal Render Pipeline (URP) / Standard 3D |
-| **Gaya Visual** | Low-Poly Casual 3D Urban Environment |
-| **Target Platform** | PC / Desktop (Windows) |
-| **Scene Utama** | `Assets/Module 2.unity` |
-| **Asset Pack** | Synty Studios - *SimpleWorld Vol. 1 / SimplePeople* |
-| **Font Utama** | `Roboto-Bold.ttf` (dengan *fallback* dinamis OS font & LegacyRuntime) |
+| **Render Pipeline** | Universal Render Pipeline (URP) |
+| **Genre** | 3D Adventure, Exploration, Time Management |
+| **Sudut Pandang** | Third-Person Follow Camera |
+| **Batas Waktu** | 10 Menit (600 Detik) Countdown Timer |
+| **Penalti Salah Kirim** | -20 detik per kesalahan pengiriman ke NPC |
+| **Penalti Tabrakan Mobil** | -5 detik + Efek dorongan mundur (*knockback*) dan tertahan sesaat |
+| **Target Scene** | `Assets/Module 2.unity` |
+| **Font Utama** | `Roboto-Bold.ttf` (dengan *supersampling* 2.0x tajam bebas buram) |
 
 ---
 
-## ✨ Fitur Utama
+## ✨ Fitur & Mekanisme Gameplay
 
-### 1. 🎮 Player Controller Fisika Lengkap
-- **Movement Physics:** Menggunakan komponen `Rigidbody` dan `CapsuleCollider` dengan penanganan lereng, gravitasi stabil, dan deteksi daratan (*ground check*).
-- **Animasi Fleksibel:** Terintegrasi penuh dengan Animator Controller (`SimpleCharacter_5.0.controller`), mendukung transisi mulus antara status *Idle*, *Walk*, *Run*, *Jump*, dan *Sitting*.
-- **Interaksi Lingkungan:** Pemain dapat duduk dan berdiri kembali di bangku taman kota dengan menekan tombol **[C]** atau **[X]**.
+### 1. ⏱️ Manajemen Waktu & Penalti Realistis
+- **Countdown Timer 10:00:** Menghitung mundur secara *real-time*. Warna indikator berubah menjadi kuning saat waktu tersisa < 3 menit, dan merah berkedip saat < 1 menit.
+- **Konsekuensi Kelalaian:**
+  - Salah menyerahkan paket ke warga atau toko yang salah mengurangi waktu sebesar **-20 detik**.
+  - Terserempet kendaraan yang melintas di jalan raya memicu efek terdorong mundur (*knockback*) dan penalti waktu **-5 detik** (dilengkapi *cooldown* 2 detik).
 
-### 2. 🎥 Third-Person Camera dengan Rear-Follow Dinamis
-- **Auto Rear Alignment:** Kamera secara dinamis menyelaraskan sudut pandangnya di belakang punggung pemain saat bergerak maju, memberikan orientasi navigasi yang alami.
-- **Mouse Orbit & Clamp:** Kontrol pandangan bebas 360° secara horizontal dan pembatasan sudut elevasi vertikal (-20° hingga +60°) agar kamera tidak menembus aspal atau tanah.
-- **Obstacle Avoidance Zoom:** Jarak kamera otomatis menyesuaikan (*smooth zoom-in*) jika terdapat bangunan atau objek yang menghalangi pandangan antara kamera dan pemain.
-- **Toggle Mode Kamera:** Tombol **[V]** memungkinkan pemain berpindah instan antara Kamera Mengikuti Pemain (*Third-Person Follow*) dan Kamera Pemandangan Kota (*City Overview*).
+### 2. 💬 Dialog Interaktif Berurutan (Multi-Line Dialogue)
+- Menampilkan balon percakapan di atas kepala karakter (*3D-to-2D projection*) dan panel subtitle sinematik di bagian bawah layar.
+- Percakapan disampaikan berurutan (1–3 kalimat) dengan tombol navigasi `[E]` atau `[Spasi]` untuk lanjut membaca dengan nyaman.
+- Kontrol karakter pemain dibekukan (*frozen*) otomatis selama berdialog agar fokus menyerap petunjuk.
 
-### 3. 🤖 NPC Cerdas & Mandiri (Autonomous AI)
-- **Sensor Anti-Tabrakan (*Obstacle Avoidance*):** NPC pejalan kaki dilengkapi detektor *Raycast* dan *SphereCast* tiga arah (depan, serong kiri, serong kanan) untuk menghindari tabrakan dengan pohon, tiang, bangku, atau pejalan kaki lain.
-- **Interaksi Sapaan Ramah:** Saat pemain mendekat dalam radius interaksi (1.8m), NPC akan berhenti, melambaikan tangan (*Wave animation*), menghadap ke arah pemain, dan memunculkan dialog sapaan.
-- **Dukungan Berbagai Mode Navigasi:**
-  - *Stationary Jumping:* Berdiri melompat di tempat secara berkala untuk olahraga.
-  - *Stationary Look Around:* Berdiri di depan pertokoan sambil menengok kiri-kanan secara alami.
-  - *Directional / Waypoint Walk:* Berjalan menelusuri trotoar berlawanan arah dengan arah pemain.
+### 3. 🗺️ Denah Kawasan Kota ([M])
+- Pemain dapat menekan tombol **[M]** kapan saja untuk membuka peta denah sederhana yang menandai lokasi Area Parkir, Coffee Shop, Drug Store, Hardware Store, dan Gedung Apartemen.
+- Tidak menggunakan panah GPS mengambang di atas target agar pemain aktif membaca papan nama toko sesuai esensi dokumen cerita.
 
-### 4. 💬 Sistem Dialog Resolusi Tinggi (*High-Definition Overlay*)
-- **Screen-Space Projection:** Mengatasi kelemahan *World-Space Canvas* yang sering buram atau berbayang di sudut 3D.
-- **Balon Kepala Melayang (*Overhead Speech Bubble*):** Menghitung proyeksi posisi kepala karakter di dunia 3D ke koordinat layar 2D secara *real-time*, melayang tepat di atas kepala tanpa menutupi wajah.
-- **Kartu Subtitle Sinematik (*Bottom Dialogue Bar*):** Panel gelap elegan di bawah layar dengan aksen biru *cyan*, nama pembicara berwarna emas bercahaya (`◆ Nama Pembicara`), dan teks dialog putih berbayang kontras tinggi.
-- **Supersampling 2.0x:** Dikonfigurasi dengan `dynamicPixelsPerUnit = 2f` pada resolusi kanvas referensi `1280 × 720` sehingga glif teks selalu tajam kristal tanpa efek pikselasi.
-- **Resilient Lifecycle:** Tahan terhadap opsi *Fast Enter Play Mode* (Reload Domain / Reload Scene disabled) tanpa menyebabkan kebocoran memori (*memory leak*).
-
-### 5. 🎬 Cinematography & Cutscene Sinematik (Modul 8)
-- **Multi-Camera Cut & Blend:** Mengintegrasikan paket *Unity Cinemachine* dan *Timeline* dengan tiga sudut kamera sinematik (`CM_vcam_Wide`, `CM_vcam_Dolly`, `CM_vcam_Waitress`).
-- **Dynamic Dolly Path Animation:** Kamera meluncur (*glide/pan*) secara dinamis di sepanjang trotoar mendekati etalase toko donat.
-- **Pengenalan Karakter Baru:** Menyorot karakter NPC pelayan toko (*Sarah - Waitress*) di konter Donut Shop lengkap dengan kartu banner UI elegan dan jingle audio PCM 16-bit.
-- **Handshake Kontrol Pemain:** Pembekuan otomatis pergerakan karakter dan kamera orang ketiga saat cutscene berlangsung, lalu secara mulus dikembalikan ke kendali pemain saat adegan berakhir.
+### 4. 📦 Penyelamatan Paket Jatuh (Misi 4)
+- Setelah menyelesaikan Misi 3, satu paket terjatuh di sela deretan kendaraan area parkir.
+- Rian dapat meminta bantuan Petugas Parkir untuk memperoleh petunjuk lokasi jatuhnya paket, lalu memungutnya dengan tombol **[E]**.
 
 ---
 
@@ -82,130 +68,82 @@ Proyek ini dikembangkan sebagai bagian dari pembelajaran mata kuliah **Introduct
 
 | Tombol / Input | Fungsi |
 |---|---|
-| **W, A, S, D** / **Tombol Panah** | Menggerakkan karakter (Maju, Mundur, Kiri, Kanan) |
-| **Shift Kiri** (Tahan) | Berlari cepat (*Sprint*) |
-| **Spasi** | Melompat (*Jump*) |
-| **C** atau **X** | Duduk di bangku terdekat / Berdiri kembali |
-| **Geser Mouse** | Memutar sudut pandang kamera (*Orbit Camera*) |
-| **Scroll Wheel Mouse** | Memperbesar / Memperkecil jarak kamera (*Zoom In / Zoom Out*) |
-| **V** | Beralih antara Kamera Mengikuti Pemain dan Kamera Kota (*Overview*) |
+| **W, A, S, D** / **Panah** | Bergerak (Maju, Kiri, Mundur, Kanan) |
+| **Shift Kiri** (Tahan) | Berlari Cepat (*Sprint*) |
+| **Spasi** | Melompat (*Jump*) / Lanjut Dialog |
+| **E** | **Interaksi Utama:** Bicara, Serahkan Paket, Ambil Paket Jatuh, Lanjut Dialog |
+| **M** | Membuka / Menutup Peta Denah Kawasan Kota |
+| **Geser Mouse** | Memutar Sudut Pandang Kamera (*Orbit 360°*) |
+| **Scroll Wheel Mouse** | Memperbesar / Memperkecil Jarak Kamera (*Zoom In/Out*) |
+| **C** atau **X** | Duduk Santai di Bangku Kota / Berdiri Kembali |
 
 ---
 
-## 👥 Daftar Karakter & Perilaku NPC
+## 👥 Daftar Karakter & Alur Misi 1 s/d 5
 
-| Karakter | Lokasi di Scene | Perilaku & Interaksi | Teks Dialog |
-|---|---|---|---|
-| **Player (Trucker)** | Trotoar Kota | Dikendalikan pemain dengan keyboard dan mouse. | - |
-| **Wanita Melompat** | Trotoar Timur (dekat air mancur) | Melompat di tempat secara terus-menerus (*Jumping in Place*). Menyapa saat pemain mendekat. | *"Halo! Lihat, aku melompat di tempat! Asyik sekali olahraga di trotoar ini!"* |
-| **Pria Pejalan Kaki** | Trotoar Barat | Berjalan kaki otonom melawan arah pemain (ke arah Selatan) dengan sensor anti-tabrakan. Berhenti & melambai saat didekati. | *"Halo bro! Selamat beraktivitas di kota. Tetap semangat!"* |
-| **Pria Barber Shop** | Depan Barber Shop | Berdiri diam di tempat sambil menengok kiri-kanan secara alami. Menyapa jika didekati. | *"Halo! Saya sedang menunggu antrean potong rambut di Barber Shop ini."* |
-| **Sarah (Waitress)** | Konter Donut Shop | Berdiri di depan konter Donut Shop menyapa pengunjung kota. Menjadi fokus adegan cutscene sinematik Modul 8. | *"Selamat datang di Donut Shop! Cobalah menu donat lezat andalan kami hari ini!"* |
+```text
+Area Parkir (Pak Beni) ──▶ Coffee Shop (Clara) ──▶ Drug Store (Pak Joko) ──▶ Hardware Store (Dimas)
+         ▲                                                                            │
+         │                                                                            ▼
+  Final Selesai ◀── Gedung Apartemen (Naya) ◀── Cari Paket Jatuh (Petugas Parkir) ◀───┘
+```
+
+1. **Pak Beni (Petugas Pengiriman) — Area Parkir:**
+   - Memberikan 5 paket kiriman dan pengarahan batas waktu 10 menit. Menjadi titik lapor akhir pengiriman.
+2. **Clara (Pegawai Coffee Shop) — Paket 1:**
+   - Menunggu kiriman biji kopi di kedai kopi trotoar timur sebelum toko tutup. Memberi petunjuk lokasi Drug Store.
+3. **Pak Joko (Pemilik Drug Store) — Paket 2:**
+   - Menunggu pasokan obat di sudut pertokoan barat. Memberi petunjuk lokasi Hardware Store.
+4. **Dimas (Pegawai Hardware Store) — Paket 3:**
+   - Menunggu perkakas pesanan bengkel di deretan toko barat. Mengabarkan adanya paket kurir yang terjatuh di area parkir.
+5. **Petugas Parkir — Petunjuk Misi 4:**
+   - Mengatur kendaraan di area parkir. Memberitahu bahwa paket terlempar di sela mobil van parkir.
+6. **Naya (Penghuni Apartemen) — Paket 5:**
+   - Menunggu kiriman dokumen keluarga penting di lobi pintu masuk apartemen bertingkat tinggi ujung kawasan.
+
+---
+
+## 🏆 Sistem 3 Variasi Ending
+
+1. **Ending 1 — Kurir Terpercaya (Menang Sempurna):**
+   - Seluruh 5 paket berhasil diantarkan ke penerima yang benar dan Rian kembali lapor ke Pak Beni sebelum batas waktu 10 menit habis.
+   - *Epilog:* Rian membuktikan dedikasi serta kecepatannya dan resmi diangkat menjadi kurir tetap.
+2. **Ending 2 — Pengiriman Terlambat:**
+   - Batas waktu habis, namun sebagian besar paket (minimal 3 paket) telah berhasil diantarkan.
+   - *Epilog:* Sebagian paket sampai tepat waktu, namun keterlambatan menjadi bahan evaluasi manajemen rute.
+3. **Ending 3 — Gagal Bertugas:**
+   - Batas waktu habis ketika kurang dari 3 paket yang berhasil diantarkan.
+   - *Epilog:* Paket-paket harus dikembalikan ke pusat pengiriman dan tugas malam ini dinyatakan gagal.
 
 ---
 
 ## 📂 Arsitektur Kode & Struktur Skrip
 
-Seluruh skrip diletakkan di direktori [`Assets/Scripts/`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts):
+Semua skrip permainan terletak di direktori [`Assets/Scripts/`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts):
 
-```text
-Assets/Scripts/
-├── PlayerController.cs        # Logika fisika pergerakan, lompatan, duduk, dan kontrol animasi Player
-├── ThirdPersonCamera.cs       # Sistem kamera orang ketiga, mouse look, rear alignment, dan zoom
-├── CutsceneTrigger.cs         # Pemicu cutscene Timeline, penguncian dan pemulihan kontrol pemain
-├── NPCWalker.cs               # AI NPC otonom: navigasi jalan, melompat, menengok, sensor rintangan
-├── NPCDialogueOverlay.cs      # Sistem kanvas overlay dialog beresolusi tinggi (Overhead & Subtitle)
-├── NPCWaypointPath.cs         # Komponen rute waypoint visual di scene untuk jalur patroli NPC
-├── PlayerBootstrap.cs         # Inisialisasi otomatis scene saat Play, setup collider, & perbaikan material
-└── Editor/
-    ├── NPCSetupWizard.cs      # Wizard Editor Unity untuk konfigurasi NPC otomatis
-    └── NPCWalkerEditor.cs     # Custom Inspector editor untuk visualisasi NPC & waypoint
-```
-
-### Rincian Fungsi Utama Tiap Skrip:
-- **[`PlayerController.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts/PlayerController.cs):**
-  Mengatur kalkulasi vektor pergerakan berdasarkan orientasi kamera, lerp rotasi karakter, eksekusi lompatan berbasis kurva fisika, serta transisi animasi parameter integer `Animation_type`.
-- **[`ThirdPersonCamera.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts/ThirdPersonCamera.cs):**
-  Menggunakan `Vector3.SmoothDamp` dan `Quaternion.Slerp` untuk rotasi mulus bebas *jitter*. Mengintegrasikan `followRearAngle` yang secara cerdas mendeteksi arah input gerak pemain untuk mengarahkan kamera ke belakang punggung.
-- **[`NPCWalker.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts/NPCWalker.cs):**
-  Memiliki arsitektur state machine (`NPCState`: *Idle*, *Walking*, *Sitting*, *InteractingWithPlayer*). Dilengkapi coroutine kalkulasi parabola loncatan (`JumpInPlaceRoutine`) dan pemindaian rintangan raycast (`CheckObstacles`).
-- **[`NPCDialogueOverlay.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts/NPCDialogueOverlay.cs):**
-  Membangun antarmuka secara programatis melalui kode (*code-driven UI*) dengan komponen `CanvasScaler`, `Image`, `Text`, `Outline`, dan `Shadow`. Menggunakan metode `Camera.WorldToScreenPoint` untuk menempatkan balon tepat di atas kepala target.
-- **[`PlayerBootstrap.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts/PlayerBootstrap.cs):**
-  Titik masuk otomatis melalui `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]`. Mengidentifikasi karakter pemain dan NPC di dalam scene, mengaitkan material tekstur yang hilang, serta memasang collider pada bangunan dan trotoar.
+- **[`DeliveryGameManager.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/DeliveryGameManager.cs):**
+  Pusat pengelola *state machine* misi, *countdown timer*, kalkulasi penalti waktu, validasi pengantaran, dan penentuan 3 cabang ending.
+- **[`DeliveryHUD.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/DeliveryHUD.cs):**
+  Pembangun antarmuka programatis kanvas *Screen-Space Overlay* (Dashboard Timer, Catatan Misi, Prompt [E], Modal Peta [M], dan Layar Hasil Akhir).
+- **[`DeliveryRecipient.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/DeliveryRecipient.cs):**
+  Komponen pada setiap NPC kota untuk menangani interaksi tombol [E], dialog sukses, dan respon penolakan salah alamat.
+- **[`DroppedPackageItem.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/DroppedPackageItem.cs):**
+  Objek fisik kardus 3D di area parkir yang dapat dipungut pada Misi 4.
+- **[`CarHazardTrigger.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/CarHazardTrigger.cs):**
+  Pendeteksi senggolan kendaraan yang memberi dorongan fisik (*knockback*) dan penalti waktu -5 detik.
+- **[`PlayerController.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/PlayerController.cs):**
+  Pengendali fisik karakter Rian (WASD, sprint, jump, sit, freeze saat dialog, dan perlambatan pasca tabrakan).
+- **[`NPCDialogueOverlay.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/NPCDialogueOverlay.cs):**
+  Sistem balon percakapan di atas kepala dan panel subtitle sinematik berurutan (*sequential dialogue*).
+- **[`PlayerBootstrap.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/FinalProject/Assets/Scripts/PlayerBootstrap.cs):**
+  Titik masuk otomatis saat Play (▶) yang membersihkan objek modul lama dan mengonfigurasi kota menjadi game Kurir Terakhir.
 
 ---
 
-## 🎨 Sistem UI & Ketajaman Teks Dialog
+## 🚀 Panduan Menjalankan Game (Quick Start)
 
-Sebelumnya teks dialog 3D di Unity sering mengalami masalah buram (*blurry / pixelated*) dan ukuran yang tidak konsisten saat kamera bergerak menjauh atau mendekat. Masalah ini diselesaikan melalui implementasi berikut pada [`NPCDialogueOverlay.cs`](file:///d:/Mata%20Kuliah/Introduction%20to%20Game%20Development/My%20project%20%281%29/Assets/Scripts/NPCDialogueOverlay.cs):
-
-1. **Resolusi Dasar Kanvas Proporsional:**
-   Menggunakan resolusi referensi `1280 × 720` pada `CanvasScaler` dengan mode `ScaleWithScreenSize` dan bobot pembagi seimbang `0.5f` (lebar vs tinggi).
-2. **Font Vektor Tebal Berkualitas Tinggi:**
-   Menggunakan aset font TrueType `Roboto-Bold.ttf` yang terbukti tajam pada rendering UI modern.
-3. **Supersampling 2.0x (`dynamicPixelsPerUnit`):**
-   Rasterizer glif Unity dipaksa merender tekstur huruf pada ketajaman 200%, membuat setiap huruf terlihat jernih dan bebas gerigi tanpa membebani performa GPU.
-4. **Ukuran yang Proporsional:**
-   - **Balon Kepala:** `440 × 88 px` dengan teks `19 pt Bold`.
-   - **Kotak Subtitle:** `740 × 85 px` dengan teks nama pembicara `18 pt Bold` (kuning keemasan) dan isi pesan `18 pt Bold` (putih bersih + *drop shadow* pekat).
-
----
-
-## 🚀 Panduan Menjalankan Proyek (Getting Started)
-
-### Prasyarat
-- **Unity Hub** terpasang di komputer Anda.
-- **Unity Editor Versi 6000.6.2f1** (Unity 6) atau versi yang kompatibel.
-
-### Langkah-langkah Membuka Proyek
-1. Buka **Unity Hub**.
-2. Klik tombol **Add** > **Add project from disk**.
-3. Pilih direktori root proyek:
-   ```text
-   d:\Mata Kuliah\Introduction to Game Development\My project (1)
-   ```
-4. Pastikan versi editor terpilih adalah **Unity 6000.6.2f1**.
-5. Buka proyek dan tunggu proses impor aset selesai.
-6. Pada panel **Project**, buka scene utama di:
-   ```text
-   Assets / Module 2.unity
-   ```
-7. Klik tombol **Play (▶)** di bagian atas editor untuk langsung memainkan game!
-
----
-
-## 🛠️ Menu Editor & Otomasi Setup
-
-Proyek ini dilengkapi menu kustom di bilah menu Unity (`Tools/`) untuk memudahkan pengujian dan otomasi:
-
-- **`Tools` > `⭐ Setup Game (1 Player WASD + Minimal 2 NPC)`**  
-  Menjalankan konfigurasi penuh secara instan: menyiapkan Player Trucker, menyiapkan NPC Wanita Melompat dan NPC Pria Berjalan, memasang material karakter, dan memastikan seluruh collider aktif.
-- **`Tools` > `👥 Setup 2 NPC (Wanita Melompat di Tempat & Pria Berjalan Melawan Arah)`**  
-  Mengonfigurasi ulang kedua NPC utama di trotoar timur dan barat.
-- **`Tools` > `💈 Setup NPC Barber Shop (Menengok Kiri-Kanan)`**  
-  Mengonfigurasi NPC penjaga di depan bangunan Barber Shop.
-- **`Tools` > `🛍️ Pindahkan Player ke Area Pertokoan (Shopping Street)`**  
-  Memindahkan posisi pemain langsung ke trotoar pusat pertokoan untuk pengujian cepat.
-- **`Tools` > `🎬 Setup Cinematography & Cutscene (Modul 8)`**  
-  Mengonfigurasi penuh seluruh sistem sinematografi: Main Camera CinemachineBrain, 3 Virtual Camera, Dolly Path, NPC Sarah, banner UI, dan audio jingle.
-- **`Tools` > `🍩 Teleport ke Donut Shop (Modul 8 Cutscene)`**  
-  Memindahkan posisi pemain langsung ke trotoar depan Donut Shop untuk pengujian instan cutscene sinematik.
-
----
-
-## 🔧 Troubleshooting & Optimasi
-
-- **Teks Dialog Tidak Muncul Setelah Keluar-Masuk Play Mode:**  
-  Jika Unity dikonfigurasi dengan opsi *Enter Play Mode Options (Reload Domain disabled)*, sistem otomatis mereset seluruh variabel statis melalui hook `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]` sehingga dialog selalu berfungsi normal setiap kali tombol Play ditekan.
-- **Karakter Menembus Tanah / Lantai:**  
-  Pastikan `PlayerController` memiliki ground check offset yang pas (0.05m) dan scene memiliki komponen MeshCollider atau BoxCollider pada bidang tanah/trotoar.
-- **Kamera Tertutup Objek Bangunan:**  
-  Kamera secara otomatis melakukan *smooth dampening* mendekat ke arah pemain jika mendeteksi dinding bangunan di antara posisi kamera dan kepala pemain.
-
----
-
-## 👨‍💻 Kontributor & Lisensi
-- **Mata Kuliah:** Introduction to Game Development
-- **Institusi / Jurusan:** Game Development / Ilmu Komputer / Teknik Informatika
-- **Lisensi Aset:** Aset 3D perkotaan dan karakter menggunakan paket resmi Synty Studios (*SimpleWorld / SimplePeople*) untuk keperluan edukasi dan praktikum akademik.
+1. Buka project di **Unity Editor**.
+2. Buka scene utama: `Assets/Module 2.unity`.
+3. *(Opsional)* Klik menu Unity: **Tools ➔ ⭐ Setup Game Kurir Terakhir (Final Project)** untuk menyelaraskan seluruh objek di Editor.
+4. Klik tombol **Play (▶)** di bagian atas Editor.
+5. Permainan langsung dimulai di **Area Parkir** di samping Pak Beni. Tekan tombol **[E]** untuk memulai tugas!
