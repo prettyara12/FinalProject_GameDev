@@ -1017,8 +1017,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             pkgGo.name = "DroppedPackage_Mission4";
         }
 
-        pkgGo.transform.localScale = new Vector3(0.45f, 0.35f, 0.50f);
-        pkgGo.transform.position = new Vector3(301.4f, 0.15f, 6.8f);
+        pkgGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        pkgGo.transform.position = new Vector3(301.4f, 0.05f, 6.8f);
         pkgGo.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
 
         Renderer rend = pkgGo.GetComponent<Renderer>();
@@ -1032,7 +1032,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         BoxCollider bc = pkgGo.GetComponent<BoxCollider>();
         if (bc == null) bc = pkgGo.AddComponent<BoxCollider>();
         bc.isTrigger = true;
-        bc.size = new Vector3(2.5f, 2.5f, 2.5f);
+        bc.size = new Vector3(1.0f, 1.0f, 1.0f);
 
         DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();

@@ -34,6 +34,7 @@ public class DeliveryHUD : MonoBehaviour
     private bool hasInteractableThisFrame = false;
     private string currentInteractableText = "";
     private System.Action currentInteractCallback;
+    private int currentInteractablePriority = 0;
 
     // Peta Kota Sederhana (Modal [M])
     private GameObject mapModalObj;
@@ -634,13 +635,18 @@ public class DeliveryHUD : MonoBehaviour
         }
 
         hasInteractableThisFrame = false;
+        currentInteractablePriority = 0;
     }
 
-    public void RegisterNearbyInteractable(string actionLabel, System.Action onInteract)
+    public void RegisterNearbyInteractable(string actionLabel, System.Action onInteract, int priority = 0)
     {
-        hasInteractableThisFrame = true;
-        currentInteractableText = actionLabel;
-        currentInteractCallback = onInteract;
+        if (!hasInteractableThisFrame || priority >= currentInteractablePriority)
+        {
+            hasInteractableThisFrame = true;
+            currentInteractableText = actionLabel;
+            currentInteractCallback = onInteract;
+            currentInteractablePriority = priority;
+        }
     }
 
     public void ToggleMap()

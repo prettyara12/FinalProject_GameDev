@@ -11,8 +11,15 @@ public class DroppedPackageItem : MonoBehaviour
 
     private Transform playerTransform;
 
+    private void Awake()
+    {
+        // Pastikan scale kotak kardus tepat 0.1 di seluruh sumbu (X, Y, Z)
+        transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+    }
+
     private void Start()
     {
+        transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         FindPlayer();
     }
 
@@ -40,6 +47,12 @@ public class DroppedPackageItem : MonoBehaviour
             if (playerTransform == null) return;
         }
 
+        // Pastikan scale kotak kardus selalu tepat 0.1 di seluruh sumbu
+        if (transform.localScale != new Vector3(0.1f, 0.1f, 0.1f))
+        {
+            transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        }
+
         // Rotasi mengambang perlahan agar mudah dikenali di sela mobil area parkir
         transform.Rotate(Vector3.up, 50f * Time.deltaTime, Space.World);
 
@@ -53,17 +66,18 @@ public class DroppedPackageItem : MonoBehaviour
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
             DeliveryGameManager gm = DeliveryGameManager.Instance;
-            bool canPickup = (gm == null || gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage);
+            bool canPickup = (gm == null || gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage || gm.CurrentState == DeliveryMissionState.Package3_HardwareStore);
 
             if (canPickup)
             {
                 DeliveryHUD hud = DeliveryHUD.Instance;
                 if (hud != null)
                 {
+                    // Prioritas tinggi (10) agar tidak tertimpa oleh NPC sekitar (misal Dimas)
                     hud.RegisterNearbyInteractable("Ambil Paket yang Terjatuh", () =>
                     {
                         PickUp();
-                    });
+                    }, priority: 10);
                 }
 
                 if (Input.GetKeyDown(KeyCode.E))

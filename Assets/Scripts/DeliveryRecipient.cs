@@ -115,15 +115,22 @@ public class DeliveryRecipient : MonoBehaviour
             // Jangan trigger jika dialog berurutan sedang aktif
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
-            // Beri tahu HUD bahwa Rian sedang berada dekat NPC ini
+            // Saat Misi 4 (paket terjatuh di dekat pos), Dimas tidak membajak prompt tombol [E] dari paket
+            if (recipientType == RecipientType.Dimas && DeliveryGameManager.Instance != null && DeliveryGameManager.Instance.CurrentState == DeliveryMissionState.Package4_DroppedPackage)
+            {
+                return;
+            }
+
+            // Beri tahu HUD bahwa Rian sedang berada dekat NPC ini (prioritas standar = 1)
             DeliveryHUD hud = DeliveryHUD.Instance;
             if (hud != null)
             {
                 string actionLabel = GetInteractionPromptText();
+                int priority = (DeliveryGameManager.Instance != null && DeliveryGameManager.Instance.CurrentState == targetForMission) ? 5 : 1;
                 hud.RegisterNearbyInteractable(actionLabel, () =>
                 {
                     OnInteract();
-                });
+                }, priority);
             }
 
             if (Input.GetKeyDown(KeyCode.E))

@@ -291,7 +291,7 @@ public class DeliveryGameManager : MonoBehaviour
     /// </summary>
     public void PickUpDroppedPackage()
     {
-        if (currentState != DeliveryMissionState.Package4_DroppedPackage || finalEnding != GameEnding.None) return;
+        if (finalEnding != GameEnding.None) return;
 
         string[] pickupMsg = new string[]
         {
@@ -305,7 +305,7 @@ public class DeliveryGameManager : MonoBehaviour
 
         NPCDialogueOverlay.ShowSequentialDialogue(targetTr, "Rian (Kurir)", pickupMsg, () =>
         {
-            packagesDelivered++;
+            packagesDelivered = Mathf.Max(packagesDelivered, 4);
             OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
             AdvanceMission(DeliveryMissionState.Package5_Apartment);
         });
