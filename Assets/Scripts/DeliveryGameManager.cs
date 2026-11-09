@@ -8,7 +8,7 @@ public enum DeliveryMissionState
     Package1_CoffeeShop,    // Mengantar paket 1 ke Clara di Coffee Shop
     Package2_DrugStore,     // Mengantar paket 2 ke Pak Joko di Drug Store
     Package3_HardwareStore, // Mengantar paket 3 ke Dimas di Hardware Store
-    Package4_DroppedPackage,// Mencari & memungut paket yang jatuh di Area Parkir
+    Package4_DroppedPackage,// Mencari & memungut paket yang jatuh di jalan
     Package5_Apartment,     // Mengantar paket 5 ke Naya di Apartemen
     Final_ReturnToHub,      // Kembali ke Pak Beni di Area Parkir
     Completed,              // Selesai dengan Ending 1 (Kurir Terpercaya)
@@ -195,7 +195,7 @@ public class DeliveryGameManager : MonoBehaviour
                     ? recipient.introDialogueLines
                     : new string[]
                     {
-                        "Halo Rian! Jalur utama kendaraan sedang padat dan beberapa ruas terhalang mobil parkir.",
+                        "Halo Rian! Jalur utama kendaraan sedang padat, hati-hati saat melintas di jalan raya.",
                         "Gunakan trotoar pejalan kaki dan lorong antar gedung untuk rute alternatif yang lebih cepat dan aman!",
                         "Waspadalah saat menyeberang jalan raya, kendaraan bergerak kencang!"
                     };
@@ -204,19 +204,19 @@ public class DeliveryGameManager : MonoBehaviour
             return;
         }
 
-        // 3. Misi 4: Interaksi khusus saat paket masih hilang di Area Parkir
+        // 3. Misi 4: Interaksi khusus saat paket masih hilang di jalan
         if (currentState == DeliveryMissionState.Package4_DroppedPackage)
         {
             if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
             {
-                string[] lines = new string[] { "Rian, cepat temukan paket yang terjatuh di sela-sela mobil area parkir sebelum terlindas!" };
+                string[] lines = new string[] { "Rian, cepat ambil kotak paket kardus yang terjatuh di jalan aspal dekat pembatas beton sebelum terlindas!" };
                 NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Pak Beni", lines);
             }
             else
             {
                 string[] lines = recipient.wrongDeliveryLines != null && recipient.wrongDeliveryLines.Length > 0
                     ? recipient.wrongDeliveryLines
-                    : new string[] { "Maaf mas, saya dengar ada paketmu yang jatuh di area parkir. Coba cari di sana!" };
+                    : new string[] { "Maaf mas, saya dengar ada kotak paket kardusmu yang terjatuh di jalan aspal dekat pembatas beton. Coba periksa di sana!" };
                 NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, lines, () =>
                 {
                     ApplyWrongDeliveryPenalty();
@@ -295,7 +295,7 @@ public class DeliveryGameManager : MonoBehaviour
 
         string[] pickupMsg = new string[]
         {
-            "Paket berhasil dipungut!",
+            "Kotak paket kardus berhasil dipungut dari jalan!",
             "Label alamat: Naya - Penghuni Apartemen bertingkat tinggi di ujung jalan.",
             "Cepat antarkan ke Naya sebelum toko-toko menutup pintunya!"
         };

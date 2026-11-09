@@ -103,7 +103,7 @@ public static class PlayerBootstrap
             "1. RIAN (PLAYER): Memulai di depan Mall (WASD, Shift Sprint, Spasi Lompat, [E] Interaksi, [M] Peta Kota).\n" +
             "2. 6 NPC PENERIMA / PETUNJUK: Pak Beni, Clara, Pak Joko, Dimas, Petugas Parkir, dan Naya.\n" +
             "3. COUNTDOWN TIMER: 10 Menit dengan penalti salah kirim (-20s) dan senggolan mobil (-5s).\n" +
-            "4. PAKET JATUH: Tersedia di sela mobil parkir pada Misi 4.\n" +
+            "4. PAKET JATUH: Kotak kardus di jalan aspal dekat pembatas beton pada Misi 4.\n" +
             "5. 3 ENDING: Kurir Terpercaya, Pengiriman Terlambat, dan Gagal Bertugas.\n\n" +
             "Klik tombol Play (▶) untuk langsung memulai petualangan pengiriman!",
             "OK");
@@ -468,7 +468,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// Konfigurasi Utama Game "Kurir Terakhir" (Final Project):
     /// - Menempatkan Rian di depan Mall (310.18, 0.02, 4.34) menghadap ke arah jalan/mall.
     /// - Mengonfigurasi 6 Karakter Penerima/Pemberi Petunjuk (Pak Beni, Clara, Pak Joko, Dimas, Petugas Parkir, Naya).
-    /// - Memasang paket fisik yang terjatuh di sela mobil parkir (294.5, 0.05, -8.0).
+    /// - Memasang paket kardus fisik yang terjatuh di jalan aspal dekat pembatas beton (301.4, 0.02, 6.8).
     /// - Memasang CarHazardTrigger pada mobil-mobil berjalan di kota.
     /// - Mengaktifkan DeliveryGameManager dan DeliveryHUD.
     /// - Membersihkan/menonaktifkan objek tugas modul lama dan karakter tersembunyi.
@@ -680,8 +680,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             new string[]
             {
                 "Wah pas sekali, perlengkapan darurat dan suku cadang pesanan tim pemadam sudah tiba. Terima kasih kurir!",
-                "Gawat Rian! Tadi kulihat ada satu kotak paketmu yang terjatuh di sela-sela mobil area parkir saat kamu menghindari mobil melintas!",
-                "Cepat kembali ke area parkir dan tanya Petugas Parkir di sana untuk mencari paketmu yang hilang!"
+                "Gawat Rian! Tadi kulihat ada satu kotak paket kardusmu yang terjatuh di jalan aspal dekat pembatas beton di depan sana!",
+                "Cepat kembali ke jalan dan ambil paket kardus itu sebelum terlindas kendaraan melintas!"
             },
             new string[]
             {
@@ -702,14 +702,14 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             DeliveryMissionState.Package4_DroppedPackage,
             new string[]
             {
-                "Halo Rian! Jalur utama kendaraan sedang padat dan beberapa ruas terhalang mobil parkir.",
+                "Halo Rian! Jalur utama kendaraan sedang padat, hati-hati saat melintas di jalan raya.",
                 "Gunakan trotoar pejalan kaki dan lorong antar gedung untuk rute yang lebih cepat dan aman!",
                 "Waspadalah saat menyeberang jalan raya, kendaraan bergerak kencang di sekitar sini!"
             },
             new string[]
             {
-                "Hei kurir! Paketmu tadi terlempar ke sela-sela mobil van di ujung parkiran saat kamu menghindari sedan yang melintas.",
-                "Cepat cari di antara barisan mobil parkir dan ambil dengan tombol [E] sebelum kendaraan lain melindasnya!"
+                "Hei kurir! Tadi kulihat kotak paket kardusmu terjatuh di jalan aspal dekat pembatas beton di depan sana saat kamu melintas.",
+                "Cepat dekati kotak paket kardus itu di jalan dan tekan tombol [E] untuk mengambilnya sebelum terlindas kendaraan!"
             },
             new string[]
             {
@@ -1010,29 +1010,77 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     private static void SetupDroppedPackageItem()
     {
-        GameObject pkgGo = GameObject.Find("DroppedPackage_Mission4");
+        // 1. Hapus paket lama (kubus primitif yang sebelumnya digunakan)
+        GameObject[] allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var go in allGo)
+        {
+            if (go == null) continue;
+            if (go.name == "DroppedPackage_Mission4")
+            {
+                MeshFilter mf = go.GetComponent<MeshFilter>();
+                if (mf != null && (mf.sharedMesh == null || mf.sharedMesh.name == "Cube"))
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+        }
+
+        // 2. Dapatkan objek paket kardus (CardboardBox_01) persis sesuai gambar pengguna
+        GameObject pkgGo = null;
+        allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var go in allGo)
+        {
+            if (go == null) continue;
+            if (go.name.Contains("CardboardBox") || go.name == "DroppedPackage_Mission4")
+            {
+                pkgGo = go;
+                break;
+            }
+        }
+
         if (pkgGo == null)
         {
-            pkgGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            pkgGo.name = "DroppedPackage_Mission4";
+#if UNITY_EDITOR
+            GameObject boxPref = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleProps/_Prefabs/CardboardBox_01.prefab");
+            if (boxPref != null)
+            {
+                pkgGo = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(boxPref);
+                if (pkgGo == null) pkgGo = Object.Instantiate(boxPref);
+            }
+#endif
+            if (pkgGo == null)
+            {
+                pkgGo = new GameObject("CardboardBox_01");
+            }
         }
 
+        pkgGo.name = "DroppedPackage_Mission4";
+        // Atur Scale tepat 0.1 di seluruh sumbu sesuai permintaan pengguna
         pkgGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        pkgGo.transform.position = new Vector3(301.4f, 0.05f, 6.8f);
+        // Posisikan di jalan aspal dekat pembatas beton sesuai foto referensi pengguna
+        pkgGo.transform.position = new Vector3(301.4f, 0.02f, 6.8f);
         pkgGo.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
 
-        Renderer rend = pkgGo.GetComponent<Renderer>();
+        // Pastikan material CardboardBox URP terpasang
+        MeshRenderer rend = pkgGo.GetComponentInChildren<MeshRenderer>();
+#if UNITY_EDITOR
         if (rend != null)
         {
-            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
-            mat.color = new Color(0.85f, 0.55f, 0.25f, 1f);
-            rend.material = mat;
+            Material boxMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleProps/_Materials/CardboardBox.mat");
+            if (boxMat != null)
+            {
+                rend.sharedMaterial = boxMat;
+            }
         }
+#endif
 
         BoxCollider bc = pkgGo.GetComponent<BoxCollider>();
         if (bc == null) bc = pkgGo.AddComponent<BoxCollider>();
         bc.isTrigger = true;
-        bc.size = new Vector3(1.0f, 1.0f, 1.0f);
+        bc.size = new Vector3(2.5f, 2.5f, 2.5f);
+        bc.center = new Vector3(0f, 0.5f, 0f);
 
         DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();

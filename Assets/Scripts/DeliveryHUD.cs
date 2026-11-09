@@ -710,7 +710,7 @@ public class DeliveryHUD : MonoBehaviour
                 break;
             case DeliveryMissionState.Package4_DroppedPackage:
                 missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
-                missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Dekati kotak kardus cokelat di depanmu dan tekan [E] untuk memungutnya!";
+                missionClueText.text = "Gawat! Kotak paket kardusmu terjatuh di jalan aspal dekat pembatas beton. Dekati dan tekan [E] untuk memungutnya!";
                 break;
             case DeliveryMissionState.Package5_Apartment:
                 missionTitleText.text = "Tujuan: Naya di Gedung Apartemen";

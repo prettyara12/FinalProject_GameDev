@@ -47,14 +47,11 @@ public class DroppedPackageItem : MonoBehaviour
             if (playerTransform == null) return;
         }
 
-        // Pastikan scale kotak kardus selalu tepat 0.1 di seluruh sumbu
+        // Pastikan scale kotak kardus selalu tepat 0.1 di seluruh sumbu sesuai gambar
         if (transform.localScale != new Vector3(0.1f, 0.1f, 0.1f))
         {
             transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         }
-
-        // Rotasi mengambang perlahan agar mudah dikenali di sela mobil area parkir
-        transform.Rotate(Vector3.up, 50f * Time.deltaTime, Space.World);
 
         // Gunakan jarak horizontal 2D (XZ) agar perbedaan elevasi tanah tidak menghalangi
         float dist = Vector2.Distance(
