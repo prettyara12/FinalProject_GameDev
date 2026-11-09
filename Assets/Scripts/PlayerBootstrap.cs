@@ -493,6 +493,9 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             {
                 pc.SetMovementFrozen(false);
             }
+
+            // Arahkan kamera langsung ke belakang Rian
+            SetupCamera(playerGo);
         }
 
         // 3. Setup 6 Karakter Utama dengan DeliveryRecipient
@@ -842,29 +845,41 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     /// <summary>
     /// Menyiapkan karakter Player yang dikendalikan keyboard (W, A, S, D).
+    /// Karakter utama adalah Rian (Kurir), menggunakan model SimpleCitizens_Tourist_Brown
+    /// dengan topi biru terbalik dan ransel pengiriman kuning.
     /// </summary>
     private static GameObject EnsurePlayerCharacter()
     {
         GameObject playerGo = null;
 
-        // 1. Prioritas Utama: Karakter SimplePeople_Trucker_Black yang dipilih pengguna
-        GameObject existingTrucker = GameObject.Find("SimplePeople_Trucker_Black");
-        if (existingTrucker != null) playerGo = existingTrucker;
-
-        if (playerGo == null)
+        // 1. Prioritas Utama: Cari karakter Rian / Tourist yang sudah ada di scene (aktif maupun inaktif)
+        GameObject[] allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var go in allGo)
         {
-            GameObject[] allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
-            foreach (var go in allGo)
+            if (go == null) continue;
+            if (go.name == "Rian (Kurir)" || go.name == "Rian" || 
+                go.name == "SimpleCitizens_Tourist_Brown" || go.name.Contains("Tourist"))
             {
-                if (go.name.Contains("Trucker"))
-                {
-                    playerGo = go;
-                    break;
-                }
+                playerGo = go;
+                break;
             }
         }
 
-        // 2. Fallback jika Trucker belum di-drag ke scene
+        // 2. Jika belum ada di scene, muat dari Prefab SimpleCitizens_Tourist_Brown
+        if (playerGo == null)
+        {
+#if UNITY_EDITOR
+            GameObject touristPref = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Prefabs/SimpleCitizens_Tourist_Brown.prefab");
+            if (touristPref != null)
+            {
+                playerGo = (GameObject)PrefabUtility.InstantiatePrefab(touristPref);
+                if (playerGo == null) playerGo = Object.Instantiate(touristPref);
+            }
+#endif
+        }
+
+        // 3. Fallback jika prefab gagal dimuat
         if (playerGo == null)
         {
             GameObject existingTaggedPlayer = GameObject.FindWithTag("Player");
@@ -879,37 +894,27 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         if (playerGo == null)
         {
-            GameObject existingStreetMan = GameObject.Find("SimplePeople_StreetMan_Black");
-            if (existingStreetMan != null) playerGo = existingStreetMan;
+            playerGo = new GameObject("Rian (Kurir)");
         }
 
-        // Cari di seluruh GameObjects (termasuk inactive)
-        if (playerGo == null)
-        {
-            GameObject[] allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
-            foreach (var go in allGo)
-            {
-                if (go.name.Contains("StreetMan"))
-                {
-                    playerGo = go;
-                    break;
-                }
-            }
-        }
-
-        if (playerGo == null)
-        {
-            playerGo = new GameObject("Player");
-        }
-
+        playerGo.name = "Rian (Kurir)";
         playerGo.tag = "Player";
         playerGo.SetActive(true);
+
+        // Hapus karakter Trucker lama jika ada di scene
+        foreach (var go in allGo)
+        {
+            if (go != null && go != playerGo && (go.name.Contains("Trucker") || go.name == "SimplePeople_Trucker_Black"))
+            {
+                DestroyGameObjectSafe(go);
+            }
+        }
 
         // Pastikan SEMUA karakter selain Player tidak ber-tag Player dan tidak memiliki PlayerController / CharacterController
         GameObject[] allCharacters = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var c in allCharacters)
         {
-            if (c != playerGo)
+            if (c != null && c != playerGo)
             {
                 if (c.CompareTag("Player")) c.tag = "Untagged";
                 PlayerController oldPc = c.GetComponent<PlayerController>();
@@ -919,43 +924,21 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        // Pastikan posisi berada di atas tanah (Y >= 0.02, perbaiki jika sebelumnya -1.7 underground)
+        // Pastikan posisi berada di atas tanah (Y >= 0.02)
         Vector3 currentPos = playerGo.transform.position;
         if (currentPos.y < 0.0f || float.IsNaN(currentPos.y))
         {
             currentPos.y = 0.02f;
         }
-        if (currentPos.magnitude < 0.1f)
-        {
-            currentPos = new Vector3(320.5f, 0.02f, 4.8f);
-            playerGo.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
-        }
-        else
-        {
-            // Jika player berada di area jalan pertokoan (Z > 0) dan rotasi masih menghadap utara (0 deg),
-            // arahkan menghadap ke barat (-90 deg) menelusuri jalan pertokoan
-            if (currentPos.z > 0f && Mathf.Abs(playerGo.transform.rotation.eulerAngles.y) < 1f)
-            {
-                playerGo.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
-            }
-        }
         playerGo.transform.position = currentPos;
         playerGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
-        // Pastikan hanya sub-mesh karakter yang relevan yang aktif (nonaktifkan mesh yang tidak dipakai)
+        // Pastikan hanya sub-mesh Tourist + Cap yang aktif (karakter Rian sesuai foto)
         EnsureCorrectCharacterMesh(playerGo);
 
-        // Pasang material URP bertekstur asli
-        if (playerGo.name.Contains("Trucker"))
-        {
-            EnsureCharacterMaterial(playerGo, "SimplePeople_Trucker_Black", 
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Trucker_Black.mat");
-        }
-        else
-        {
-            EnsureCharacterMaterial(playerGo, "SimplePeople_StreetMan_Black", 
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Black.mat");
-        }
+        // Pasang material URP bertekstur asli SimpleCitizens_Tourist_Brown
+        EnsureCharacterMaterial(playerGo, "SimpleCitizens_Tourist_Brown", 
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Tourist_Brown.mat");
 
         // Hapus NPCWalker dari Player jika ada
         NPCWalker walker = playerGo.GetComponent<NPCWalker>();
@@ -965,11 +948,17 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         Animator anim = playerGo.GetComponent<Animator>();
         if (anim == null) anim = playerGo.AddComponent<Animator>();
         anim.applyRootMotion = false;
+        anim.enabled = true;
 
 #if UNITY_EDITOR
         if (anim.runtimeAnimatorController == null)
         {
-            RuntimeAnimatorController ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
+            RuntimeAnimatorController ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Models/SimpleCitizens.controller");
+            if (ctrl == null)
+            {
+                ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
+            }
             if (ctrl != null) anim.runtimeAnimatorController = ctrl;
         }
 #endif
@@ -1693,12 +1682,60 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// <summary>
     /// Memastikan hanya sub-mesh karakter yang relevan yang aktif dan semua sub-mesh lain dinonaktifkan,
     /// agar tidak terjadi tumpang-tindih mesh ganda yang menyebabkan karakter berwarna magenta/pink.
+    /// Mendukung seri SimpleCitizens (SC_) dan SimplePeople (CH_).
     /// </summary>
     public static void EnsureCorrectCharacterMesh(GameObject character)
     {
         if (character == null) return;
         string cName = character.name;
 
+        Transform[] allTransforms = character.GetComponentsInChildren<Transform>(true);
+
+        // 1. Cek seri SimpleCitizens (submesh berawalan "SC_")
+        bool hasSCMeshes = false;
+        foreach (var t in allTransforms)
+        {
+            if (t.name.StartsWith("SC_"))
+            {
+                hasSCMeshes = true;
+                break;
+            }
+        }
+
+        if (hasSCMeshes)
+        {
+            bool isTouristOrRian = cName.Contains("Tourist") || cName.Contains("Rian") || character.CompareTag("Player");
+            foreach (var t in allTransforms)
+            {
+                if (t.name.StartsWith("SC_"))
+                {
+                    if (isTouristOrRian)
+                    {
+                        // Rian (Kurir): SC_Tourist (badan + ransel kurir kuning) dan SC_Cap (topi biru terbalik) aktif
+                        t.gameObject.SetActive(t.name == "SC_Tourist" || t.name == "SC_Cap");
+                    }
+                    else
+                    {
+                        bool match = false;
+                        if (cName.Contains("ShopKeeper") && t.name == "SC_ShopKeeper") match = true;
+                        else if (cName.Contains("Runner") && t.name == "SC_Runner") match = true;
+                        else if (cName.Contains("Mountie") && t.name == "SC_Mountie") match = true;
+                        else if (cName.Contains("Cheerleader") && t.name == "SC_Cheerleader") match = true;
+                        else if (cName.Contains("Grandma") && t.name == "SC_Grandma") match = true;
+                        else if (cName.Contains("Luchador") && t.name == "SC_Luchador") match = true;
+                        else if (cName.Contains("Footballer") && t.name == "SC_Footballer") match = true;
+                        else if (cName.Contains("Hippie") && t.name == "SC_Hippie") match = true;
+                        else if (cName.Contains("Biker") && t.name == "SC_Biker") match = true;
+                        else if (cName.Contains("Emo") && t.name == "SC_Emo") match = true;
+                        else if (cName.Contains("Clown") && t.name == "SC_Clown") match = true;
+                        t.gameObject.SetActive(match);
+                    }
+                }
+            }
+            return;
+        }
+
+        // 2. Seri SimplePeople (submesh berawalan "CH_")
         string targetMesh = null;
         if (cName.Contains("Pimp")) targetMesh = "CH_Pimp";
         else if (cName.Contains("Trucker")) targetMesh = "CH_Trucker";
@@ -1715,7 +1752,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         else if (cName.Contains("Prostitute")) targetMesh = "CH_Prostitute";
         else if (cName.Contains("RiotCop")) targetMesh = "CH_RiotCop";
 
-        Transform[] allTransforms = character.GetComponentsInChildren<Transform>(true);
         if (!string.IsNullOrEmpty(targetMesh))
         {
             foreach (var t in allTransforms)
@@ -1765,6 +1801,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/{textureName}.png"
             );
+            if (tex == null && (textureName.Contains("Tourist") || character.name.Contains("Tourist") || character.name.Contains("Rian")))
+            {
+                tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures/SimpleCitizens_Tourist_Brown.png"
+                );
+            }
             if (tex == null && (textureName.Contains("Trucker") || character.name.Contains("Trucker")))
             {
                 tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
@@ -1777,6 +1819,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                     $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures/{textureName}.png"
                 );
             }
+        }
+
+        if (tex == null && (character.name.Contains("Tourist") || character.name.Contains("Rian")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures/SimpleCitizens_Tourist_Brown.png"
+            );
         }
 
         if (tex == null && character.name.Contains("Trucker"))
@@ -1798,6 +1847,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 string fileName = System.IO.Path.GetFileNameWithoutExtension(path).ToLower();
                 if (cleanName.Contains(fileName) || fileName.Contains(cleanName) ||
+                    (cleanName.Contains("tourist") && fileName.Contains("tourist")) ||
                     (cleanName.Contains("pimp") && fileName.Contains("pimp")) ||
                     (cleanName.Contains("waitress") && fileName.Contains("waitress")) ||
                     (cleanName.Contains("trucker") && fileName.Contains("redneck")) ||
@@ -1815,6 +1865,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (!string.IsNullOrEmpty(materialAssetPath))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
+        }
+        if (targetMat == null && (character.name.Contains("Tourist") || character.name.Contains("Rian") || (!string.IsNullOrEmpty(textureName) && textureName.Contains("Tourist"))))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Tourist_Brown.mat"
+            );
         }
 
         Shader urpShader = Shader.Find("Universal Render Pipeline/Simple Lit");
@@ -2034,6 +2090,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (character == null) return;
 #if UNITY_EDITOR
         string cName = character.name.Replace("(Clone)", "").Trim();
+        if (cName.Contains("Rian") || cName.Contains("Tourist") || character.CompareTag("Player"))
+        {
+            EnsureCharacterMaterial(character, "SimpleCitizens_Tourist_Brown", 
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Tourist_Brown.mat");
+            return;
+        }
         string matPath = $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/{cName}.mat";
         if (AssetDatabase.LoadAssetAtPath<Material>(matPath) == null)
         {

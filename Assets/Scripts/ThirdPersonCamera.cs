@@ -202,17 +202,24 @@ public class ThirdPersonCamera : MonoBehaviour
     /// </summary>
     public void FindPlayerTarget()
     {
-        GameObject trucker = GameObject.Find("SimplePeople_Trucker_Black");
-        if (trucker != null)
-        {
-            target = trucker.transform;
-            return;
-        }
-
         GameObject playerObj = GameObject.FindWithTag("Player");
         if (playerObj != null)
         {
             target = playerObj.transform;
+            return;
+        }
+
+        GameObject rianObj = GameObject.Find("Rian (Kurir)");
+        if (rianObj != null)
+        {
+            target = rianObj.transform;
+            return;
+        }
+
+        GameObject tourist = GameObject.Find("SimpleCitizens_Tourist_Brown");
+        if (tourist != null)
+        {
+            target = tourist.transform;
             return;
         }
 

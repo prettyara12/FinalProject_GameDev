@@ -72,7 +72,7 @@ public class PlayerController : MonoBehaviour
     public void SetMovementFrozen(bool frozen)
     {
         isMovementFrozen = frozen;
-        if (frozen && animator != null)
+        if (frozen && animator != null && hasParamSpeedF)
         {
             animator.SetFloat(ParamSpeedF, 0f);
         }
@@ -194,7 +194,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnDisable()
     {
-        if (animator != null)
+        if (animator != null && hasParamSpeedF)
         {
             animator.SetFloat(ParamSpeedF, 0f);
         }
@@ -205,7 +205,7 @@ public class PlayerController : MonoBehaviour
         // Kunci input jika sedang kuis, transisi portal, atau dialog aktif
         if (!InputManager.bCanPlayerMove || isMovementFrozen)
         {
-            if (animator != null)
+            if (animator != null && hasParamSpeedF)
             {
                 animator.SetFloat(ParamSpeedF, 0f);
             }
@@ -261,7 +261,7 @@ public class PlayerController : MonoBehaviour
             {
                 verticalVelocity = 0f;
             }
-            if (animator != null)
+            if (animator != null && hasParamAnimationInt)
             {
                 animator.SetInteger(ParamAnimationInt, isSitting ? 9 : 0);
             }
@@ -274,7 +274,7 @@ public class PlayerController : MonoBehaviour
         if (isSitting && (inputMagnitude > 0.05f || Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.Space)))
         {
             isSitting = false;
-            if (animator != null)
+            if (animator != null && hasParamAnimationInt)
             {
                 animator.SetInteger(ParamAnimationInt, 0);
             }
@@ -285,10 +285,11 @@ public class PlayerController : MonoBehaviour
         {
             if (animator != null)
             {
-                animator.SetFloat(ParamSpeedF, 0f);
-                animator.SetInteger(ParamAnimationInt, 9);
-                animator.SetBool(ParamGrounded, true);
-                animator.SetBool(ParamStaticB, true);
+                if (hasParamSpeedF) animator.SetFloat(ParamSpeedF, 0f);
+                if (hasParamAnimationInt) animator.SetInteger(ParamAnimationInt, 9);
+                if (hasParamGrounded) animator.SetBool(ParamGrounded, true);
+                if (hasParamGroundedB) animator.SetBool(ParamGroundedB, true);
+                if (hasParamStaticB) animator.SetBool(ParamStaticB, true);
             }
             return;
         }
@@ -326,11 +327,11 @@ public class PlayerController : MonoBehaviour
             {
                 verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 isGrounded = false;
-                if (animator != null) animator.SetBool(ParamJumpB, true);
+                if (animator != null && hasParamJumpB) animator.SetBool(ParamJumpB, true);
             }
             else
             {
-                if (animator != null) animator.SetBool(ParamJumpB, false);
+                if (animator != null && hasParamJumpB) animator.SetBool(ParamJumpB, false);
             }
         }
         else
