@@ -7,7 +7,7 @@ using UnityEngine;
 public class DroppedPackageItem : MonoBehaviour
 {
     [Tooltip("Radius jarak interaksi pemungutan paket.")]
-    public float interactionRadius = 2.0f;
+    public float interactionRadius = 3.0f;
 
     private Transform playerTransform;
 
@@ -22,6 +22,13 @@ public class DroppedPackageItem : MonoBehaviour
         if (pc != null)
         {
             playerTransform = pc.transform;
+            return;
+        }
+
+        GameObject playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (playerGo != null)
+        {
+            playerTransform = playerGo.transform;
         }
     }
 
@@ -33,10 +40,14 @@ public class DroppedPackageItem : MonoBehaviour
             if (playerTransform == null) return;
         }
 
-        // Rotasi mengambang / bobbing halus agar mudah dikenali di area parkir
-        transform.Rotate(Vector3.up, 40f * Time.deltaTime, Space.World);
+        // Rotasi mengambang perlahan agar mudah dikenali di sela mobil area parkir
+        transform.Rotate(Vector3.up, 50f * Time.deltaTime, Space.World);
 
-        float dist = Vector3.Distance(transform.position, playerTransform.position);
+        // Gunakan jarak horizontal 2D (XZ) agar perbedaan elevasi tanah tidak menghalangi
+        float dist = Vector2.Distance(
+            new Vector2(transform.position.x, transform.position.z),
+            new Vector2(playerTransform.position.x, playerTransform.position.z)
+        );
         if (dist <= interactionRadius)
         {
             if (NPCDialogueOverlay.IsDialogueActive) return;
