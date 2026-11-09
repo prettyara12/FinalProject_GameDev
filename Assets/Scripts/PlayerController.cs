@@ -57,6 +57,27 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Is the character currently sitting (Toggle with C or X key).")]
     public bool isSitting = false;
 
+    [Header("=== Freeze & Hazard State ===")]
+    [Tooltip("Is movement frozen (e.g. during sequential dialogues).")]
+    public bool isMovementFrozen = false;
+    private float hazardStumbleTimer = 0f;
+
+    public void SetMovementFrozen(bool frozen)
+    {
+        isMovementFrozen = frozen;
+        if (frozen && animator != null)
+        {
+            animator.SetFloat(ParamSpeedF, 0f);
+        }
+    }
+
+    public void ApplyKnockback(Vector3 force, float stumbleDuration = 0.7f)
+    {
+        hazardStumbleTimer = stumbleDuration;
+        transform.position += force * Time.deltaTime;
+        ResolveDepenetration();
+    }
+
     private CapsuleCollider ownCapsule;
     private Collider[] ownColliders;
     private string lastBlockedObstacle = null;
@@ -161,14 +182,19 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
-        // Kunci input jika sedang kuis atau transisi portal
-        if (!InputManager.bCanPlayerMove)
+        // Kunci input jika sedang kuis, transisi portal, atau dialog aktif
+        if (!InputManager.bCanPlayerMove || isMovementFrozen)
         {
             if (animator != null)
             {
                 animator.SetFloat(ParamSpeedF, 0f);
             }
             return;
+        }
+
+        if (hazardStumbleTimer > 0f)
+        {
+            hazardStumbleTimer -= Time.deltaTime;
         }
 
         // 1. Read input axes (with direct KeyCode fallback for 100% responsiveness)
@@ -248,7 +274,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // 3. Determine current speed
-        float targetSpeed = isSprinting ? sprintSpeed : walkSpeed;
+        float targetSpeed = (isSprinting ? sprintSpeed : walkSpeed) * (hazardStumbleTimer > 0f ? 0.45f : 1.0f);
         float currentMoveSpeed = targetSpeed * inputMagnitude;
 
         // 4. Smooth rotation towards movement direction

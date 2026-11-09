@@ -52,6 +52,7 @@ public class NPCDialogueOverlay : MonoBehaviour
     private GameObject subtitleBarObj;
     private Text subtitleSpeakerText;
     private Text subtitleMessageText;
+    private Text subtitleContinuePromptText;
 
     // Active Dialogue Tracking
     private NPCWalker activeSpeaker;
@@ -59,6 +60,15 @@ public class NPCDialogueOverlay : MonoBehaviour
     private float activeSpeakerHeightOffset = 0.20f;
     private string activeSpeakerName;
     private string activeMessage;
+
+    // Sequential Dialogue Tracking
+    private string[] currentSequentialLines;
+    private int currentSequentialIndex = 0;
+    private bool isSequentialActive = false;
+    private System.Action onSequentialComplete;
+    private float sequentialAdvanceCooldown = 0f;
+
+    public static bool IsDialogueActive => instance != null && (instance.isSequentialActive || (instance.subtitleBarObj != null && instance.subtitleBarObj.activeSelf));
 
     public static void EnsureInstance()
     {
@@ -309,6 +319,25 @@ public class NPCDialogueOverlay : MonoBehaviour
         msgShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
         msgShadow.effectDistance = new Vector2(1.5f, -1.5f);
 
+        // Petunjuk Lanjut / Selesai Dialog
+        GameObject contObj = new GameObject("ContinuePrompt");
+        contObj.transform.SetParent(subtitleBarObj.transform, false);
+        RectTransform contRT = contObj.AddComponent<RectTransform>();
+        contRT.anchorMin = new Vector2(1f, 0f);
+        contRT.anchorMax = new Vector2(1f, 0.45f);
+        contRT.pivot = new Vector2(1f, 0f);
+        contRT.offsetMin = new Vector2(-230f, 6f);
+        contRT.offsetMax = new Vector2(-20f, -2f);
+
+        subtitleContinuePromptText = contObj.AddComponent<Text>();
+        subtitleContinuePromptText.font = mainFont;
+        subtitleContinuePromptText.fontSize = 14;
+        subtitleContinuePromptText.fontStyle = FontStyle.Bold;
+        subtitleContinuePromptText.alignment = TextAnchor.MiddleRight;
+        subtitleContinuePromptText.color = new Color(0.4f, 0.85f, 1f, 0.95f);
+        subtitleContinuePromptText.text = "Tekan [E] atau [Spasi] Lanjut ▶";
+        subtitleContinuePromptText.gameObject.SetActive(false);
+
         // Default sembunyikan saat mulai
         overheadBubbleObj.SetActive(false);
         subtitleBarObj.SetActive(false);
@@ -354,6 +383,104 @@ public class NPCDialogueOverlay : MonoBehaviour
         if (instance.subtitleBarObj != null) instance.subtitleBarObj.SetActive(true);
 
         instance.UpdateOverheadPosition();
+    }
+
+    private void Update()
+    {
+        if (sequentialAdvanceCooldown > 0f)
+        {
+            sequentialAdvanceCooldown -= Time.unscaledDeltaTime;
+        }
+
+        if (isSequentialActive)
+        {
+            if (sequentialAdvanceCooldown <= 0f && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space)))
+            {
+                AdvanceSequentialDialogue();
+            }
+        }
+    }
+
+    public static void ShowSequentialDialogue(Transform speakerTransform, string speakerName, string[] lines, System.Action onComplete = null, float heightOffset = 0.20f)
+    {
+        if (!Application.isPlaying || isQuitting) return;
+        EnsureInstance();
+        if (instance == null) return;
+
+        if (lines == null || lines.Length == 0)
+        {
+            ShowDialogue(speakerTransform, speakerName, "", false);
+            onComplete?.Invoke();
+            return;
+        }
+
+        instance.currentSequentialLines = lines;
+        instance.currentSequentialIndex = 0;
+        instance.isSequentialActive = true;
+        instance.onSequentialComplete = onComplete;
+        instance.sequentialAdvanceCooldown = 0.25f;
+
+        // Freeze kontrol player saat berdialog
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null) player.SetMovementFrozen(true);
+
+        instance.DisplayCurrentSequentialLine(speakerTransform, speakerName, heightOffset);
+    }
+
+    private void DisplayCurrentSequentialLine(Transform speakerTransform, string speakerName, float heightOffset)
+    {
+        if (currentSequentialLines == null || currentSequentialIndex >= currentSequentialLines.Length)
+        {
+            EndSequentialDialogue();
+            return;
+        }
+
+        string line = currentSequentialLines[currentSequentialIndex];
+        ShowDialogue(speakerTransform, speakerName, line, true, heightOffset);
+
+        if (subtitleContinuePromptText != null)
+        {
+            subtitleContinuePromptText.gameObject.SetActive(true);
+            bool isLast = currentSequentialIndex == currentSequentialLines.Length - 1;
+            subtitleContinuePromptText.text = isLast ? "Tekan [E] atau [Spasi] Selesai ✔" : "Tekan [E] atau [Spasi] Lanjut ▶";
+        }
+    }
+
+    private void AdvanceSequentialDialogue()
+    {
+        sequentialAdvanceCooldown = 0.2f;
+        currentSequentialIndex++;
+        if (currentSequentialIndex < currentSequentialLines.Length)
+        {
+            DisplayCurrentSequentialLine(activeSpeakerTransform, activeSpeakerName, activeSpeakerHeightOffset);
+        }
+        else
+        {
+            EndSequentialDialogue();
+        }
+    }
+
+    public static void EndSequentialDialogue()
+    {
+        if (instance == null) return;
+        instance.isSequentialActive = false;
+        instance.currentSequentialLines = null;
+        instance.currentSequentialIndex = 0;
+
+        if (instance.subtitleContinuePromptText != null)
+        {
+            instance.subtitleContinuePromptText.gameObject.SetActive(false);
+        }
+
+        ShowDialogue((Transform)null, "", "", false);
+
+        // Buka kembali freeze kontrol player
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null) player.SetMovementFrozen(false);
+
+        var cb = instance.onSequentialComplete;
+        instance.onSequentialComplete = null;
+        cb?.Invoke();
     }
 
     private void LateUpdate()
