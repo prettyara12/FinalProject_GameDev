@@ -233,7 +233,7 @@ public class DeliveryHUD : MonoBehaviour
         missionTitleText.fontStyle = FontStyle.Bold;
         missionTitleText.color = new Color(0.35f, 0.85f, 1f, 1f);
         missionTitleText.alignment = TextAnchor.MiddleLeft;
-        missionTitleText.text = "Tujuan: Temui Pak Beni di Area Parkir";
+        missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman";
 
         // Mission Clue Text
         GameObject clueGo = new GameObject("MissionClueText");
@@ -397,8 +397,8 @@ public class DeliveryHUD : MonoBehaviour
         layoutTxt.alignment = TextAnchor.UpperLeft;
         layoutTxt.text =
             "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
-            "1. AREA PARKIR (Selatan):\n" +
-            "   • Titik Awal Rian & Pos Pak Beni (Pusat Pengiriman)\n" +
+            "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
+            "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
             "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
             "2. COFFEE SHOP (Timur Trotoar):\n" +
             "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
@@ -650,7 +650,7 @@ public class DeliveryHUD : MonoBehaviour
         switch (state)
         {
             case DeliveryMissionState.Prolog:
-                missionTitleText.text = "Tujuan: Temui Pak Beni di Area Parkir";
+                missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman";
                 missionClueText.text = "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.";
                 break;
             case DeliveryMissionState.Package1_CoffeeShop:
@@ -674,7 +674,7 @@ public class DeliveryHUD : MonoBehaviour
                 missionClueText.text = "Label basah: 'N...a' - Penghuni gedung apartemen bertingkat tinggi di ujung kawasan kota.";
                 break;
             case DeliveryMissionState.Final_ReturnToHub:
-                missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Area Parkir!";
+                missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Pos Pengiriman!";
                 missionClueText.text = "Seluruh 5 paket berhasil dikirim! Segera kembali ke Pak Beni sebelum batas waktu berakhir!";
                 break;
             case DeliveryMissionState.Completed:

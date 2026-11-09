@@ -100,7 +100,7 @@ public static class PlayerBootstrap
 
         EditorUtility.DisplayDialog("Game Kurir Terakhir Siap Dimainkan!",
             "Game 'Kurir Terakhir' berhasil dikonfigurasi lengkap:\n\n" +
-            "1. RIAN (PLAYER): Memulai di Area Parkir (WASD, Shift Sprint, Spasi Lompat, [E] Interaksi, [M] Peta Kota).\n" +
+            "1. RIAN (PLAYER): Memulai di depan Mall (WASD, Shift Sprint, Spasi Lompat, [E] Interaksi, [M] Peta Kota).\n" +
             "2. 6 NPC PENERIMA / PETUNJUK: Pak Beni, Clara, Pak Joko, Dimas, Petugas Parkir, dan Naya.\n" +
             "3. COUNTDOWN TIMER: 10 Menit dengan penalti salah kirim (-20s) dan senggolan mobil (-5s).\n" +
             "4. PAKET JATUH: Tersedia di sela mobil parkir pada Misi 4.\n" +
@@ -471,30 +471,30 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     /// <summary>
     /// Konfigurasi Utama Game "Kurir Terakhir" (Final Project):
-    /// - Menempatkan Rian di Area Parkir (302.0, 0.02, -12.0) menghadap ke Pak Beni.
+    /// - Menempatkan Rian di depan Mall (310.18, 0.02, 4.34) menghadap ke arah jalan/mall.
     /// - Mengonfigurasi 6 Karakter Penerima/Pemberi Petunjuk (Pak Beni, Clara, Pak Joko, Dimas, Petugas Parkir, Naya).
     /// - Memasang paket fisik yang terjatuh di sela mobil parkir (294.5, 0.05, -8.0).
     /// - Memasang CarHazardTrigger pada mobil-mobil berjalan di kota.
     /// - Mengaktifkan DeliveryGameManager dan DeliveryHUD.
-    /// - Membersihkan/menonaktifkan objek tugas modul lama (Steve, Portal, Cutscene Donut Shop).
+    /// - Membersihkan/menonaktifkan objek tugas modul lama dan karakter tersembunyi.
     /// </summary>
     public static void SetupKurirTerakhirGame(GameObject playerGo)
     {
-        // 1. Bersihkan elemen tugas modul lama
+        // 1. Bersihkan elemen tugas modul lama dan karakter tersembunyi
         CleanupLegacyModuleObjects();
 
-        // 2. Posisikan Rian (Player) di Area Parkir
+        // 2. Posisikan Rian (Player) persis seperti pada screenshot sebelumnya (di depan Mall)
         if (playerGo != null)
         {
-            playerGo.transform.position = new Vector3(302.0f, 0.02f, -12.0f);
-            playerGo.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            playerGo.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+            playerGo.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
             PlayerController pc = playerGo.GetComponent<PlayerController>();
             if (pc != null)
             {
                 pc.SetMovementFrozen(false);
             }
 
-            // Arahkan kamera langsung ke belakang Rian
+            // Arahkan kamera langsung ke belakang Rian di depan mall
             SetupCamera(playerGo);
         }
 
@@ -562,17 +562,38 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         {
             ssm.SetActive(false);
         }
+
+        // Bersihkan karakter tersembunyi di antara gedung atau duplikat Tourist
+        GameObject[] allObjs = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var obj in allObjs)
+        {
+            if (obj == null) continue;
+            string n = obj.name;
+            if (n.Contains("Tourist") || n == "Rian (Kurir)" || n == "Rian")
+            {
+                DestroyGameObjectSafe(obj);
+                continue;
+            }
+            Vector3 pos = obj.transform.position;
+            if (pos.x >= 299f && pos.x <= 305f && pos.z >= -15f && pos.z <= -9f)
+            {
+                if (n.Contains("Tourist") || n.Contains("Citizen") || obj.GetComponent<PlayerController>() != null)
+                {
+                    DestroyGameObjectSafe(obj);
+                }
+            }
+        }
     }
 
     private static void SetupKurirRecipients(GameObject playerGo)
     {
-        // 1. PAK BENI (Gambar 1: SimplePeople_Sheriff_Black - Pusat Pengiriman)
+        // 1. PAK BENI (Gambar 1: SimplePeople_Sheriff_Black - Pusat Pengiriman di Depan Mall)
         EnsureRecipientNPC(
             "NPC_PakBeni",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Sheriff_Black.prefab",
             "SimplePeople_Sheriff_Black",
-            new Vector3(304.5f, 0.02f, -12.0f),
-            Quaternion.Euler(0f, -90f, 0f),
+            new Vector3(310.05f, 0.02f, 6.06f),
+            Quaternion.Euler(0f, 180f, 0f),
             "Pak Beni (Pusat Pengiriman)",
             DeliveryRecipient.RecipientType.PakBeni,
             DeliveryMissionState.Prolog,
@@ -935,12 +956,22 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         playerGo.tag = "Player";
         playerGo.SetActive(true);
 
-        // Hapus karakter Tourist jika ada sisa eksperimen
+        // Hapus karakter tersembunyi di antara gedung atau sisa Tourist
         foreach (var go in allGo)
         {
-            if (go != null && go != playerGo && go.name.Contains("Tourist"))
+            if (go == null || go == playerGo) continue;
+            if (go.name.Contains("Tourist") || go.name == "Rian (Kurir)" || go.name == "Rian")
             {
                 DestroyGameObjectSafe(go);
+                continue;
+            }
+            Vector3 p = go.transform.position;
+            if (p.x >= 299f && p.x <= 305f && p.z >= -15f && p.z <= -9f)
+            {
+                if (go.GetComponent<CharacterController>() != null || go.GetComponent<PlayerController>() != null)
+                {
+                    DestroyGameObjectSafe(go);
+                }
             }
         }
 
@@ -958,9 +989,14 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        // Pastikan posisi berada di atas tanah (Y >= 0.02)
+        // Pastikan posisi berada di depan mall (sesuai foto referensi pemain)
         Vector3 currentPos = playerGo.transform.position;
-        if (currentPos.y < 0.0f || float.IsNaN(currentPos.y))
+        if (currentPos.z < -8.0f && currentPos.x < 305.0f)
+        {
+            // Jika sebelumnya berada di lorong antara gedung, kembalikan ke depan mall
+            currentPos = new Vector3(310.18f, 0.02f, 4.34f);
+        }
+        else if (currentPos.y < 0.0f || float.IsNaN(currentPos.y))
         {
             currentPos.y = 0.02f;
         }
