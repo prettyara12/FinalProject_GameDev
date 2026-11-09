@@ -185,3 +185,4 @@ Assets/Scripts/
 4. **Uji Responsivitas & Performa:**
    - Canvas UI tajam kristal tanpa penurunan FPS.
    - Tombol [M] (Peta) dan [E] (Interaksi) responsif.
+
