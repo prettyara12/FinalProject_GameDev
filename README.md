@@ -88,17 +88,17 @@ Area Parkir (Pak Beni) ──▶ Coffee Shop (Clara) ──▶ Drug Store (Pak J
   Final Selesai ◀── Gedung Apartemen (Naya) ◀── Cari Paket Jatuh (Petugas Parkir) ◀───┘
 ```
 
-1. **Pak Beni (Petugas Pengiriman) — Area Parkir:**
+1. **Pak Beni (`SimplePeople_Sheriff_Black`) — Petugas Pengiriman (Area Parkir):**
    - Memberikan 5 paket kiriman dan pengarahan batas waktu 10 menit. Menjadi titik lapor akhir pengiriman.
-2. **Clara (Pegawai Coffee Shop) — Paket 1:**
+2. **Clara (`SimplePeople_Waitress_White`) — Pegawai Coffee Shop (Paket 1):**
    - Menunggu kiriman biji kopi di kedai kopi trotoar timur sebelum toko tutup. Memberi petunjuk lokasi Drug Store.
-3. **Pak Joko (Pemilik Drug Store) — Paket 2:**
+3. **Pak Joko (`SimplePeople_Prostitute_Brown`) — Pemilik Drug Store (Paket 2):**
    - Menunggu pasokan obat di sudut pertokoan barat. Memberi petunjuk lokasi Fire Station.
-4. **Dimas (Pegawai Fire Station) — Paket 3:**
+4. **Dimas (`SimplePeople_StreetMan_Black`) — Pegawai Fire Station (Paket 3):**
    - Menunggu kiriman perlengkapan darurat di pos Fire Station sebelah barat. Mengabarkan adanya paket kurir yang terjatuh di area parkir.
-5. **Petugas Parkir — Petunjuk Misi 4:**
-   - Mengatur kendaraan di area parkir. Memberitahu bahwa paket terlempar di sela mobil van parkir.
-6. **Naya (Penghuni Apartemen) — Paket 5:**
+5. **Petugas Parkir (`SimplePeople_RoadWorker_White`) — Pengatur Area Parkir & Jalur Alternatif (Misi 4):**
+   - Mengatur arus kendaraan di area parkir. Memberi informasi mengenai ruas jalan yang padat/terhalang dan memandu Rian memilih rute alternatif lewat trotoar dan lorong gedung, serta memberi petunjuk lokasi paket yang terlempar di sela mobil van parkir.
+6. **Naya (`SimplePeople_BeachBabe_Black`) — Penghuni Apartemen (Paket 5):**
    - Menunggu kiriman dokumen keluarga penting di lobi pintu masuk apartemen bertingkat tinggi ujung kawasan.
 
 ---

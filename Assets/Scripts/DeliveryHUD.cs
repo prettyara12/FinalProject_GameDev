@@ -399,7 +399,7 @@ public class DeliveryHUD : MonoBehaviour
             "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
             "1. AREA PARKIR (Selatan):\n" +
             "   • Titik Awal Rian & Pos Pak Beni (Pusat Pengiriman)\n" +
-            "   • Lokasi Pos Petugas Parkir & Paket Jatuh (Misi 4)\n\n" +
+            "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
             "2. COFFEE SHOP (Timur Trotoar):\n" +
             "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
             "3. DRUG STORE (Sudut Pertokoan Barat):\n" +

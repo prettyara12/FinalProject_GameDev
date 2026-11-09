@@ -179,14 +179,35 @@ public class DeliveryGameManager : MonoBehaviour
             return;
         }
 
-        // 2. Misi 4: Interaksi khusus dengan Petugas Parkir untuk petunjuk paket jatuh
+        // 2. Petugas Parkir: Mengatur kendaraan dan memberi info jalur terhalang & rute alternatif (serta petunjuk paket jatuh pada Misi 4)
+        if (recipient.recipientType == DeliveryRecipient.RecipientType.PetugasParkir)
+        {
+            if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+            {
+                string[] droppedClues = recipient.successDialogueLines != null && recipient.successDialogueLines.Length > 0
+                    ? recipient.successDialogueLines
+                    : recipient.introDialogueLines;
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", droppedClues);
+            }
+            else
+            {
+                string[] trafficAdvice = recipient.introDialogueLines != null && recipient.introDialogueLines.Length > 0
+                    ? recipient.introDialogueLines
+                    : new string[]
+                    {
+                        "Halo Rian! Jalur utama kendaraan sedang padat dan beberapa ruas terhalang mobil parkir.",
+                        "Gunakan trotoar pejalan kaki dan lorong antar gedung untuk rute alternatif yang lebih cepat dan aman!",
+                        "Waspadalah saat menyeberang jalan raya, kendaraan bergerak kencang!"
+                    };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", trafficAdvice);
+            }
+            return;
+        }
+
+        // 3. Misi 4: Interaksi khusus saat paket masih hilang di Area Parkir
         if (currentState == DeliveryMissionState.Package4_DroppedPackage)
         {
-            if (recipient.recipientType == DeliveryRecipient.RecipientType.PetugasParkir)
-            {
-                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", recipient.introDialogueLines);
-            }
-            else if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+            if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
             {
                 string[] lines = new string[] { "Rian, cepat temukan paket yang terjatuh di sela-sela mobil area parkir sebelum terlindas!" };
                 NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Pak Beni", lines);
@@ -204,7 +225,7 @@ public class DeliveryGameManager : MonoBehaviour
             return;
         }
 
-        // 3. Final: Lapor kembali ke Pak Beni setelah Paket 5 selesai
+        // 4. Final: Lapor kembali ke Pak Beni setelah Paket 5 selesai
         if (currentState == DeliveryMissionState.Final_ReturnToHub)
         {
             if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)

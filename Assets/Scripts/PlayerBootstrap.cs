@@ -674,11 +674,11 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 5. PETUGAS PARKIR (Area Parkir)
+        // 5. PETUGAS PARKIR (Gambar 6: SimplePeople_RoadWorker_White - Area Parkir)
         EnsureRecipientNPC(
             "NPC_PetugasParkir",
-            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Police_White.prefab",
-            "SimplePeople_Police_White",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_RoadWorker_White.prefab",
+            "SimplePeople_RoadWorker_White",
             new Vector3(298.0f, 0.02f, -5.0f),
             Quaternion.Euler(0f, 45f, 0f),
             "Petugas Parkir",
@@ -686,16 +686,18 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             DeliveryMissionState.Package4_DroppedPackage,
             new string[]
             {
+                "Halo Rian! Jalur utama kendaraan sedang padat dan beberapa ruas terhalang mobil parkir.",
+                "Gunakan trotoar pejalan kaki dan lorong antar gedung untuk rute yang lebih cepat dan aman!",
+                "Waspadalah saat menyeberang jalan raya, kendaraan bergerak kencang di sekitar sini!"
+            },
+            new string[]
+            {
                 "Hei kurir! Paketmu tadi terlempar ke sela-sela mobil van di ujung parkiran saat kamu menghindari sedan yang melintas.",
                 "Cepat cari di antara barisan mobil parkir dan ambil dengan tombol [E] sebelum kendaraan lain melindasnya!"
             },
             new string[]
             {
-                "Bagus, kamu sudah menemukan paket yang jatuh itu! Segera antarkan ke alamat berikutnya sebelum toko tutup."
-            },
-            new string[]
-            {
-                "Saya petugas parkir, tugas saya mengatur jalur keluar masuk kendaraan di sini, bukan menerima paket!"
+                "Saya petugas parkir yang mengatur lalu lintas kendaraan di sini. Rute trotoar dan lorong pintas lebih aman untuk dilewati!"
             },
             playerGo
         );
@@ -1768,7 +1770,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         else if (cName.Contains("BeachBabe") || cName.Contains("Naya")) targetMesh = "CH_Woman";
         else if (cName.Contains("Waitress") || cName.Contains("Clara") || cName.Contains("Woman") || cName.Contains("HouseWife") || cName.Contains("Wanita")) targetMesh = "CH_Woman";
         else if (cName.Contains("StreetMan") || cName.Contains("Dimas")) targetMesh = "CH_StreetMan";
-        else if (cName.Contains("Police") || cName.Contains("Cop") || cName.Contains("PetugasParkir")) targetMesh = "CH_Policeman";
+        else if (cName.Contains("Police") || cName.Contains("Cop")) targetMesh = "CH_Policeman";
         else if (cName.Contains("Pimp")) targetMesh = "CH_Pimp";
         else if (cName.Contains("Trucker")) targetMesh = "CH_Trucker";
         else if (cName.Contains("FireFighter")) targetMesh = "CH_FireFighter";
@@ -1776,7 +1778,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         else if (cName.Contains("Punk")) targetMesh = "CH_Punk";
         else if (cName.Contains("Robber")) targetMesh = "CH_Robber";
         else if (cName.Contains("Hobo")) targetMesh = "CH_Hobo";
-        else if (cName.Contains("Roadworker")) targetMesh = "CH_Roadworker";
+        else if (cName.Contains("Roadworker") || cName.Contains("RoadWorker") || cName.Contains("PetugasParkir")) targetMesh = "CH_Roadworker";
         else if (cName.Contains("RiotCop")) targetMesh = "CH_RiotCop";
 
         if (!string.IsNullOrEmpty(targetMesh))
@@ -1885,7 +1887,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_StreetMan_Black.png"
             );
         }
-        if (tex == null && (character.name.Contains("Police") || character.name.Contains("PetugasParkir")))
+        if (tex == null && (character.name.Contains("Roadworker") || character.name.Contains("RoadWorker") || character.name.Contains("PetugasParkir")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_RoadWorker_White.png"
+            );
+        }
+        if (tex == null && (character.name.Contains("Police") || character.name.Contains("Cop")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Police_White.png"
@@ -1966,7 +1974,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Black.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("Police") || character.name.Contains("PetugasParkir")))
+        if (targetMat == null && (character.name.Contains("Roadworker") || character.name.Contains("RoadWorker") || character.name.Contains("PetugasParkir")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_RoadWorker_White.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("Police") || character.name.Contains("Cop")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Police_White.mat"
@@ -2226,7 +2240,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_BeachBabe_Black.mat");
             return;
         }
-        if (cName.Contains("PetugasParkir") || cName.Contains("Police"))
+        if (cName.Contains("PetugasParkir") || cName.Contains("Roadworker") || cName.Contains("RoadWorker"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_RoadWorker_White",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_RoadWorker_White.mat");
+            return;
+        }
+        if (cName.Contains("Police") || cName.Contains("Cop"))
         {
             EnsureCharacterMaterial(character, "SimplePeople_Police_White",
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Police_White.mat");
