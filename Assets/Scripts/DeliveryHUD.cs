@@ -404,8 +404,8 @@ public class DeliveryHUD : MonoBehaviour
             "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
             "3. DRUG STORE (Sudut Pertokoan Barat):\n" +
             "   • Toko obat dengan plang nama farmasi milik Pak Joko (Paket 2)\n\n" +
-            "4. HARDWARE STORE & PERTOKOAN (Barat):\n" +
-            "   • Toko perkakas Dimas & deretan toko pakaian (Paket 3)\n\n" +
+            "4. FIRE STATION / POS PEMADAM (Barat):\n" +
+            "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
             "5. GEDUNG APARTEMEN (Utara Ujung Jalan):\n" +
             "   • Gedung bertingkat tinggi tempat Naya menunggu dokumen (Paket 5)";
 
@@ -662,8 +662,8 @@ public class DeliveryHUD : MonoBehaviour
                 missionClueText.text = "Label basah: 'Pak J...o' - Pemilik toko obat dan farmasi di sudut deretan pertokoan barat.";
                 break;
             case DeliveryMissionState.Package3_HardwareStore:
-                missionTitleText.text = "Tujuan: Dimas di Hardware Store";
-                missionClueText.text = "Label basah: 'Di...s' - Pegawai toko perkakas perkotaan di sebelah barat jalan pertokoan.";
+                missionTitleText.text = "Tujuan: Dimas di Fire Station (Pos Pemadam)";
+                missionClueText.text = "Label basah: 'Di...s' - Pegawai pos pemadam kebakaran (Fire Station) di sebelah barat deretan toko.";
                 break;
             case DeliveryMissionState.Package4_DroppedPackage:
                 missionTitleText.text = "Tujuan: Cari Paket Jatuh di Area Parkir!";

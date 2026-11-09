@@ -566,10 +566,11 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     private static void SetupKurirRecipients(GameObject playerGo)
     {
-        // 1. PAK BENI (Area Parkir, samping mobil pengiriman)
+        // 1. PAK BENI (Gambar 1: SimplePeople_Sheriff_Black - Pusat Pengiriman)
         EnsureRecipientNPC(
             "NPC_PakBeni",
-            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Sheriff_Black.prefab",
+            "SimplePeople_Sheriff_Black",
             new Vector3(304.5f, 0.02f, -12.0f),
             Quaternion.Euler(0f, -90f, 0f),
             "Pak Beni (Pusat Pengiriman)",
@@ -594,11 +595,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 2. CLARA (Coffee Shop - Trotoar Timur)
+        // 2. CLARA (Gambar 2: SimplePeople_Waitress_White - Coffee Shop Trotoar Timur)
         EnsureRecipientNPC(
             "NPC_Clara",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Waitress_White.prefab",
-            new Vector3(316.0f, 0.02f, 14.0f),
+            "SimplePeople_Waitress_White",
+            new Vector3(315.35f, 0.02f, 9.01f),
             Quaternion.Euler(0f, -140f, 0f),
             "Clara (Coffee Shop)",
             DeliveryRecipient.RecipientType.Clara,
@@ -610,7 +612,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             new string[]
             {
                 "Halo! Akhirnya paket biji kopi pesananku sampai juga tepat sebelum kedai kami tutup. Terima kasih banyak ya, Mas Rian!",
-                "Oh ya, tadi kulihat Pak Joko pemilik Drug Store sedang menunggu kiriman obat di sudut deretan pertokoan barat jalan ini."
+                "Oh ya, tadi kulihat Pak Joko pemilik Drug Store sedang menunggu kiriman obat di deretan pertokoan barat jalan ini."
             },
             new string[]
             {
@@ -619,11 +621,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 3. PAK JOKO (Drug Store - Sudut Pertokoan Barat)
+        // 3. PAK JOKO (Gambar 3: SimplePeople_Prostitute_Brown - Drug Store Sudut Pertokoan Barat)
         EnsureRecipientNPC(
             "NPC_PakJoko",
-            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Pimp_Brown.prefab",
-            new Vector3(320.0f, 0.02f, 5.0f),
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Prostitute_Brown.prefab",
+            "SimplePeople_Prostitute_Brown",
+            new Vector3(315.69f, 0.02f, 3.82f),
             Quaternion.Euler(0f, -90f, 0f),
             "Pak Joko (Drug Store)",
             DeliveryRecipient.RecipientType.PakJoko,
@@ -635,7 +638,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             new string[]
             {
                 "Terima kasih banyak, Mas Rian! Pasokan obat dan vitamin ini sangat ditunggu warga untuk besok pagi.",
-                "Kalau kamu mencari toko perlengkapan (Hardware Store), Dimas ada di toko deretan sebelah barat jalan pertokoan ini."
+                "Kalau kamu mencari Dimas petugas pemadam kebakaran, ia sedang berjaga di pos Fire Station di seberang jalan sebelah barat ini."
             },
             new string[]
             {
@@ -644,28 +647,29 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 4. DIMAS (Hardware Store)
+        // 4. DIMAS (Gambar 4: SimplePeople_StreetMan_Black - Pegawai Fire Station)
         EnsureRecipientNPC(
             "NPC_Dimas",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab",
-            new Vector3(308.0f, 0.02f, 7.0f),
+            "SimplePeople_StreetMan_Black",
+            new Vector3(304.0f, 0.02f, 4.0f),
             Quaternion.Euler(0f, 0f, 0f),
-            "Dimas (Hardware Store)",
+            "Dimas (Fire Station)",
             DeliveryRecipient.RecipientType.Dimas,
             DeliveryMissionState.Package3_HardwareStore,
             new string[]
             {
-                "Halo kurir! Selamat datang di Hardware Store perlengkapan teknik."
+                "Halo kurir! Ini pos pemadam kebakaran (Fire Station). Ada kiriman perlengkapan darurat untuk tim kami?"
             },
             new string[]
             {
-                "Wah pas sekali, mur dan perkakas pesanan bengkel sudah tiba. Terima kasih kurir!",
+                "Wah pas sekali, perlengkapan darurat dan suku cadang pesanan tim pemadam sudah tiba. Terima kasih kurir!",
                 "Gawat Rian! Tadi kulihat ada satu kotak paketmu yang terjatuh di sela-sela mobil area parkir saat kamu menghindari mobil melintas!",
                 "Cepat kembali ke area parkir dan tanya Petugas Parkir di sana untuk mencari paketmu yang hilang!"
             },
             new string[]
             {
-                "Maaf mas, ini Hardware Store perkakas toko. Cari toko yang sesuai dengan pesanan paketmu!"
+                "Maaf mas, ini pos pemadam kebakaran (Fire Station). Kami hanya menerima kiriman paket darurat pesanan tim!"
             },
             playerGo
         );
@@ -674,6 +678,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         EnsureRecipientNPC(
             "NPC_PetugasParkir",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Police_White.prefab",
+            "SimplePeople_Police_White",
             new Vector3(298.0f, 0.02f, -5.0f),
             Quaternion.Euler(0f, 45f, 0f),
             "Petugas Parkir",
@@ -695,11 +700,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 6. NAYA (Penghuni Apartemen - Ujung Kawasan)
+        // 6. NAYA (Gambar 5: SimplePeople_BeachBabe_Black - Penghuni Apartemen)
         EnsureRecipientNPC(
             "NPC_Naya",
-            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Waitress_White.prefab",
-            new Vector3(288.0f, 0.02f, 18.0f),
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_BeachBabe_Black.prefab",
+            "SimplePeople_BeachBabe_Black",
+            new Vector3(311.15f, 0.02f, -4.42f),
             Quaternion.Euler(0f, 90f, 0f),
             "Naya (Penghuni Apartemen)",
             DeliveryRecipient.RecipientType.Naya,
@@ -724,6 +730,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     private static GameObject EnsureRecipientNPC(
         string objectName,
         string prefabPath,
+        string sceneSearchName,
         Vector3 position,
         Quaternion rotation,
         string displayName,
@@ -735,6 +742,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         GameObject playerGo)
     {
         GameObject npcGo = GameObject.Find(objectName);
+        if (npcGo == null && !string.IsNullOrEmpty(sceneSearchName))
+        {
+            npcGo = GameObject.Find(sceneSearchName);
+        }
+
+        bool wasAlreadyInScene = (npcGo != null);
+
         if (npcGo == null)
         {
 #if UNITY_EDITOR
@@ -746,19 +760,31 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
             if (pref != null)
             {
-                npcGo = Object.Instantiate(pref);
-                npcGo.name = objectName;
+                npcGo = (GameObject)PrefabUtility.InstantiatePrefab(pref);
+                if (npcGo == null) npcGo = Object.Instantiate(pref);
             }
 #endif
         }
 
         if (npcGo == null) return null;
 
+        npcGo.name = objectName;
         npcGo.SetActive(true);
         npcGo.tag = "Untagged";
         npcGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        npcGo.transform.position = position;
-        npcGo.transform.rotation = rotation;
+
+        if (!wasAlreadyInScene)
+        {
+            npcGo.transform.position = position;
+            npcGo.transform.rotation = rotation;
+        }
+        else
+        {
+            // Pertahankan koordinat yang sudah diatur pengguna di scene jika wajar
+            Vector3 curPos = npcGo.transform.position;
+            if (curPos.y < 0.0f || float.IsNaN(curPos.y)) curPos.y = 0.02f;
+            npcGo.transform.position = curPos;
+        }
 
         PlayerController pc = npcGo.GetComponent<PlayerController>();
         if (pc != null) DestroyComponentSafe(pc);
@@ -1737,19 +1763,20 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         // 2. Seri SimplePeople (submesh berawalan "CH_")
         string targetMesh = null;
-        if (cName.Contains("Pimp")) targetMesh = "CH_Pimp";
+        if (cName.Contains("Sheriff") || cName.Contains("PakBeni")) targetMesh = "CH_Sheriff";
+        else if (cName.Contains("Prostitute") || cName.Contains("PakJoko")) targetMesh = "CH_Prostitute";
+        else if (cName.Contains("BeachBabe") || cName.Contains("Naya")) targetMesh = "CH_Woman";
+        else if (cName.Contains("Waitress") || cName.Contains("Clara") || cName.Contains("Woman") || cName.Contains("HouseWife") || cName.Contains("Wanita")) targetMesh = "CH_Woman";
+        else if (cName.Contains("StreetMan") || cName.Contains("Dimas")) targetMesh = "CH_StreetMan";
+        else if (cName.Contains("Police") || cName.Contains("Cop") || cName.Contains("PetugasParkir")) targetMesh = "CH_Policeman";
+        else if (cName.Contains("Pimp")) targetMesh = "CH_Pimp";
         else if (cName.Contains("Trucker")) targetMesh = "CH_Trucker";
-        else if (cName.Contains("StreetMan")) targetMesh = "CH_StreetMan";
-        else if (cName.Contains("Waitress") || cName.Contains("Woman") || cName.Contains("HouseWife") || cName.Contains("Wanita")) targetMesh = "CH_Woman";
-        else if (cName.Contains("Police") || cName.Contains("Cop")) targetMesh = "CH_Policeman";
         else if (cName.Contains("FireFighter")) targetMesh = "CH_FireFighter";
         else if (cName.Contains("BusinessMan")) targetMesh = "CH_BusinessMan";
         else if (cName.Contains("Punk")) targetMesh = "CH_Punk";
         else if (cName.Contains("Robber")) targetMesh = "CH_Robber";
-        else if (cName.Contains("Sheriff")) targetMesh = "CH_Sheriff";
         else if (cName.Contains("Hobo")) targetMesh = "CH_Hobo";
         else if (cName.Contains("Roadworker")) targetMesh = "CH_Roadworker";
-        else if (cName.Contains("Prostitute")) targetMesh = "CH_Prostitute";
         else if (cName.Contains("RiotCop")) targetMesh = "CH_RiotCop";
 
         if (!string.IsNullOrEmpty(targetMesh))
@@ -1828,6 +1855,43 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             );
         }
 
+        if (tex == null && (character.name.Contains("Sheriff") || character.name.Contains("PakBeni")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Sheriff_Black.png"
+            );
+        }
+        if (tex == null && (character.name.Contains("Prostitute") || character.name.Contains("PakJoko")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Prostitute_Brown.png"
+            );
+        }
+        if (tex == null && (character.name.Contains("BeachBabe") || character.name.Contains("Naya")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_BeachBabe_Black.png"
+            );
+        }
+        if (tex == null && (character.name.Contains("Waitress") || character.name.Contains("Clara")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Waitress_White.png"
+            );
+        }
+        if (tex == null && (character.name.Contains("StreetMan") || character.name.Contains("Dimas")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_StreetMan_Black.png"
+            );
+        }
+        if (tex == null && (character.name.Contains("Police") || character.name.Contains("PetugasParkir")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Police_White.png"
+            );
+        }
+
         if (tex == null && character.name.Contains("Trucker"))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
@@ -1870,6 +1934,42 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Tourist_Brown.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("Sheriff") || character.name.Contains("PakBeni")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Sheriff_Black.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("Prostitute") || character.name.Contains("PakJoko")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Prostitute_Brown.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("BeachBabe") || character.name.Contains("Naya")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_BeachBabe_Black.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("Waitress") || character.name.Contains("Clara")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Waitress_White.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("StreetMan") || character.name.Contains("Dimas")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Black.mat"
+            );
+        }
+        if (targetMat == null && (character.name.Contains("Police") || character.name.Contains("PetugasParkir")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Police_White.mat"
             );
         }
 
@@ -2094,6 +2194,42 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         {
             EnsureCharacterMaterial(character, "SimpleCitizens_Tourist_Brown", 
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Tourist_Brown.mat");
+            return;
+        }
+        if (cName.Contains("PakBeni") || cName.Contains("Sheriff"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_Sheriff_Black",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Sheriff_Black.mat");
+            return;
+        }
+        if (cName.Contains("Clara") || cName.Contains("Waitress"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_Waitress_White",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Waitress_White.mat");
+            return;
+        }
+        if (cName.Contains("PakJoko") || cName.Contains("Prostitute"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_Prostitute_Brown",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Prostitute_Brown.mat");
+            return;
+        }
+        if (cName.Contains("Dimas") || cName.Contains("StreetMan"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_StreetMan_Black",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Black.mat");
+            return;
+        }
+        if (cName.Contains("Naya") || cName.Contains("BeachBabe"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_BeachBabe_Black",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_BeachBabe_Black.mat");
+            return;
+        }
+        if (cName.Contains("PetugasParkir") || cName.Contains("Police"))
+        {
+            EnsureCharacterMaterial(character, "SimplePeople_Police_White",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Police_White.mat");
             return;
         }
         string matPath = $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/{cName}.mat";
