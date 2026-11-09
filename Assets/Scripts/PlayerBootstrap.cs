@@ -437,12 +437,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 4. Setup KAMERA (Pemandangan Kota Luas & Third-Person Follow)
         SetupCamera(playerGo);
 
-        // 5. Setup 2 NPC Mandiri Sesuai Permintaan Pengguna:
-        //    - NPC Wanita baju kuning (melompat di tempat di trotoar)
-        //    - NPC Pria berjalan kaki di trotoar barat melawan arah dari karakter utama
-        SetupAllNPCs(playerGo);
-
-        // 6. Pastikan seluruh karakter di scene memiliki material & tekstur URP yang valid (tidak pink/magenta)
+        // 5. Pastikan seluruh karakter di scene memiliki material & tekstur URP yang valid (tidak pink/magenta)
         GameObject[] allChars = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
         foreach (var go in allChars)
         {
@@ -452,7 +447,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        // 7. Bersihkan objek kanvas WorldSpace lama yang mungkin tertinggal di scene & inisialisasi Screen-Space Dialogue
+        // 6. Bersihkan objek kanvas WorldSpace lama yang mungkin tertinggal di scene & inisialisasi Screen-Space Dialogue
         GameObject[] allObjects = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var go in allObjects)
         {
@@ -463,7 +458,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         }
         NPCDialogueOverlay.EnsureInstance();
 
-        // 8. Setup Game Inti Kurir Terakhir (Final Project)
+        // 7. Setup Game Inti Kurir Terakhir (Final Project)
         SetupKurirTerakhirGame(playerGo);
 
         Debug.Log("[PlayerBootstrap] Berhasil mengonfigurasi 1 Player (WASD) dan Game 'Kurir Terakhir'!");
@@ -750,6 +745,102 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         );
     }
 
+    private static GameObject FindManualRecipientNPC(
+        DeliveryRecipient.RecipientType type,
+        string objectName,
+        string sceneSearchName,
+        Vector3 defaultPosition)
+    {
+        // 1. Cari di antara semua GameObject di scene (termasuk yang sedang nonaktif)
+        GameObject[] all = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+
+        // a. Prioritas 1: Cocokkan nama spesifik yang diberikan atau dinamai manual oleh pengguna
+        foreach (var go in all)
+        {
+            if (go == null) continue;
+            if (go.name.StartsWith("CH_") || go.name.Contains("_jnt")) continue;
+            if (go.CompareTag("Player") || go.GetComponent<PlayerController>() != null) continue;
+
+            string n = go.name;
+            bool match = false;
+
+            switch (type)
+            {
+                case DeliveryRecipient.RecipientType.Clara:
+                    match = n.Equals("Clara", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Contains("Clara") ||
+                            n.Contains("Waitress");
+                    break;
+                case DeliveryRecipient.RecipientType.PakBeni:
+                    match = n.Equals("Pak Beni", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Equals("PakBeni", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Contains("Beni") ||
+                            n.Contains("Sheriff");
+                    break;
+                case DeliveryRecipient.RecipientType.PakJoko:
+                    match = n.Equals("Pak Joko", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Equals("PakJoko", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Contains("Joko") ||
+                            n.Contains("Prostitute_Brown");
+                    break;
+                case DeliveryRecipient.RecipientType.Dimas:
+                    match = n.Equals("Dimas", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Contains("Dimas") ||
+                            n.Contains("StreetMan_Black");
+                    break;
+                case DeliveryRecipient.RecipientType.PetugasParkir:
+                    match = n.Equals("Petugas Parkir", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Equals("PetugasParkir", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Contains("Parkir") ||
+                            n.Contains("RoadWorker");
+                    break;
+                case DeliveryRecipient.RecipientType.Naya:
+                    match = n.Equals("Naya", System.StringComparison.OrdinalIgnoreCase) ||
+                            n.Contains("Naya") ||
+                            n.Contains("BeachBabe");
+                    break;
+            }
+
+            if (match) return go;
+        }
+
+        // b. Prioritas 2: Cari objek karakter di dekat posisi target (radius 5.0m)
+        GameObject closest = null;
+        float minDist = 5.0f;
+        foreach (var go in all)
+        {
+            if (go == null) continue;
+            if (go.name.StartsWith("CH_") || go.name.Contains("_jnt")) continue;
+            if (go.CompareTag("Player") || go.GetComponent<PlayerController>() != null) continue;
+            if (go.transform.parent != null && (go.transform.parent.name.StartsWith("SimplePeople") || go.transform.parent.name.StartsWith("SimpleCitizens"))) continue;
+
+            bool isChar = go.GetComponent<Animator>() != null || 
+                          go.name.StartsWith("SimplePeople") || 
+                          go.name.StartsWith("SimpleCitizens") ||
+                          go.GetComponent<DeliveryRecipient>() != null;
+
+            if (isChar)
+            {
+                float d = Vector3.Distance(go.transform.position, defaultPosition);
+                if (d < minDist)
+                {
+                    minDist = d;
+                    closest = go;
+                }
+            }
+        }
+
+        if (closest != null) return closest;
+
+        // c. Fallback ke objectName atau sceneSearchName
+        GameObject fallback = GameObject.Find(objectName);
+        if (fallback == null && !string.IsNullOrEmpty(sceneSearchName))
+        {
+            fallback = GameObject.Find(sceneSearchName);
+        }
+        return fallback;
+    }
+
     private static GameObject EnsureRecipientNPC(
         string objectName,
         string prefabPath,
@@ -764,12 +855,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         string[] wrongLines,
         GameObject playerGo)
     {
-        GameObject npcGo = GameObject.Find(objectName);
-        if (npcGo == null && !string.IsNullOrEmpty(sceneSearchName))
-        {
-            npcGo = GameObject.Find(sceneSearchName);
-        }
-
+        GameObject npcGo = FindManualRecipientNPC(type, objectName, sceneSearchName, position);
         bool wasAlreadyInScene = (npcGo != null);
 
         if (npcGo == null)
@@ -791,7 +877,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         if (npcGo == null) return null;
 
-        npcGo.name = objectName;
         npcGo.SetActive(true);
         npcGo.tag = "Untagged";
         npcGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
@@ -800,10 +885,11 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         {
             npcGo.transform.position = position;
             npcGo.transform.rotation = rotation;
+            npcGo.name = objectName;
         }
         else
         {
-            // Pertahankan koordinat yang sudah diatur pengguna di scene jika wajar
+            // PERTAHANKAN POSISI DAN ROTASI YANG SUDAH DITENTUKAN MANUAL OLEH PENGGUNA DI SCENE
             Vector3 curPos = npcGo.transform.position;
             if (curPos.y < 0.0f || float.IsNaN(curPos.y)) curPos.y = 0.02f;
             npcGo.transform.position = curPos;
@@ -811,6 +897,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         PlayerController pc = npcGo.GetComponent<PlayerController>();
         if (pc != null) DestroyComponentSafe(pc);
+        CharacterController cc = npcGo.GetComponent<CharacterController>();
+        if (cc != null) DestroyComponentSafe(cc);
 
         EnsureCorrectCharacterMesh(npcGo);
         AutoEnsureCharacterMaterial(npcGo);
@@ -847,7 +935,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         recipient.introDialogueLines = introLines;
         recipient.successDialogueLines = successLines;
         recipient.wrongDeliveryLines = wrongLines;
-        recipient.interactionRadius = 2.0f;
+        recipient.interactionRadius = 2.5f;
 
         NPCWalker walker = npcGo.GetComponent<NPCWalker>();
         if (walker != null)
