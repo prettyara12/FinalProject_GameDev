@@ -7934,6 +7934,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   isSitting: 0
+  isMovementFrozen: 0
 --- !u!54 &132776101
 Rigidbody:
   m_ObjectHideFlags: 0
