@@ -1,0 +1,341 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public enum DeliveryMissionState
+{
+    Prolog,                 // Menerima 5 paket & instruksi dari Pak Beni di Area Parkir
+    Package1_CoffeeShop,    // Mengantar paket 1 ke Clara di Coffee Shop
+    Package2_DrugStore,     // Mengantar paket 2 ke Pak Joko di Drug Store
+    Package3_HardwareStore, // Mengantar paket 3 ke Dimas di Hardware Store
+    Package4_DroppedPackage,// Mencari & memungut paket yang jatuh di Area Parkir
+    Package5_Apartment,     // Mengantar paket 5 ke Naya di Apartemen
+    Final_ReturnToHub,      // Kembali ke Pak Beni di Area Parkir
+    Completed,              // Selesai dengan Ending 1 (Kurir Terpercaya)
+    Failed                  // Selesai dengan Ending 2 atau Ending 3
+}
+
+public enum GameEnding
+{
+    None,
+    Ending1_KurirTerpercaya,    // 5/5 paket terkirim tepat waktu
+    Ending2_PengirimanTerlambat,// Waktu habis, >= 3 paket terkirim
+    Ending3_GagalBertugas       // Waktu habis, < 3 paket terkirim
+}
+
+/// <summary>
+/// DeliveryGameManager: State machine inti dan manajer aturan game Kurir Terakhir.
+/// Mengelola countdown timer 10 menit, penalti waktu, tahapan pengiriman, dan 3 variasi ending.
+/// </summary>
+public class DeliveryGameManager : MonoBehaviour
+{
+    private static DeliveryGameManager instance;
+    public static DeliveryGameManager Instance => instance;
+
+    [Header("=== Game Configuration ===")]
+    [Tooltip("Total batas waktu permainan dalam detik (10 menit = 600 detik).")]
+    public float totalTimeLimit = 600f;
+
+    [Tooltip("Penalti waktu saat salah menyerahkan paket ke NPC (detik).")]
+    public float wrongDeliveryPenalty = 20f;
+
+    [Tooltip("Penalti waktu saat terserempet mobil (detik).")]
+    public float carHitPenalty = 5f;
+
+    [Header("=== Runtime Status ===")]
+    [SerializeField] private float timeRemaining = 600f;
+    [SerializeField] private int packagesDelivered = 0;
+    [SerializeField] private int totalPackages = 5;
+    [SerializeField] private int wrongDeliveryCount = 0;
+    [SerializeField] private bool isTimerRunning = false;
+    [SerializeField] private DeliveryMissionState currentState = DeliveryMissionState.Prolog;
+    [SerializeField] private GameEnding finalEnding = GameEnding.None;
+
+    public float TimeRemaining => timeRemaining;
+    public int PackagesDelivered => packagesDelivered;
+    public int TotalPackages => totalPackages;
+    public int WrongDeliveryCount => wrongDeliveryCount;
+    public bool IsTimerRunning => isTimerRunning;
+    public DeliveryMissionState CurrentState => currentState;
+    public GameEnding FinalEnding => finalEnding;
+
+    // Events untuk HUD & UI
+    public event System.Action<float> OnTimerTick;
+    public event System.Action<DeliveryMissionState> OnMissionChanged;
+    public event System.Action<int, int> OnPackageProgressChanged;
+    public event System.Action<GameEnding> OnGameEnded;
+    public event System.Action<float, string> OnPenaltyApplied;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        instance = null;
+    }
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else if (instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        timeRemaining = totalTimeLimit;
+    }
+
+    private void Start()
+    {
+        StartGame();
+    }
+
+    public void StartGame()
+    {
+        timeRemaining = totalTimeLimit;
+        packagesDelivered = 0;
+        wrongDeliveryCount = 0;
+        currentState = DeliveryMissionState.Prolog;
+        finalEnding = GameEnding.None;
+        isTimerRunning = true;
+
+        OnTimerTick?.Invoke(timeRemaining);
+        OnMissionChanged?.Invoke(currentState);
+        OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+    }
+
+    private void Update()
+    {
+        if (!isTimerRunning || finalEnding != GameEnding.None) return;
+
+        // Timer terus berjalan kecuali saat permainan telah selesai
+        timeRemaining -= Time.deltaTime;
+        if (timeRemaining < 0f) timeRemaining = 0f;
+
+        OnTimerTick?.Invoke(timeRemaining);
+
+        if (timeRemaining <= 0f)
+        {
+            HandleTimeExpired();
+        }
+    }
+
+    public void ApplyWrongDeliveryPenalty()
+    {
+        if (finalEnding != GameEnding.None) return;
+
+        timeRemaining = Mathf.Max(0f, timeRemaining - wrongDeliveryPenalty);
+        wrongDeliveryCount++;
+
+        OnPenaltyApplied?.Invoke(wrongDeliveryPenalty, "Salah Alamat! -20s");
+        OnTimerTick?.Invoke(timeRemaining);
+
+        if (timeRemaining <= 0f)
+        {
+            HandleTimeExpired();
+        }
+    }
+
+    public void ApplyCarHitPenalty()
+    {
+        if (finalEnding != GameEnding.None) return;
+
+        timeRemaining = Mathf.Max(0f, timeRemaining - carHitPenalty);
+
+        OnPenaltyApplied?.Invoke(carHitPenalty, "Tertabrak Kendaraan! -5s");
+        OnTimerTick?.Invoke(timeRemaining);
+
+        if (timeRemaining <= 0f)
+        {
+            HandleTimeExpired();
+        }
+    }
+
+    /// <summary>
+    /// Dipanggil saat Rian menekan tombol [E] pada NPC penerima.
+    /// </summary>
+    public void InteractWithRecipient(DeliveryRecipient recipient)
+    {
+        if (recipient == null || finalEnding != GameEnding.None) return;
+
+        // 1. Prolog: Bicara ke Pak Beni
+        if (currentState == DeliveryMissionState.Prolog)
+        {
+            if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+            {
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Pak Beni", recipient.introDialogueLines, () =>
+                {
+                    AdvanceMission(DeliveryMissionState.Package1_CoffeeShop);
+                });
+            }
+            else
+            {
+                // Bicara ke orang lain sebelum ambil paket
+                string[] lines = new string[] { "Temui Pak Beni di dekat mobil pengiriman area parkir untuk mengambil paket tugasmu!" };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, lines);
+            }
+            return;
+        }
+
+        // 2. Misi 4: Interaksi khusus dengan Petugas Parkir untuk petunjuk paket jatuh
+        if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+        {
+            if (recipient.recipientType == DeliveryRecipient.RecipientType.PetugasParkir)
+            {
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", recipient.introDialogueLines);
+            }
+            else if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+            {
+                string[] lines = new string[] { "Rian, cepat temukan paket yang terjatuh di sela-sela mobil area parkir sebelum terlindas!" };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Pak Beni", lines);
+            }
+            else
+            {
+                string[] lines = recipient.wrongDeliveryLines != null && recipient.wrongDeliveryLines.Length > 0
+                    ? recipient.wrongDeliveryLines
+                    : new string[] { "Maaf mas, saya dengar ada paketmu yang jatuh di area parkir. Coba cari di sana!" };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, lines, () =>
+                {
+                    ApplyWrongDeliveryPenalty();
+                });
+            }
+            return;
+        }
+
+        // 3. Final: Lapor kembali ke Pak Beni setelah Paket 5 selesai
+        if (currentState == DeliveryMissionState.Final_ReturnToHub)
+        {
+            if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+            {
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Pak Beni", recipient.successDialogueLines, () =>
+                {
+                    TriggerEnding(GameEnding.Ending1_KurirTerpercaya);
+                });
+            }
+            else
+            {
+                string[] lines = new string[] { "Semua paket sudah terkirim! Segera kembali ke Pak Beni di Area Parkir untuk menyelesaikan tugas!" };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, lines);
+            }
+            return;
+        }
+
+        // 4. Misi Pengiriman Standar (Misi 1, 2, 3, 5)
+        bool isCorrectRecipient = (recipient.targetForMission == currentState);
+
+        if (isCorrectRecipient)
+        {
+            // Penerima Benar!
+            NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, recipient.successDialogueLines, () =>
+            {
+                packagesDelivered++;
+                OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+
+                // Tentukan langkah misi selanjutnya
+                switch (currentState)
+                {
+                    case DeliveryMissionState.Package1_CoffeeShop:
+                        AdvanceMission(DeliveryMissionState.Package2_DrugStore);
+                        break;
+                    case DeliveryMissionState.Package2_DrugStore:
+                        AdvanceMission(DeliveryMissionState.Package3_HardwareStore);
+                        break;
+                    case DeliveryMissionState.Package3_HardwareStore:
+                        AdvanceMission(DeliveryMissionState.Package4_DroppedPackage);
+                        break;
+                    case DeliveryMissionState.Package5_Apartment:
+                        AdvanceMission(DeliveryMissionState.Final_ReturnToHub);
+                        break;
+                }
+            });
+        }
+        else
+        {
+            // Penerima Salah! Terapkan Penalti
+            string[] wrongLines = recipient.wrongDeliveryLines != null && recipient.wrongDeliveryLines.Length > 0
+                ? recipient.wrongDeliveryLines
+                : new string[] { "Maaf mas, saya bukan penerima paket ini. Coba periksa alamat dan papan nama toko!" };
+
+            NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, wrongLines, () =>
+            {
+                ApplyWrongDeliveryPenalty();
+            });
+        }
+    }
+
+    /// <summary>
+    /// Mengambil paket yang terjatuh di area parkir (Misi 4).
+    /// </summary>
+    public void PickUpDroppedPackage()
+    {
+        if (currentState != DeliveryMissionState.Package4_DroppedPackage || finalEnding != GameEnding.None) return;
+
+        string[] pickupMsg = new string[]
+        {
+            "Paket berhasil dipungut dari area parkir!",
+            "Label alamat: Naya - Penghuni Apartemen bertingkat tinggi di ujung jalan.",
+            "Cepat antarkan ke Naya sebelum toko-toko menutup pintunya!"
+        };
+
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        Transform targetTr = player != null ? player.transform : transform;
+
+        NPCDialogueOverlay.ShowSequentialDialogue(targetTr, "Rian (Kurir)", pickupMsg, () =>
+        {
+            AdvanceMission(DeliveryMissionState.Package5_Apartment);
+        });
+    }
+
+    private void AdvanceMission(DeliveryMissionState nextState)
+    {
+        currentState = nextState;
+        OnMissionChanged?.Invoke(currentState);
+
+        // Jika masuk ke Misi 4, aktifkan paket fisik di parkiran
+        if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+        {
+            DroppedPackageItem pkg = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
+            if (pkg != null)
+            {
+                pkg.gameObject.SetActive(true);
+            }
+        }
+    }
+
+    private void HandleTimeExpired()
+    {
+        if (finalEnding != GameEnding.None) return;
+
+        isTimerRunning = false;
+
+        // Tutup dialog aktif jika ada
+        NPCDialogueOverlay.EndSequentialDialogue();
+
+        // Evaluasi Ending
+        if (packagesDelivered >= 3)
+        {
+            TriggerEnding(GameEnding.Ending2_PengirimanTerlambat);
+        }
+        else
+        {
+            TriggerEnding(GameEnding.Ending3_GagalBertugas);
+        }
+    }
+
+    public void TriggerEnding(GameEnding ending)
+    {
+        isTimerRunning = false;
+        finalEnding = ending;
+        currentState = (ending == GameEnding.Ending1_KurirTerpercaya)
+            ? DeliveryMissionState.Completed
+            : DeliveryMissionState.Failed;
+
+        // Freeze kontrol pergerakan pemain
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null) player.SetMovementFrozen(true);
+
+        OnGameEnded?.Invoke(ending);
+    }
+}
