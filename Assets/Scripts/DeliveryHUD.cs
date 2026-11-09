@@ -703,8 +703,8 @@ public class DeliveryHUD : MonoBehaviour
                 missionClueText.text = "Label basah: 'Di...s' - Pegawai pos pemadam kebakaran (Fire Station) di sebelah barat deretan toko.";
                 break;
             case DeliveryMissionState.Package4_DroppedPackage:
-                missionTitleText.text = "Tujuan: Cari Paket Jatuh di Area Parkir!";
-                missionClueText.text = "Gawat! Satu paket terjatuh di area parkir saat menghindari mobil. Tanya Petugas Parkir untuk petunjuk!";
+                missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
+                missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Dekati kotak kardus cokelat di depanmu dan tekan [E] untuk memungutnya!";
                 break;
             case DeliveryMissionState.Package5_Apartment:
                 missionTitleText.text = "Tujuan: Naya di Gedung Apartemen";

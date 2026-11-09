@@ -287,7 +287,7 @@ public class DeliveryGameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Mengambil paket yang terjatuh di area parkir (Misi 4).
+    /// Mengambil paket yang terjatuh (Misi 4).
     /// </summary>
     public void PickUpDroppedPackage()
     {
@@ -295,7 +295,7 @@ public class DeliveryGameManager : MonoBehaviour
 
         string[] pickupMsg = new string[]
         {
-            "Paket berhasil dipungut dari area parkir!",
+            "Paket berhasil dipungut!",
             "Label alamat: Naya - Penghuni Apartemen bertingkat tinggi di ujung jalan.",
             "Cepat antarkan ke Naya sebelum toko-toko menutup pintunya!"
         };
@@ -305,6 +305,8 @@ public class DeliveryGameManager : MonoBehaviour
 
         NPCDialogueOverlay.ShowSequentialDialogue(targetTr, "Rian (Kurir)", pickupMsg, () =>
         {
+            packagesDelivered++;
+            OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
             AdvanceMission(DeliveryMissionState.Package5_Apartment);
         });
     }
@@ -314,13 +316,14 @@ public class DeliveryGameManager : MonoBehaviour
         currentState = nextState;
         OnMissionChanged?.Invoke(currentState);
 
-        // Jika masuk ke Misi 4, aktifkan paket fisik di parkiran
+        // Jika masuk ke Misi 4, pastikan paket fisik di depan karakter aktif dan di posisinya
         if (currentState == DeliveryMissionState.Package4_DroppedPackage)
         {
             DroppedPackageItem pkg = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
             if (pkg != null)
             {
                 pkg.gameObject.SetActive(true);
+                pkg.transform.position = new Vector3(301.4f, 0.15f, 6.8f);
             }
         }
     }

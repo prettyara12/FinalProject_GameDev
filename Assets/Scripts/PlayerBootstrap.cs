@@ -1015,28 +1015,30 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         {
             pkgGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
             pkgGo.name = "DroppedPackage_Mission4";
-            pkgGo.transform.localScale = new Vector3(0.28f, 0.22f, 0.32f);
-
-            Renderer rend = pkgGo.GetComponent<Renderer>();
-            if (rend != null)
-            {
-                Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
-                mat.color = new Color(0.72f, 0.48f, 0.24f, 1f);
-                rend.material = mat;
-            }
         }
 
-        pkgGo.transform.position = new Vector3(294.5f, 0.12f, -8.0f);
+        pkgGo.transform.localScale = new Vector3(0.45f, 0.35f, 0.50f);
+        pkgGo.transform.position = new Vector3(301.4f, 0.15f, 6.8f);
+        pkgGo.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
+
+        Renderer rend = pkgGo.GetComponent<Renderer>();
+        if (rend != null)
+        {
+            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            mat.color = new Color(0.85f, 0.55f, 0.25f, 1f);
+            rend.material = mat;
+        }
+
         BoxCollider bc = pkgGo.GetComponent<BoxCollider>();
         if (bc == null) bc = pkgGo.AddComponent<BoxCollider>();
         bc.isTrigger = true;
-        bc.size = new Vector3(2.0f, 2.0f, 2.0f);
+        bc.size = new Vector3(2.5f, 2.5f, 2.5f);
 
         DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();
-        drop.interactionRadius = 2.0f;
+        drop.interactionRadius = 3.5f;
 
-        pkgGo.SetActive(false);
+        pkgGo.SetActive(true);
     }
 
     /// <summary>

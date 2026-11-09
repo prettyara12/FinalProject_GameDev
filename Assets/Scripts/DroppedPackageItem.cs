@@ -52,18 +52,47 @@ public class DroppedPackageItem : MonoBehaviour
         {
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
-            DeliveryHUD hud = DeliveryHUD.Instance;
-            if (hud != null)
+            DeliveryGameManager gm = DeliveryGameManager.Instance;
+            bool canPickup = (gm == null || gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage);
+
+            if (canPickup)
             {
-                hud.RegisterNearbyInteractable("Ambil Paket yang Terjatuh", () =>
+                DeliveryHUD hud = DeliveryHUD.Instance;
+                if (hud != null)
+                {
+                    hud.RegisterNearbyInteractable("Ambil Paket yang Terjatuh", () =>
+                    {
+                        PickUp();
+                    });
+                }
+
+                if (Input.GetKeyDown(KeyCode.E))
                 {
                     PickUp();
-                });
+                }
             }
-
-            if (Input.GetKeyDown(KeyCode.E))
+            else if (gm != null && (int)gm.CurrentState < (int)DeliveryMissionState.Package4_DroppedPackage)
             {
-                PickUp();
+                DeliveryHUD hud = DeliveryHUD.Instance;
+                if (hud != null)
+                {
+                    hud.RegisterNearbyInteractable("Periksa Paket Terjatuh", () =>
+                    {
+                        NPCDialogueOverlay.ShowSequentialDialogue(transform, "Kotak Paket", new string[]
+                        {
+                            "Ini salah satu kotak paket kiriman yang terjatuh!",
+                            "Selesaikan pengiriman paket sebelumnya terlebih dahulu."
+                        });
+                    });
+                }
+                if (Input.GetKeyDown(KeyCode.E))
+                {
+                    NPCDialogueOverlay.ShowSequentialDialogue(transform, "Kotak Paket", new string[]
+                    {
+                        "Ini salah satu kotak paket kiriman yang terjatuh!",
+                        "Selesaikan pengiriman paket sebelumnya terlebih dahulu."
+                    });
+                }
             }
         }
     }
