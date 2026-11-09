@@ -663,13 +663,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 4. DIMAS (Gambar 4: SimplePeople_StreetMan_Black - Pegawai Fire Station)
+        // 4. DIMAS (Gambar 4: SimplePeople_StreetMan_Brown - Pegawai Fire Station)
         EnsureRecipientNPC(
             "NPC_Dimas",
-            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab",
-            "SimplePeople_StreetMan_Black",
-            new Vector3(304.0f, 0.02f, 4.0f),
-            Quaternion.Euler(0f, 0f, 0f),
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Brown.prefab",
+            "SimplePeople_StreetMan_Brown",
+            new Vector3(301.37f, 0.02f, 5.96f),
+            Quaternion.Euler(0f, 280f, 0f),
             "Dimas (Fire Station)",
             DeliveryRecipient.RecipientType.Dimas,
             DeliveryMissionState.Package3_HardwareStore,
@@ -755,53 +755,63 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         GameObject[] all = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
 
         // a. Prioritas 1: Cocokkan nama spesifik yang diberikan atau dinamai manual oleh pengguna
-        foreach (var go in all)
+        // Pass 0: Khusus root GameObject yang ditaruh langsung di scene (transform.parent == null)
+        // Pass 1: Fallback jika berada di dalam hirarki
+        for (int pass = 0; pass < 2; pass++)
         {
-            if (go == null) continue;
-            if (go.name.StartsWith("CH_") || go.name.Contains("_jnt")) continue;
-            if (go.CompareTag("Player") || go.GetComponent<PlayerController>() != null) continue;
-
-            string n = go.name;
-            bool match = false;
-
-            switch (type)
+            foreach (var go in all)
             {
-                case DeliveryRecipient.RecipientType.Clara:
-                    match = n.Equals("Clara", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Contains("Clara") ||
-                            n.Contains("Waitress");
-                    break;
-                case DeliveryRecipient.RecipientType.PakBeni:
-                    match = n.Equals("Pak Beni", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Equals("PakBeni", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Contains("Beni") ||
-                            n.Contains("Sheriff");
-                    break;
-                case DeliveryRecipient.RecipientType.PakJoko:
-                    match = n.Equals("Pak Joko", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Equals("PakJoko", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Contains("Joko") ||
-                            n.Contains("Prostitute_Brown");
-                    break;
-                case DeliveryRecipient.RecipientType.Dimas:
-                    match = n.Equals("Dimas", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Contains("Dimas") ||
-                            n.Contains("StreetMan_Black");
-                    break;
-                case DeliveryRecipient.RecipientType.PetugasParkir:
-                    match = n.Equals("Petugas Parkir", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Equals("PetugasParkir", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Contains("Parkir") ||
-                            n.Contains("RoadWorker");
-                    break;
-                case DeliveryRecipient.RecipientType.Naya:
-                    match = n.Equals("Naya", System.StringComparison.OrdinalIgnoreCase) ||
-                            n.Contains("Naya") ||
-                            n.Contains("BeachBabe");
-                    break;
-            }
+                if (go == null) continue;
+                if (go.name.StartsWith("CH_") || go.name.Contains("_jnt")) continue;
+                if (go.CompareTag("Player") || go.GetComponent<PlayerController>() != null) continue;
+                if (go.transform.parent != null && (go.transform.parent.name.StartsWith("SimplePeople") || go.transform.parent.name.StartsWith("SimpleCitizens"))) continue;
 
-            if (match) return go;
+                if (pass == 0 && go.transform.parent != null) continue;
+
+                string n = go.name;
+                bool match = false;
+
+                switch (type)
+                {
+                    case DeliveryRecipient.RecipientType.Clara:
+                        match = n.Equals("Clara", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Clara") ||
+                                n.Contains("Waitress");
+                        break;
+                    case DeliveryRecipient.RecipientType.PakBeni:
+                        match = n.Equals("Pak Beni", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Equals("PakBeni", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Beni") ||
+                                n.Contains("Sheriff");
+                        break;
+                    case DeliveryRecipient.RecipientType.PakJoko:
+                        match = n.Equals("Pak Joko", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Equals("PakJoko", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Joko") ||
+                                n.Contains("Prostitute");
+                        break;
+                    case DeliveryRecipient.RecipientType.Dimas:
+                        match = n.Equals("Dimas", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Dimas") ||
+                                n.Contains("StreetMan_Brown") ||
+                                n.Contains("StreetMan");
+                        break;
+                    case DeliveryRecipient.RecipientType.PetugasParkir:
+                        match = n.Equals("Petugas Parkir", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Equals("PetugasParkir", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Parkir") ||
+                                n.Contains("RoadWorker") ||
+                                n.Contains("Roadworker");
+                        break;
+                    case DeliveryRecipient.RecipientType.Naya:
+                        match = n.Equals("Naya", System.StringComparison.OrdinalIgnoreCase) ||
+                                n.Contains("Naya") ||
+                                n.Contains("BeachBabe");
+                        break;
+                }
+
+                if (match) return go;
+            }
         }
 
         // b. Prioritas 2: Cari objek karakter di dekat posisi target (radius 5.0m)
@@ -865,7 +875,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             if (pref == null)
             {
                 pref = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Black.prefab");
+                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Brown.prefab");
             }
             if (pref != null)
             {
@@ -893,12 +903,26 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             Vector3 curPos = npcGo.transform.position;
             if (curPos.y < 0.0f || float.IsNaN(curPos.y)) curPos.y = 0.02f;
             npcGo.transform.position = curPos;
+
+            // Bersihkan instansiasi duplikat bernama sama jika ada
+            if (!string.IsNullOrEmpty(objectName) && npcGo.name != objectName)
+            {
+                GameObject staleDup = GameObject.Find(objectName);
+                if (staleDup != null && staleDup != npcGo)
+                {
+                    DestroyGameObjectSafe(staleDup);
+                }
+            }
         }
 
         PlayerController pc = npcGo.GetComponent<PlayerController>();
         if (pc != null) DestroyComponentSafe(pc);
         CharacterController cc = npcGo.GetComponent<CharacterController>();
         if (cc != null) DestroyComponentSafe(cc);
+
+        // Hapus NPCWalker agar penerima misi tidak patroli atau menggerakkan kaki
+        NPCWalker walker = npcGo.GetComponent<NPCWalker>();
+        if (walker != null) DestroyComponentSafe(walker);
 
         EnsureCorrectCharacterMesh(npcGo);
         AutoEnsureCharacterMaterial(npcGo);
@@ -926,6 +950,15 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 #endif
         anim.SetInteger("Animation_int", 0);
         anim.SetFloat("Speed_f", 0f);
+        anim.SetBool("Static_b", false);
+        anim.SetBool("Grounded", true);
+        anim.SetBool("Jump_b", false);
+        anim.SetBool("Crouch_b", false);
+        if (anim.runtimeAnimatorController != null)
+        {
+            anim.Play("Idle", 0, 0f);
+            anim.Update(0f);
+        }
 
         DeliveryRecipient recipient = npcGo.GetComponent<DeliveryRecipient>();
         if (recipient == null) recipient = npcGo.AddComponent<DeliveryRecipient>();
@@ -936,15 +969,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         recipient.successDialogueLines = successLines;
         recipient.wrongDeliveryLines = wrongLines;
         recipient.interactionRadius = 2.5f;
-
-        NPCWalker walker = npcGo.GetComponent<NPCWalker>();
-        if (walker != null)
-        {
-            walker.enablePlayerInteraction = false;
-            walker.navMode = NPCWalker.NavigationMode.Stationary;
-            walker.walkSpeed = 0f;
-            walker.runSpeed = 0f;
-        }
 
         return npcGo;
     }
@@ -2016,7 +2040,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (tex == null && (character.name.Contains("StreetMan") || character.name.Contains("Dimas")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_StreetMan_Black.png"
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_StreetMan_Brown.png"
             );
         }
         if (tex == null && (character.name.Contains("Roadworker") || character.name.Contains("RoadWorker") || character.name.Contains("PetugasParkir")))
@@ -2103,7 +2127,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (targetMat == null && (character.name.Contains("StreetMan") || character.name.Contains("Dimas")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Black.mat"
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Brown.mat"
             );
         }
         if (targetMat == null && (character.name.Contains("Roadworker") || character.name.Contains("RoadWorker") || character.name.Contains("PetugasParkir")))
@@ -2362,8 +2386,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         }
         if (cName.Contains("Dimas") || cName.Contains("StreetMan"))
         {
-            EnsureCharacterMaterial(character, "SimplePeople_StreetMan_Black",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Black.mat");
+            EnsureCharacterMaterial(character, "SimplePeople_StreetMan_Brown",
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Brown.mat");
             return;
         }
         if (cName.Contains("Naya") || cName.Contains("BeachBabe"))

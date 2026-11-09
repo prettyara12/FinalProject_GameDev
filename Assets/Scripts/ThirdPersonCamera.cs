@@ -232,13 +232,6 @@ public class ThirdPersonCamera : MonoBehaviour
             target = pc.transform;
             return;
         }
-
-        GameObject streetMan = GameObject.Find("SimplePeople_StreetMan_Black");
-        if (streetMan != null)
-        {
-            target = streetMan.transform;
-            return;
-        }
     }
 
     /// <summary>

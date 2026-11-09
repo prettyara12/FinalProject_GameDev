@@ -529,7 +529,7 @@ public class NPCWalker : MonoBehaviour
         }
         if (pObj == null)
         {
-            pObj = GameObject.Find("SimplePeople_StreetMan_Black") ?? GameObject.Find("Player");
+            pObj = GameObject.Find("Rian (Kurir)") ?? GameObject.Find("Player");
         }
 
         if (pObj != null)

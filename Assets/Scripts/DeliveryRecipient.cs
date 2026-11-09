@@ -39,6 +39,29 @@ public class DeliveryRecipient : MonoBehaviour
     public string[] wrongDeliveryLines;
 
     private Transform playerTransform;
+    private Animator anim;
+
+    private void Awake()
+    {
+        // Hapus komponen NPCWalker agar karakter penerima tidak bergerak/patroli
+        NPCWalker walker = GetComponent<NPCWalker>();
+        if (walker != null)
+        {
+            Destroy(walker);
+        }
+
+        anim = GetComponent<Animator>();
+        if (anim != null)
+        {
+            anim.applyRootMotion = false;
+            anim.SetFloat("Speed_f", 0f);
+            anim.SetInteger("Animation_int", 0);
+            anim.SetBool("Static_b", false);
+            anim.SetBool("Grounded", true);
+            anim.SetBool("Jump_b", false);
+            anim.SetBool("Crouch_b", false);
+        }
+    }
 
     private void Start()
     {
@@ -56,6 +79,19 @@ public class DeliveryRecipient : MonoBehaviour
 
     private void Update()
     {
+        // Kunci parameter animator agar karakter tetap diam sempurna di tempat tanpa menggerakkan kaki
+        if (anim != null)
+        {
+            if (anim.GetFloat("Speed_f") != 0f)
+            {
+                anim.SetFloat("Speed_f", 0f);
+            }
+            if (anim.GetInteger("Animation_int") != 0)
+            {
+                anim.SetInteger("Animation_int", 0);
+            }
+        }
+
         if (playerTransform == null)
         {
             FindPlayer();
