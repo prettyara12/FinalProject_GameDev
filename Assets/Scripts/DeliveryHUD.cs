@@ -326,26 +326,30 @@ public class DeliveryHUD : MonoBehaviour
         mapHintText.verticalOverflow = VerticalWrapMode.Overflow;
         mapHintText.text = "Tekan [M] untuk melihat Denah Kota";
 
-        // Penalty Flash Text (Overlay Notifikasi)
+        // Penalty Flash Text (Overlay Notifikasi di Kanan Layar)
         GameObject penGo = new GameObject("PenaltyFlashText", typeof(RectTransform));
-        penGo.transform.SetParent(dashboardObj.transform, false);
+        penGo.transform.SetParent(transform, false);
         RectTransform penRT = penGo.GetComponent<RectTransform>();
-        penRT.anchorMin = new Vector2(0.5f, 0.5f);
-        penRT.anchorMax = new Vector2(0.5f, 0.5f);
-        penRT.pivot = new Vector2(0.5f, 0.5f);
-        penRT.anchoredPosition = Vector2.zero;
-        penRT.sizeDelta = new Vector2(320f, 36f);
+        penRT.anchorMin = new Vector2(1f, 1f);
+        penRT.anchorMax = new Vector2(1f, 1f);
+        penRT.pivot = new Vector2(1f, 1f);
+        penRT.anchoredPosition = new Vector2(-60f, -60f);
+        penRT.sizeDelta = new Vector2(400f, 40f);
 
         penaltyFlashText = penGo.AddComponent<Text>();
         penaltyFlashText.font = mainFont;
         penaltyFlashText.fontSize = 18;
         penaltyFlashText.fontStyle = FontStyle.Bold;
-        penaltyFlashText.color = new Color(1f, 0.2f, 0.2f, 1f);
-        penaltyFlashText.alignment = TextAnchor.MiddleCenter;
+        penaltyFlashText.color = new Color(1f, 0.25f, 0.25f, 1f);
+        penaltyFlashText.alignment = TextAnchor.MiddleRight;
         penaltyFlashText.horizontalOverflow = HorizontalWrapMode.Overflow;
         penaltyFlashText.verticalOverflow = VerticalWrapMode.Overflow;
         penaltyFlashText.text = "";
         penaltyFlashText.gameObject.SetActive(false);
+
+        Shadow penShadow = penGo.AddComponent<Shadow>();
+        penShadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        penShadow.effectDistance = new Vector2(1.5f, -1.5f);
     }
 
     private void BuildInteractPrompt()
@@ -555,8 +559,9 @@ public class DeliveryHUD : MonoBehaviour
         RectTransform sRT = storyGo.AddComponent<RectTransform>();
         sRT.anchorMin = new Vector2(0f, 1f);
         sRT.anchorMax = new Vector2(1f, 1f);
-        sRT.anchoredPosition = new Vector2(0f, -140f);
-        sRT.sizeDelta = new Vector2(640f, 140f);
+        sRT.pivot = new Vector2(0.5f, 1f);
+        sRT.anchoredPosition = new Vector2(0f, -80f);
+        sRT.sizeDelta = new Vector2(-80f, 130f);
 
         endingStoryText = storyGo.AddComponent<Text>();
         endingStoryText.font = mainFont;
@@ -566,6 +571,7 @@ public class DeliveryHUD : MonoBehaviour
         endingStoryText.lineSpacing = 1.35f;
         endingStoryText.alignment = TextAnchor.MiddleCenter;
         endingStoryText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        endingStoryText.verticalOverflow = VerticalWrapMode.Overflow;
         endingStoryText.text = "Epilog permainan...";
 
         // Statistik Misi
@@ -574,8 +580,9 @@ public class DeliveryHUD : MonoBehaviour
         RectTransform stRT = statsGo.AddComponent<RectTransform>();
         stRT.anchorMin = new Vector2(0f, 1f);
         stRT.anchorMax = new Vector2(1f, 1f);
-        stRT.anchoredPosition = new Vector2(0f, -260f);
-        stRT.sizeDelta = new Vector2(640f, 70f);
+        stRT.pivot = new Vector2(0.5f, 1f);
+        stRT.anchoredPosition = new Vector2(0f, -225f);
+        stRT.sizeDelta = new Vector2(-80f, 45f);
 
         endingStatsText = statsGo.AddComponent<Text>();
         endingStatsText.font = mainFont;
@@ -1289,7 +1296,7 @@ public class DeliveryHUD : MonoBehaviour
                 {
                     endingStoryText.text =
                         "Semua lima paket berhasil diantarkan dengan benar sebelum waktu habis!\n\n" +
-                        "Rian menyelesaikan tugas malam itu dengan sempurna dan membuktikan dedikasinya. " +
+                        "Rian menyelesaikan tugas malam itu dengan sempurna dan membuktikan dedikasinya.\n" +
                         "Mulai besok, Rian resmi mendapat kepercayaan penuh untuk diangkat menjadi kurir tetap di kawasan kota ini!";
                 }
                 break;

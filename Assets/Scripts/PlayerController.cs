@@ -764,8 +764,8 @@ public class PlayerController : MonoBehaviour
             blockStyle.fontSize = 14;
             blockStyle.fontStyle = FontStyle.Bold;
             blockStyle.normal.textColor = new Color(1f, 0.45f, 0.45f);
-            blockStyle.alignment = TextAnchor.MiddleLeft;
-            GUI.Box(new Rect(12, 92, 390, 32), $"⛔ Menabrak Rintangan: {lastBlockedObstacle}", blockStyle);
+            blockStyle.alignment = TextAnchor.MiddleCenter;
+            GUI.Box(new Rect(Screen.width - 390, 60, 370, 34), $"⛔ Menabrak Rintangan: {lastBlockedObstacle}", blockStyle);
         }
     }
 }
