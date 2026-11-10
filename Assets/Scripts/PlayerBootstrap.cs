@@ -2552,15 +2552,21 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         // 1. Coba periksa apakah berasal dari Prefab Asset asli
         string prefabName = "";
-        GameObject prefabSource = PrefabUtility.GetCorrespondingObjectFromSource(character);
-        if (prefabSource == null)
+        try
         {
-            prefabSource = PrefabUtility.GetOriginalSourceFileRootObject(character) as GameObject;
+            GameObject root = PrefabUtility.GetNearestPrefabInstanceRoot(character);
+            if (root != null)
+            {
+                GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(root);
+                if (source != null) prefabName = source.name;
+            }
+            if (string.IsNullOrEmpty(prefabName))
+            {
+                GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(character);
+                if (source != null) prefabName = source.name;
+            }
         }
-        if (prefabSource != null)
-        {
-            prefabName = prefabSource.name;
-        }
+        catch {}
 
         string chosenMatName = null;
         string chosenTexName = null;
