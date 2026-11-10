@@ -46,7 +46,14 @@ public class DeliveryHUD : MonoBehaviour
     private Text endingStoryText;
     private Text endingStatsText;
     private Button restartButton;
+    private Button mainMenuButton;
     private float endingModalOpenTime = 0f;
+
+    // Main Menu Elemen
+    private GameObject mainMenuObj;
+    private GameObject howToPlayModalObj;
+    private bool isMainMenuOpen = true;
+    public bool IsMainMenuOpen => isMainMenuOpen;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
@@ -100,6 +107,7 @@ public class DeliveryHUD : MonoBehaviour
     private void Start()
     {
         BindGameManager();
+        ShowMainMenu();
     }
 
     private void BindGameManager()
@@ -182,6 +190,8 @@ public class DeliveryHUD : MonoBehaviour
         BuildInteractPrompt();
         BuildMapModal();
         BuildEndingModal();
+        BuildMainMenu();
+        BuildHowToPlayModal();
     }
 
     private void BuildDashboardPanel()
@@ -563,18 +573,18 @@ public class DeliveryHUD : MonoBehaviour
         endingStatsText.alignment = TextAnchor.MiddleCenter;
         endingStatsText.text = "Waktu Tersisa: 00:00 | Paket: 5/5 | Salah Antar: 0";
 
-        // Tombol Main Lagi
+        // Tombol 1: Main Lagi (Kiri)
         GameObject btnGo = new GameObject("RestartButton");
         btnGo.transform.SetParent(card.transform, false);
         RectTransform bRT = btnGo.AddComponent<RectTransform>();
         bRT.anchorMin = new Vector2(0.5f, 0f);
         bRT.anchorMax = new Vector2(0.5f, 0f);
         bRT.pivot = new Vector2(0.5f, 0f);
-        bRT.anchoredPosition = new Vector2(0f, 32f);
-        bRT.sizeDelta = new Vector2(220f, 50f);
+        bRT.anchoredPosition = new Vector2(-120f, 32f);
+        bRT.sizeDelta = new Vector2(200f, 50f);
 
         Image btnImg = btnGo.AddComponent<Image>();
-        btnImg.color = new Color(0.15f, 0.45f, 0.9f, 1f);
+        btnImg.color = new Color(0.12f, 0.38f, 0.85f, 1f);
 
         Outline btnOutline = btnGo.AddComponent<Outline>();
         btnOutline.effectColor = new Color(0.3f, 0.8f, 1f, 0.9f);
@@ -583,7 +593,6 @@ public class DeliveryHUD : MonoBehaviour
         restartButton = btnGo.AddComponent<Button>();
         restartButton.onClick.AddListener(() =>
         {
-            // Cegah klik tidak sengaja yang tersisa dari dialog terakhir
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
             RestartGame();
         });
@@ -604,7 +613,372 @@ public class DeliveryHUD : MonoBehaviour
         btnTxt.alignment = TextAnchor.MiddleCenter;
         btnTxt.text = "Main Lagi";
 
+        // Tombol 2: Menu Utama (Kanan)
+        GameObject menuBtnGo = new GameObject("MainMenuButton");
+        menuBtnGo.transform.SetParent(card.transform, false);
+        RectTransform mbRT = menuBtnGo.AddComponent<RectTransform>();
+        mbRT.anchorMin = new Vector2(0.5f, 0f);
+        mbRT.anchorMax = new Vector2(0.5f, 0f);
+        mbRT.pivot = new Vector2(0.5f, 0f);
+        mbRT.anchoredPosition = new Vector2(120f, 32f);
+        mbRT.sizeDelta = new Vector2(200f, 50f);
+
+        Image menuBtnImg = menuBtnGo.AddComponent<Image>();
+        menuBtnImg.color = new Color(0.12f, 0.18f, 0.30f, 1f);
+
+        Outline menuBtnOutline = menuBtnGo.AddComponent<Outline>();
+        menuBtnOutline.effectColor = new Color(0.4f, 0.6f, 0.8f, 0.9f);
+        menuBtnOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        mainMenuButton = menuBtnGo.AddComponent<Button>();
+        mainMenuButton.onClick.AddListener(() =>
+        {
+            if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
+            if (DeliveryGameManager.Instance != null)
+            {
+                DeliveryGameManager.Instance.GoToMainMenu();
+            }
+            else
+            {
+                ShowMainMenu();
+            }
+        });
+
+        GameObject menuTxtGo = new GameObject("ButtonText");
+        menuTxtGo.transform.SetParent(menuBtnGo.transform, false);
+        RectTransform mtRT = menuTxtGo.AddComponent<RectTransform>();
+        mtRT.anchorMin = Vector2.zero;
+        mtRT.anchorMax = Vector2.one;
+        mtRT.offsetMin = Vector2.zero;
+        mtRT.offsetMax = Vector2.zero;
+
+        Text menuTxt = menuTxtGo.AddComponent<Text>();
+        menuTxt.font = mainFont;
+        menuTxt.fontSize = 17;
+        menuTxt.fontStyle = FontStyle.Bold;
+        menuTxt.color = Color.white;
+        menuTxt.alignment = TextAnchor.MiddleCenter;
+        menuTxt.text = "Menu Utama";
+
         endingModalObj.SetActive(false);
+    }
+
+    private void BuildMainMenu()
+    {
+        mainMenuObj = new GameObject("MainMenuOverlay", typeof(RectTransform));
+        mainMenuObj.transform.SetParent(transform, false);
+
+        RectTransform mmRT = mainMenuObj.GetComponent<RectTransform>();
+        mmRT.anchorMin = Vector2.zero;
+        mmRT.anchorMax = Vector2.one;
+        mmRT.offsetMin = Vector2.zero;
+        mmRT.offsetMax = Vector2.zero;
+
+        Image bg = mainMenuObj.AddComponent<Image>();
+        bg.color = new Color(0.04f, 0.07f, 0.14f, 0.88f); // Latar belakang semi-transparan elegan
+
+        // Kartu Kontainer Menu
+        GameObject card = new GameObject("MenuContainer", typeof(RectTransform));
+        card.transform.SetParent(mainMenuObj.transform, false);
+        RectTransform cRT = card.GetComponent<RectTransform>();
+        cRT.anchorMin = new Vector2(0.5f, 0.5f);
+        cRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cRT.pivot = new Vector2(0.5f, 0.5f);
+        cRT.anchoredPosition = Vector2.zero;
+        cRT.sizeDelta = new Vector2(560f, 490f);
+
+        Image cImg = card.AddComponent<Image>();
+        cImg.color = new Color(0.06f, 0.10f, 0.20f, 0.95f);
+
+        Outline cOutline = card.AddComponent<Outline>();
+        cOutline.effectColor = new Color(0.2f, 0.6f, 1f, 0.8f);
+        cOutline.effectDistance = new Vector2(2f, -2f);
+
+        // Header Strip Cyan
+        GameObject strip = new GameObject("MenuStrip", typeof(RectTransform));
+        strip.transform.SetParent(card.transform, false);
+        RectTransform sRT = strip.GetComponent<RectTransform>();
+        sRT.anchorMin = new Vector2(0f, 1f);
+        sRT.anchorMax = new Vector2(1f, 1f);
+        sRT.pivot = new Vector2(0.5f, 1f);
+        sRT.anchoredPosition = Vector2.zero;
+        sRT.sizeDelta = new Vector2(0f, 4f);
+        Image sImg = strip.AddComponent<Image>();
+        sImg.color = new Color(0.25f, 0.85f, 1f, 1f);
+
+        // Judul Game: KURIR TERAKHIR
+        GameObject titleGo = new GameObject("TitleText", typeof(RectTransform));
+        titleGo.transform.SetParent(card.transform, false);
+        RectTransform tRT = titleGo.GetComponent<RectTransform>();
+        tRT.anchorMin = new Vector2(0f, 1f);
+        tRT.anchorMax = new Vector2(1f, 1f);
+        tRT.pivot = new Vector2(0.5f, 1f);
+        tRT.anchoredPosition = new Vector2(0f, -36f);
+        tRT.sizeDelta = new Vector2(0f, 52f);
+
+        Text titleTxt = titleGo.AddComponent<Text>();
+        titleTxt.font = mainFont;
+        titleTxt.fontSize = 38;
+        titleTxt.fontStyle = FontStyle.Bold;
+        titleTxt.alignment = TextAnchor.MiddleCenter;
+        titleTxt.color = new Color(1f, 0.82f, 0.2f, 1f); // Gold Amber
+        titleTxt.text = "KURIR TERAKHIR";
+
+        Outline tOutline = titleGo.AddComponent<Outline>();
+        tOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+        tOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        // Subtitle
+        GameObject subGo = new GameObject("SubtitleText", typeof(RectTransform));
+        subGo.transform.SetParent(card.transform, false);
+        RectTransform subRT = subGo.GetComponent<RectTransform>();
+        subRT.anchorMin = new Vector2(0f, 1f);
+        subRT.anchorMax = new Vector2(1f, 1f);
+        subRT.pivot = new Vector2(0.5f, 1f);
+        subRT.anchoredPosition = new Vector2(0f, -92f);
+        subRT.sizeDelta = new Vector2(0f, 26f);
+
+        Text subTxt = subGo.AddComponent<Text>();
+        subTxt.font = mainFont;
+        subTxt.fontSize = 16;
+        subTxt.fontStyle = FontStyle.Bold;
+        subTxt.alignment = TextAnchor.MiddleCenter;
+        subTxt.color = new Color(0.4f, 0.85f, 1f, 1f); // Sky Blue
+        subTxt.text = "Misi Pengantaran Paket Kota";
+
+        // Tagline
+        GameObject tagGo = new GameObject("TaglineText", typeof(RectTransform));
+        tagGo.transform.SetParent(card.transform, false);
+        RectTransform tagRT = tagGo.GetComponent<RectTransform>();
+        tagRT.anchorMin = new Vector2(0f, 1f);
+        tagRT.anchorMax = new Vector2(1f, 1f);
+        tagRT.pivot = new Vector2(0.5f, 1f);
+        tagRT.anchoredPosition = new Vector2(0f, -120f);
+        tagRT.sizeDelta = new Vector2(0f, 22f);
+
+        Text tagTxt = tagGo.AddComponent<Text>();
+        tagTxt.font = mainFont;
+        tagTxt.fontSize = 13;
+        tagTxt.alignment = TextAnchor.MiddleCenter;
+        tagTxt.color = new Color(0.7f, 0.8f, 0.9f, 0.9f);
+        tagTxt.text = "Tepat Waktu  •  Kenali Alamat  •  Hindari Lalu Lintas";
+
+        // Tombol 1: Mulai Permainan
+        CreateMenuButton(card.transform, "Btn_Play", "Mulai Permainan", new Vector2(0f, -175f), new Vector2(280f, 52f),
+            new Color(0.12f, 0.38f, 0.85f, 1f), new Color(0.3f, 0.8f, 1f, 1f), 18, () =>
+            {
+                if (DeliveryGameManager.Instance != null)
+                {
+                    DeliveryGameManager.Instance.StartGame();
+                }
+                else
+                {
+                    HideMainMenu();
+                }
+            });
+
+        // Tombol 2: Cara Bermain
+        CreateMenuButton(card.transform, "Btn_HowToPlay", "Cara Bermain", new Vector2(0f, -238f), new Vector2(280f, 48f),
+            new Color(0.12f, 0.18f, 0.30f, 1f), new Color(0.3f, 0.5f, 0.7f, 0.8f), 16, () =>
+            {
+                ShowHowToPlay(true);
+            });
+
+        // Tombol 3: Keluar
+        CreateMenuButton(card.transform, "Btn_Quit", "Keluar", new Vector2(0f, -298f), new Vector2(280f, 48f),
+            new Color(0.20f, 0.08f, 0.10f, 1f), new Color(0.85f, 0.25f, 0.25f, 0.8f), 16, () =>
+            {
+                QuitGame();
+            });
+
+        // Footer Credit
+        GameObject footerGo = new GameObject("FooterText", typeof(RectTransform));
+        footerGo.transform.SetParent(card.transform, false);
+        RectTransform fRT = footerGo.GetComponent<RectTransform>();
+        fRT.anchorMin = new Vector2(0f, 0f);
+        fRT.anchorMax = new Vector2(1f, 0f);
+        fRT.pivot = new Vector2(0.5f, 0f);
+        fRT.anchoredPosition = new Vector2(0f, 16f);
+        fRT.sizeDelta = new Vector2(0f, 20f);
+
+        Text fTxt = footerGo.AddComponent<Text>();
+        fTxt.font = mainFont;
+        fTxt.fontSize = 12;
+        fTxt.alignment = TextAnchor.MiddleCenter;
+        fTxt.color = new Color(0.45f, 0.55f, 0.65f, 0.9f);
+        fTxt.text = "Final Project - Introduction to Game Development";
+    }
+
+    private Button CreateMenuButton(Transform parent, string goName, string text, Vector2 anchoredPos, Vector2 size,
+        Color bgColor, Color outlineColor, int fontSize, System.Action onClick)
+    {
+        GameObject btnGo = new GameObject(goName, typeof(RectTransform));
+        btnGo.transform.SetParent(parent, false);
+
+        RectTransform rt = btnGo.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = anchoredPos;
+        rt.sizeDelta = size;
+
+        Image img = btnGo.AddComponent<Image>();
+        img.color = bgColor;
+
+        Outline outline = btnGo.AddComponent<Outline>();
+        outline.effectColor = outlineColor;
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        Button btn = btnGo.AddComponent<Button>();
+        btn.onClick.AddListener(() => onClick?.Invoke());
+
+        GameObject txtGo = new GameObject("Text", typeof(RectTransform));
+        txtGo.transform.SetParent(btnGo.transform, false);
+        RectTransform txtRT = txtGo.GetComponent<RectTransform>();
+        txtRT.anchorMin = Vector2.zero;
+        txtRT.anchorMax = Vector2.one;
+        txtRT.offsetMin = Vector2.zero;
+        txtRT.offsetMax = Vector2.zero;
+
+        Text t = txtGo.AddComponent<Text>();
+        t.font = mainFont;
+        t.fontSize = fontSize;
+        t.fontStyle = FontStyle.Bold;
+        t.color = Color.white;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.text = text;
+
+        return btn;
+    }
+
+    private void BuildHowToPlayModal()
+    {
+        howToPlayModalObj = new GameObject("HowToPlayModal", typeof(RectTransform));
+        howToPlayModalObj.transform.SetParent(transform, false);
+
+        RectTransform rt = howToPlayModalObj.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        Image bg = howToPlayModalObj.AddComponent<Image>();
+        bg.color = new Color(0f, 0f, 0f, 0.75f);
+
+        GameObject card = new GameObject("Card", typeof(RectTransform));
+        card.transform.SetParent(howToPlayModalObj.transform, false);
+        RectTransform cRT = card.GetComponent<RectTransform>();
+        cRT.anchorMin = new Vector2(0.5f, 0.5f);
+        cRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cRT.pivot = new Vector2(0.5f, 0.5f);
+        cRT.sizeDelta = new Vector2(660f, 460f);
+
+        Image cImg = card.AddComponent<Image>();
+        cImg.color = new Color(0.06f, 0.10f, 0.20f, 0.98f);
+
+        Outline cOutline = card.AddComponent<Outline>();
+        cOutline.effectColor = new Color(0.2f, 0.6f, 1f, 0.85f);
+        cOutline.effectDistance = new Vector2(2f, -2f);
+
+        // Judul
+        GameObject titleGo = new GameObject("Title");
+        titleGo.transform.SetParent(card.transform, false);
+        RectTransform tRT = titleGo.AddComponent<RectTransform>();
+        tRT.anchorMin = new Vector2(0f, 1f);
+        tRT.anchorMax = new Vector2(1f, 1f);
+        tRT.anchoredPosition = new Vector2(0f, -28f);
+        tRT.sizeDelta = new Vector2(0f, 36f);
+
+        Text titleTxt = titleGo.AddComponent<Text>();
+        titleTxt.font = mainFont;
+        titleTxt.fontSize = 22;
+        titleTxt.fontStyle = FontStyle.Bold;
+        titleTxt.alignment = TextAnchor.MiddleCenter;
+        titleTxt.color = new Color(1f, 0.85f, 0.2f, 1f);
+        titleTxt.text = "PANDUAN CARA BERMAIN";
+
+        // Teks Kontrol & Aturan
+        GameObject bodyGo = new GameObject("BodyText");
+        bodyGo.transform.SetParent(card.transform, false);
+        RectTransform bRT = bodyGo.AddComponent<RectTransform>();
+        bRT.anchorMin = new Vector2(0f, 1f);
+        bRT.anchorMax = new Vector2(1f, 1f);
+        bRT.anchoredPosition = new Vector2(0f, -70f);
+        bRT.sizeDelta = new Vector2(600f, 290f);
+
+        Text bodyTxt = bodyGo.AddComponent<Text>();
+        bodyTxt.font = mainFont;
+        bodyTxt.fontSize = 14;
+        bodyTxt.lineSpacing = 1.35f;
+        bodyTxt.color = Color.white;
+        bodyTxt.alignment = TextAnchor.UpperLeft;
+        bodyTxt.text =
+            "KONTROL KARAKTER:\n" +
+            "  • [W] [A] [S] [D]  : Bergerak & Berjalan melintasi jalan dan trotoar kota\n" +
+            "  • [Left Shift]     : Berlari lebih cepat (Sprint)\n" +
+            "  • [Mouse]          : Mengarahkan kamera pandangan Rian\n" +
+            "  • [E]              : Berbicara dengan warga, bertanya arah, dan mengambil paket\n" +
+            "  • [M]              : Membuka denah peta kota & lokasi pertokoan\n\n" +
+            "ATURAN PERMAINAN & MISI:\n" +
+            "  1. Ambil 5 paket dari Pak Beni di depan Mall untuk memulai pengantaran.\n" +
+            "  2. Antarkan seluruh 5 paket ke toko yang sesuai sebelum batas waktu 10 menit habis.\n" +
+            "  3. Hati-hati menyeberang jalan raya! Terserempet mobil mengurangi sisa waktu (-5 dtk).\n" +
+            "  4. Salah memberikan paket ke orang yang salah akan terkena penalti waktu (-20 dtk).\n" +
+            "  5. Jika ada paket terjatuh di jalan, tanyakan lokasinya ke Petugas Parkir!";
+
+        // Tombol Tutup
+        CreateMenuButton(card.transform, "Btn_Close", "Tutup", new Vector2(0f, -395f), new Vector2(180f, 44f),
+            new Color(0.12f, 0.38f, 0.85f, 1f), new Color(0.3f, 0.8f, 1f, 1f), 15, () =>
+            {
+                ShowHowToPlay(false);
+            });
+
+        howToPlayModalObj.SetActive(false);
+    }
+
+    public void ShowHowToPlay(bool show)
+    {
+        if (howToPlayModalObj != null)
+        {
+            howToPlayModalObj.SetActive(show);
+        }
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    public void ShowMainMenu()
+    {
+        isMainMenuOpen = true;
+        if (mainMenuObj != null) mainMenuObj.SetActive(true);
+        if (dashboardObj != null) dashboardObj.SetActive(false);
+        if (interactPromptObj != null) interactPromptObj.SetActive(false);
+        if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
+        if (mapModalObj != null) mapModalObj.SetActive(false);
+        if (endingModalObj != null) endingModalObj.SetActive(false);
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+        if (pc != null) pc.SetMovementFrozen(true);
+    }
+
+    public void HideMainMenu()
+    {
+        isMainMenuOpen = false;
+        if (mainMenuObj != null) mainMenuObj.SetActive(false);
+        if (dashboardObj != null) dashboardObj.SetActive(true);
+        if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
+
+        PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+        if (pc != null) pc.SetMovementFrozen(false);
     }
 
     public void HideEndingModal()
@@ -626,6 +1000,15 @@ public class DeliveryHUD : MonoBehaviour
 
     private void Update()
     {
+        // Jika Main Menu sedang aktif, kunci HUD gameplay & kursor bebas bergerak
+        if (isMainMenuOpen)
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            if (interactPromptObj != null) interactPromptObj.SetActive(false);
+            return;
+        }
+
         // Toggle Peta [M]
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -649,6 +1032,14 @@ public class DeliveryHUD : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (isMainMenuOpen)
+        {
+            if (interactPromptObj != null) interactPromptObj.SetActive(false);
+            hasInteractableThisFrame = false;
+            currentInteractablePriority = 0;
+            return;
+        }
+
         // Tampilkan/sembunyikan prompt [E]
         if (interactPromptObj != null)
         {

@@ -27502,7 +27502,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000, guid: 0d98918798ca2404b9b060a460199585, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_Prostitute_White
+      value: Icha
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 0d98918798ca2404b9b060a460199585, type: 3}
       propertyPath: m_LocalScale.x
@@ -49973,7 +49973,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 873f9a2829d8f3f4497bd4c1ed136707, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 300.478
+      value: 300.28
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 873f9a2829d8f3f4497bd4c1ed136707, type: 3}
       propertyPath: m_LocalPosition.y
@@ -49981,7 +49981,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 873f9a2829d8f3f4497bd4c1ed136707, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.246
+      value: 2.3
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 873f9a2829d8f3f4497bd4c1ed136707, type: 3}
       propertyPath: m_LocalRotation.w
@@ -50945,7 +50945,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100066, guid: a55a5eaeb8f927a449967b5a27fd8e03, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_Prostitute_Brown
+      value: Pak Joko
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: a55a5eaeb8f927a449967b5a27fd8e03, type: 3}
       propertyPath: m_LocalScale.x
@@ -64087,7 +64087,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100066, guid: ddd740d46a8a6eb4399573a9f3d4b2f4, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_Pimp_Brown
+      value: Derryl
       objectReference: {fileID: 0}
     - target: {fileID: 198242, guid: ddd740d46a8a6eb4399573a9f3d4b2f4, type: 3}
       propertyPath: m_IsActive
@@ -69347,7 +69347,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100066, guid: 83fbe18e5570dd643bd5ec438484c2a2, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_Trucker_Black
+      value: Rian
       objectReference: {fileID: 0}
     - target: {fileID: 100066, guid: 83fbe18e5570dd643bd5ec438484c2a2, type: 3}
       propertyPath: m_TagString
@@ -81775,7 +81775,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100066, guid: 04bbc969ba1271d4295504ca3f510d22, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_Sheriff_Black
+      value: Pak Beni
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 04bbc969ba1271d4295504ca3f510d22, type: 3}
       propertyPath: m_LocalScale.x
@@ -115892,7 +115892,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000, guid: d714ac2c5f4f93d49b94880740d4e6a2, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_BeachBabe_Black
+      value: Naya
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: d714ac2c5f4f93d49b94880740d4e6a2, type: 3}
       propertyPath: m_LocalScale.x
@@ -122155,7 +122155,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000, guid: 0703a1849c2c89b4db4568688faf0c5f, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_RoadWorker_White
+      value: Petugas Parkir
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 0703a1849c2c89b4db4568688faf0c5f, type: 3}
       propertyPath: m_LocalScale.x
@@ -122179,7 +122179,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 0703a1849c2c89b4db4568688faf0c5f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 10.11
+      value: 4.04
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 0703a1849c2c89b4db4568688faf0c5f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -125437,7 +125437,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100066, guid: fe520ce6663e67348a964bf7b4318e26, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_Waitress_White
+      value: Clara
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: fe520ce6663e67348a964bf7b4318e26, type: 3}
       propertyPath: m_LocalScale.x
@@ -125506,7 +125506,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_Name
-      value: SimplePeople_StreetMan_Brown
+      value: Dimas
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalScale.x
@@ -125522,7 +125522,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 301.37244
+      value: 302.2
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalPosition.y
@@ -125530,11 +125530,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.958355
+      value: 7.32
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.7660444
+      value: -0.5735764
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalRotation.x
@@ -125542,7 +125542,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.6427877
+      value: 0.8191521
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalRotation.z
@@ -125554,7 +125554,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 280
+      value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 400066, guid: 973da52f37faff44fbaa2270c9c5ea90, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z

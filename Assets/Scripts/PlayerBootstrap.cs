@@ -440,12 +440,23 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 4. Setup KAMERA (Pemandangan Kota Luas & Third-Person Follow)
         SetupCamera(playerGo);
 
-        // 5. Pastikan seluruh karakter di scene memiliki material & tekstur URP yang valid (tidak pink/magenta)
+        // 5. Pastikan seluruh karakter di scene memiliki material & tekstur URP yang valid (tidak pink/putih/magenta)
         GameObject[] allChars = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
         foreach (var go in allChars)
         {
-            if (go.GetComponent<Animator>() != null && !go.name.Contains("Camera") && !go.name.Contains("Light"))
+            if (go == null) continue;
+            bool isChar = go.GetComponent<Animator>() != null ||
+                          go.name.StartsWith("SimplePeople") ||
+                          go.name.StartsWith("SimpleCitizens") ||
+                          go.name.StartsWith("NPC_") ||
+                          go.name == "Derryl" ||
+                          go.name == "Icha" ||
+                          go.GetComponent<DeliveryRecipient>() != null ||
+                          go.GetComponent<NPCWalker>() != null;
+
+            if (isChar && !go.name.Contains("Camera") && !go.name.Contains("Light"))
             {
+                EnsureCorrectCharacterMesh(go);
                 AutoEnsureCharacterMaterial(go);
             }
         }
@@ -489,7 +500,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             PlayerController pc = playerGo.GetComponent<PlayerController>();
             if (pc != null)
             {
-                pc.SetMovementFrozen(false);
+                // Kunci gerakan pemain saat awal permainan karena Main Menu aktif
+                pc.SetMovementFrozen(true);
             }
 
             // Arahkan kamera langsung ke belakang Rian di depan mall
@@ -1973,7 +1985,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     public static void EnsureCorrectCharacterMesh(GameObject character)
     {
         if (character == null) return;
-        string cName = character.name;
+        string cName = character.name.Replace("(Clone)", "").Trim();
 
         Transform[] allTransforms = character.GetComponentsInChildren<Transform>(true);
 
@@ -2003,17 +2015,20 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                     else
                     {
                         bool match = false;
-                        if (cName.Contains("ShopKeeper") && t.name == "SC_ShopKeeper") match = true;
-                        else if (cName.Contains("Runner") && t.name == "SC_Runner") match = true;
-                        else if (cName.Contains("Mountie") && t.name == "SC_Mountie") match = true;
-                        else if (cName.Contains("Cheerleader") && t.name == "SC_Cheerleader") match = true;
-                        else if (cName.Contains("Grandma") && t.name == "SC_Grandma") match = true;
-                        else if (cName.Contains("Luchador") && t.name == "SC_Luchador") match = true;
-                        else if (cName.Contains("Footballer") && t.name == "SC_Footballer") match = true;
-                        else if (cName.Contains("Hippie") && t.name == "SC_Hippie") match = true;
-                        else if (cName.Contains("Biker") && t.name == "SC_Biker") match = true;
-                        else if (cName.Contains("Emo") && t.name == "SC_Emo") match = true;
-                        else if (cName.Contains("Clown") && t.name == "SC_Clown") match = true;
+                        if ((cName.Contains("ShopKeeper")) && t.name == "SC_ShopKeeper") match = true;
+                        else if ((cName.Contains("Runner") || cName.Contains("Walker_07") || cName.Contains("Walker_7")) && t.name == "SC_Runner") match = true;
+                        else if ((cName.Contains("Mountie")) && t.name == "SC_Mountie") match = true;
+                        else if ((cName.Contains("Cheerleader")) && t.name == "SC_Cheerleader") match = true;
+                        else if ((cName.Contains("Grandma")) && t.name == "SC_Grandma") match = true;
+                        else if ((cName.Contains("Grandpa")) && t.name == "SC_Grandpa") match = true;
+                        else if ((cName.Contains("Luchador")) && t.name == "SC_Luchador") match = true;
+                        else if ((cName.Contains("Footballer")) && t.name == "SC_Footballer") match = true;
+                        else if ((cName.Contains("Hippie")) && t.name == "SC_Hippie") match = true;
+                        else if ((cName.Contains("Biker")) && t.name == "SC_Biker") match = true;
+                        else if ((cName.Contains("Emo") || cName.Contains("Walker_04") || cName.Contains("Walker_4")) && t.name == "SC_Emo") match = true;
+                        else if ((cName.Contains("Clown")) && t.name == "SC_Clown") match = true;
+                        else if ((cName.Contains("Nerd")) && t.name == "SC_Nerd") match = true;
+                        else if ((cName.Contains("Prisoner")) && t.name == "SC_Prisoner") match = true;
                         t.gameObject.SetActive(match);
                     }
                 }
@@ -2023,20 +2038,20 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         // 2. Seri SimplePeople (submesh berawalan "CH_")
         string targetMesh = null;
-        if (cName.Contains("Sheriff") || cName.Contains("PakBeni")) targetMesh = "CH_Sheriff";
-        else if (cName.Contains("Prostitute") || cName.Contains("PakJoko")) targetMesh = "CH_Prostitute";
+        if (cName.Contains("Sheriff") || cName.Contains("PakBeni") || cName.Contains("Pak Beni")) targetMesh = "CH_Sheriff";
+        else if (cName.Contains("Prostitute") || cName.Contains("PakJoko") || cName.Contains("Pak Joko") || cName == "Icha") targetMesh = "CH_Prostitute";
         else if (cName.Contains("BeachBabe") || cName.Contains("Naya")) targetMesh = "CH_Woman";
-        else if (cName.Contains("Waitress") || cName.Contains("Clara") || cName.Contains("Woman") || cName.Contains("HouseWife") || cName.Contains("Wanita")) targetMesh = "CH_Woman";
+        else if (cName.Contains("Waitress") || cName.Contains("Clara") || cName.Contains("Sarah") || cName.Contains("Woman") || cName.Contains("HouseWife") || cName.Contains("Wanita")) targetMesh = "CH_Woman";
         else if (cName.Contains("StreetMan") || cName.Contains("Dimas")) targetMesh = "CH_StreetMan";
         else if (cName.Contains("Police") || cName.Contains("Cop")) targetMesh = "CH_Policeman";
-        else if (cName.Contains("Pimp")) targetMesh = "CH_Pimp";
+        else if (cName.Contains("Pimp") || cName == "Derryl") targetMesh = "CH_Pimp";
         else if (cName.Contains("Trucker") || cName.Contains("Rian") || character.CompareTag("Player")) targetMesh = "CH_Trucker";
         else if (cName.Contains("FireFighter")) targetMesh = "CH_FireFighter";
         else if (cName.Contains("BusinessMan")) targetMesh = "CH_BusinessMan";
         else if (cName.Contains("Punk")) targetMesh = "CH_Punk";
         else if (cName.Contains("Robber")) targetMesh = "CH_Robber";
         else if (cName.Contains("Hobo")) targetMesh = "CH_Hobo";
-        else if (cName.Contains("Roadworker") || cName.Contains("RoadWorker") || cName.Contains("PetugasParkir")) targetMesh = "CH_Roadworker";
+        else if (cName.Contains("Roadworker") || cName.Contains("RoadWorker") || cName.Contains("PetugasParkir") || cName.Contains("Petugas Parkir")) targetMesh = "CH_Roadworker";
         else if (cName.Contains("RiotCop")) targetMesh = "CH_RiotCop";
 
         if (!string.IsNullOrEmpty(targetMesh))
@@ -2088,18 +2103,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/{textureName}.png"
             );
-            if (tex == null && (textureName.Contains("Tourist") || character.name.Contains("Tourist") || character.name.Contains("Rian")))
-            {
-                tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures/SimpleCitizens_Tourist_Brown.png"
-                );
-            }
-            if (tex == null && (textureName.Contains("Trucker") || character.name.Contains("Trucker")))
-            {
-                tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Redneck_Black.png"
-                );
-            }
             if (tex == null)
             {
                 tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
@@ -2108,140 +2111,188 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        if (tex == null && (character.name.Contains("Trucker") || character.name.Contains("Rian") || character.CompareTag("Player")))
+        string cName = character.name.Replace("(Clone)", "").Trim();
+
+        if (tex == null && (cName == "Derryl" || cName.Contains("Pimp")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Pimp_Brown.png"
+            );
+        }
+        if (tex == null && (cName == "Icha"))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Prostitute_White.png"
+            );
+        }
+        if (tex == null && (cName.Contains("Walker_04") || cName.Contains("Walker_4") || cName.Contains("Emo")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures/SimpleCitizens_Emo_White.png"
+            );
+        }
+        if (tex == null && (cName.Contains("Walker_07") || cName.Contains("Walker_7") || cName.Contains("Runner")))
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures/SimpleCitizens_Runner_White.png"
+            );
+        }
+        if (tex == null && (cName.Contains("Trucker") || cName.Contains("Rian") || character.CompareTag("Player")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Redneck_Black.png"
             );
         }
-
-        if (tex == null && (character.name.Contains("Sheriff") || character.name.Contains("PakBeni")))
+        if (tex == null && (cName.Contains("Sheriff") || cName.Contains("PakBeni") || cName.Contains("Pak Beni")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Sheriff_Black.png"
             );
         }
-        if (tex == null && (character.name.Contains("Prostitute") || character.name.Contains("PakJoko")))
+        if (tex == null && (cName.Contains("Prostitute") || cName.Contains("PakJoko") || cName.Contains("Pak Joko")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Prostitute_Brown.png"
             );
         }
-        if (tex == null && (character.name.Contains("BeachBabe") || character.name.Contains("Naya")))
+        if (tex == null && (cName.Contains("BeachBabe") || cName.Contains("Naya")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_BeachBabe_Black.png"
             );
         }
-        if (tex == null && (character.name.Contains("Waitress") || character.name.Contains("Clara")))
+        if (tex == null && (cName.Contains("Waitress") || cName.Contains("Clara") || cName.Contains("Sarah")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Waitress_White.png"
             );
         }
-        if (tex == null && (character.name.Contains("StreetMan") || character.name.Contains("Dimas")))
+        if (tex == null && (cName.Contains("StreetMan") || cName.Contains("Dimas")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_StreetMan_Brown.png"
             );
         }
-        if (tex == null && (character.name.Contains("Roadworker") || character.name.Contains("RoadWorker") || character.name.Contains("PetugasParkir")))
+        if (tex == null && (cName.Contains("Roadworker") || cName.Contains("RoadWorker") || cName.Contains("PetugasParkir") || cName.Contains("Petugas Parkir")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_RoadWorker_White.png"
             );
         }
-        if (tex == null && (character.name.Contains("Police") || character.name.Contains("Cop")))
+        if (tex == null && (cName.Contains("Police") || cName.Contains("Cop")))
         {
             tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Police_White.png"
             );
         }
 
-        if (tex == null && character.name.Contains("Trucker"))
-        {
-            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_Redneck_Black.png"
-            );
-        }
-
+        // Coba periksa apakah renderer saat ini sudah memiliki tekstur valid bawaan prefab
         if (tex == null)
         {
-            string cleanName = character.name.Replace("(Clone)", "").Trim().ToLower();
-            string[] allGuids = AssetDatabase.FindAssets("t:Texture2D", new[] {
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Textures"
-            });
-            foreach (var guid in allGuids)
+            Renderer[] curRends = character.GetComponentsInChildren<Renderer>(true);
+            foreach (var r in curRends)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                string fileName = System.IO.Path.GetFileNameWithoutExtension(path).ToLower();
-                if (cleanName.Contains(fileName) || fileName.Contains(cleanName) ||
-                    (cleanName.Contains("tourist") && fileName.Contains("tourist")) ||
-                    (cleanName.Contains("pimp") && fileName.Contains("pimp")) ||
-                    (cleanName.Contains("waitress") && fileName.Contains("waitress")) ||
-                    (cleanName.Contains("trucker") && fileName.Contains("redneck")) ||
-                    (cleanName.Contains("housewife") && fileName.Contains("housewife")) ||
-                    (cleanName.Contains("streetman") && fileName.Contains("streetman")))
+                if (r.sharedMaterial != null && r.sharedMaterial.mainTexture != null)
                 {
-                    tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                    break;
+                    tex = r.sharedMaterial.mainTexture as Texture2D;
+                    if (tex != null) break;
                 }
             }
         }
 
-        // 3. Muat atau buat Material URP yang valid
+        // Fallback tekstur agar karakter TIDAK PERNAH polos putih
+        if (tex == null)
+        {
+            tex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Textures/SimplePeople_StreetMan_Brown.png"
+            );
+        }
+
+        // 3. Muat Material URP yang valid
         Material targetMat = null;
         if (!string.IsNullOrEmpty(materialAssetPath))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
         }
-        if (targetMat == null && (character.name.Contains("Trucker") || character.name.Contains("Rian") || character.CompareTag("Player")))
+
+        if (targetMat == null && (cName == "Derryl" || cName.Contains("Pimp")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Pimp_Brown.mat"
+            );
+        }
+        if (targetMat == null && (cName == "Icha"))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Prostitute_White.mat"
+            );
+        }
+        if (targetMat == null && (cName.Contains("Walker_04") || cName.Contains("Walker_4") || cName.Contains("Emo")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Emo_White.mat"
+            );
+        }
+        if (targetMat == null && (cName.Contains("Walker_07") || cName.Contains("Walker_7") || cName.Contains("Runner")))
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/SimpleCitizens_Runner_White.mat"
+            );
+        }
+        if (targetMat == null && (cName.Contains("Trucker") || cName.Contains("Rian") || character.CompareTag("Player")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Trucker_Black.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("Sheriff") || character.name.Contains("PakBeni")))
+        if (targetMat == null && (cName.Contains("Sheriff") || cName.Contains("PakBeni") || cName.Contains("Pak Beni")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Sheriff_Black.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("Prostitute") || character.name.Contains("PakJoko")))
+        if (targetMat == null && (cName.Contains("Prostitute") || cName.Contains("PakJoko") || cName.Contains("Pak Joko")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Prostitute_Brown.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("BeachBabe") || character.name.Contains("Naya")))
+        if (targetMat == null && (cName.Contains("BeachBabe") || cName.Contains("Naya")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_BeachBabe_Black.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("Waitress") || character.name.Contains("Clara")))
+        if (targetMat == null && (cName.Contains("Waitress") || cName.Contains("Clara") || cName.Contains("Sarah")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Waitress_White.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("StreetMan") || character.name.Contains("Dimas")))
+        if (targetMat == null && (cName.Contains("StreetMan") || cName.Contains("Dimas")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Brown.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("Roadworker") || character.name.Contains("RoadWorker") || character.name.Contains("PetugasParkir")))
+        if (targetMat == null && (cName.Contains("Roadworker") || cName.Contains("RoadWorker") || cName.Contains("PetugasParkir") || cName.Contains("Petugas Parkir")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_RoadWorker_White.mat"
             );
         }
-        if (targetMat == null && (character.name.Contains("Police") || character.name.Contains("Cop")))
+        if (targetMat == null && (cName.Contains("Police") || cName.Contains("Cop")))
         {
             targetMat = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Police_White.mat"
+            );
+        }
+
+        // Fallback material jika masih null
+        if (targetMat == null)
+        {
+            targetMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Brown.mat"
             );
         }
 
@@ -2250,37 +2301,28 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (urpShader == null) urpShader = Shader.Find("Mobile/Diffuse");
         if (urpShader == null) urpShader = Shader.Find("Sprites/Default");
 
-        bool isUrpShader = targetMat != null && targetMat.shader != null && 
-                           targetMat.shader.name.StartsWith("Universal Render Pipeline");
-
-        if (targetMat == null || !isUrpShader || targetMat.shader.name.Contains("Error"))
+        if (targetMat != null)
         {
-            if (targetMat != null && urpShader != null)
+            if (targetMat.shader == null || !targetMat.shader.name.StartsWith("Universal Render Pipeline"))
             {
-                targetMat.shader = urpShader;
+                if (urpShader != null) targetMat.shader = urpShader;
             }
-            else
+            if (tex != null)
             {
-                targetMat = new Material(urpShader != null ? urpShader : Shader.Find("Universal Render Pipeline/Simple Lit"));
-                targetMat.name = (string.IsNullOrEmpty(textureName) ? character.name : textureName) + "_URP_Mat";
+                if (targetMat.HasProperty("_BaseMap")) targetMat.SetTexture("_BaseMap", tex);
+                if (targetMat.HasProperty("_MainTex")) targetMat.SetTexture("_MainTex", tex);
+                targetMat.mainTexture = tex;
             }
-        }
-
-        // Ikat tekstur ke targetMat
-        if (tex != null && targetMat != null)
-        {
-            if (targetMat.HasProperty("_BaseMap")) targetMat.SetTexture("_BaseMap", tex);
-            if (targetMat.HasProperty("_MainTex")) targetMat.SetTexture("_MainTex", tex);
             if (targetMat.HasProperty("_BaseColor")) targetMat.SetColor("_BaseColor", Color.white);
             if (targetMat.HasProperty("_Color")) targetMat.SetColor("_Color", Color.white);
-            targetMat.mainTexture = tex;
         }
 
         // 4. SELALU tetapkan targetMat ke seluruh Renderer anak karakter ini
-        // (Menggantikan material default Standard yang menyebabkan warna ungu/pink di URP)
         Renderer[] renderers = character.GetComponentsInChildren<Renderer>(true);
         foreach (var r in renderers)
         {
+            if (r == null || (r is ParticleSystemRenderer)) continue;
+
             if (targetMat != null)
             {
                 r.sharedMaterial = targetMat;
@@ -2507,60 +2549,150 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (character == null) return;
 #if UNITY_EDITOR
         string cName = character.name.Replace("(Clone)", "").Trim();
-        if (cName.Contains("Rian") || cName.Contains("Trucker") || character.CompareTag("Player"))
+
+        // 1. Coba periksa apakah berasal dari Prefab Asset asli
+        string prefabName = "";
+        GameObject prefabSource = PrefabUtility.GetCorrespondingObjectFromSource(character);
+        if (prefabSource == null)
         {
-            EnsureCharacterMaterial(character, "SimplePeople_Redneck_Black", 
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Trucker_Black.mat");
-            return;
+            prefabSource = PrefabUtility.GetOriginalSourceFileRootObject(character) as GameObject;
         }
-        if (cName.Contains("PakBeni") || cName.Contains("Sheriff"))
+        if (prefabSource != null)
         {
-            EnsureCharacterMaterial(character, "SimplePeople_Sheriff_Black",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Sheriff_Black.mat");
-            return;
+            prefabName = prefabSource.name;
         }
-        if (cName.Contains("Clara") || cName.Contains("Waitress"))
+
+        string chosenMatName = null;
+        string chosenTexName = null;
+
+        if (!string.IsNullOrEmpty(prefabName))
         {
-            EnsureCharacterMaterial(character, "SimplePeople_Waitress_White",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Waitress_White.mat");
-            return;
+            if (prefabName.StartsWith("SimplePeople_") || prefabName.StartsWith("SimpleCitizens_"))
+            {
+                chosenMatName = prefabName;
+                chosenTexName = prefabName;
+                if (prefabName.Contains("Trucker"))
+                {
+                    chosenTexName = "SimplePeople_Redneck_Black";
+                }
+            }
         }
-        if (cName.Contains("PakJoko") || cName.Contains("Prostitute"))
+
+        // 2. Pemetaan eksplisit untuk nama scene kustom
+        if (string.IsNullOrEmpty(chosenMatName))
         {
-            EnsureCharacterMaterial(character, "SimplePeople_Prostitute_Brown",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Prostitute_Brown.mat");
-            return;
+            if (cName == "Derryl" || cName.Contains("Pimp"))
+            {
+                chosenMatName = "SimplePeople_Pimp_Brown";
+                chosenTexName = "SimplePeople_Pimp_Brown";
+            }
+            else if (cName == "Icha")
+            {
+                chosenMatName = "SimplePeople_Prostitute_White";
+                chosenTexName = "SimplePeople_Prostitute_White";
+            }
+            else if (cName.Contains("PakJoko") || cName.Contains("Pak Joko") || cName.Contains("Prostitute"))
+            {
+                chosenMatName = "SimplePeople_Prostitute_Brown";
+                chosenTexName = "SimplePeople_Prostitute_Brown";
+            }
+            else if (cName.Contains("Rian") || cName.Contains("Trucker") || character.CompareTag("Player"))
+            {
+                chosenMatName = "SimplePeople_Trucker_Black";
+                chosenTexName = "SimplePeople_Redneck_Black";
+            }
+            else if (cName.Contains("PakBeni") || cName.Contains("Pak Beni") || cName.Contains("Sheriff"))
+            {
+                chosenMatName = "SimplePeople_Sheriff_Black";
+                chosenTexName = "SimplePeople_Sheriff_Black";
+            }
+            else if (cName.Contains("Clara") || cName.Contains("Sarah") || cName.Contains("Waitress"))
+            {
+                chosenMatName = "SimplePeople_Waitress_White";
+                chosenTexName = "SimplePeople_Waitress_White";
+            }
+            else if (cName.Contains("Dimas") || cName.Contains("StreetMan"))
+            {
+                chosenMatName = "SimplePeople_StreetMan_Brown";
+                chosenTexName = "SimplePeople_StreetMan_Brown";
+            }
+            else if (cName.Contains("Naya") || cName.Contains("BeachBabe"))
+            {
+                chosenMatName = "SimplePeople_BeachBabe_Black";
+                chosenTexName = "SimplePeople_BeachBabe_Black";
+            }
+            else if (cName.Contains("PetugasParkir") || cName.Contains("Petugas Parkir") || cName.Contains("Roadworker") || cName.Contains("RoadWorker"))
+            {
+                chosenMatName = "SimplePeople_RoadWorker_White";
+                chosenTexName = "SimplePeople_RoadWorker_White";
+            }
+            else if (cName.Contains("Walker_04") || cName.Contains("Walker_4") || cName.Contains("Emo"))
+            {
+                chosenMatName = "SimpleCitizens_Emo_White";
+                chosenTexName = "SimpleCitizens_Emo_White";
+            }
+            else if (cName.Contains("Walker_07") || cName.Contains("Walker_7") || cName.Contains("Runner"))
+            {
+                chosenMatName = "SimpleCitizens_Runner_White";
+                chosenTexName = "SimpleCitizens_Runner_White";
+            }
+            else if (cName.Contains("Police") || cName.Contains("Cop"))
+            {
+                chosenMatName = "SimplePeople_Police_White";
+                chosenTexName = "SimplePeople_Police_White";
+            }
         }
-        if (cName.Contains("Dimas") || cName.Contains("StreetMan"))
+
+        // 3. Deteksi sub-mesh anak aktif jika masih belum terpetakan
+        if (string.IsNullOrEmpty(chosenMatName))
         {
-            EnsureCharacterMaterial(character, "SimplePeople_StreetMan_Brown",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_StreetMan_Brown.mat");
-            return;
+            Transform[] children = character.GetComponentsInChildren<Transform>(true);
+            foreach (var ch in children)
+            {
+                if (ch.name == "CH_Pimp") { chosenMatName = "SimplePeople_Pimp_Brown"; chosenTexName = "SimplePeople_Pimp_Brown"; break; }
+                if (ch.name == "CH_Prostitute") { chosenMatName = "SimplePeople_Prostitute_White"; chosenTexName = "SimplePeople_Prostitute_White"; break; }
+                if (ch.name == "CH_Sheriff") { chosenMatName = "SimplePeople_Sheriff_Black"; chosenTexName = "SimplePeople_Sheriff_Black"; break; }
+                if (ch.name == "CH_StreetMan") { chosenMatName = "SimplePeople_StreetMan_Brown"; chosenTexName = "SimplePeople_StreetMan_Brown"; break; }
+                if (ch.name == "CH_Roadworker") { chosenMatName = "SimplePeople_RoadWorker_White"; chosenTexName = "SimplePeople_RoadWorker_White"; break; }
+                if (ch.name == "CH_Policeman") { chosenMatName = "SimplePeople_Police_White"; chosenTexName = "SimplePeople_Police_White"; break; }
+                if (ch.name == "CH_FireFighter") { chosenMatName = "SimplePeople_FireFighter_White"; chosenTexName = "SimplePeople_FireFighter_White"; break; }
+                if (ch.name == "CH_BusinessMan") { chosenMatName = "SimplePeople_BusinessMan_Black"; chosenTexName = "SimplePeople_BusinessMan_Black"; break; }
+                if (ch.name == "CH_Hobo") { chosenMatName = "SimplePeople_Hobo_White"; chosenTexName = "SimplePeople_Hobo_White"; break; }
+                if (ch.name == "CH_Punk") { chosenMatName = "SimplePeople_Punk_White"; chosenTexName = "SimplePeople_Punk_White"; break; }
+                if (ch.name == "CH_Robber") { chosenMatName = "SimplePeople_Robber_White"; chosenTexName = "SimplePeople_Robber_White"; break; }
+                if (ch.name == "CH_Waitress" || ch.name == "CH_Woman") { chosenMatName = "SimplePeople_Waitress_White"; chosenTexName = "SimplePeople_Waitress_White"; break; }
+                if (ch.name == "CH_Trucker") { chosenMatName = "SimplePeople_Trucker_Black"; chosenTexName = "SimplePeople_Redneck_Black"; break; }
+                if (ch.name == "SC_Runner") { chosenMatName = "SimpleCitizens_Runner_White"; chosenTexName = "SimpleCitizens_Runner_White"; break; }
+                if (ch.name == "SC_Emo") { chosenMatName = "SimpleCitizens_Emo_White"; chosenTexName = "SimpleCitizens_Emo_White"; break; }
+                if (ch.name == "SC_Cheerleader") { chosenMatName = "SimpleCitizens_Cheerleader_White"; chosenTexName = "SimpleCitizens_Cheerleader_White"; break; }
+                if (ch.name == "SC_Biker") { chosenMatName = "SimpleCitizens_Biker_White"; chosenTexName = "SimpleCitizens_Biker_White"; break; }
+                if (ch.name == "SC_Clown") { chosenMatName = "SimpleCitizens_Clown_White"; chosenTexName = "SimpleCitizens_Clown_White"; break; }
+                if (ch.name == "SC_Footballer") { chosenMatName = "SimpleCitizens_Footballer_White"; chosenTexName = "SimpleCitizens_Footballer_White"; break; }
+                if (ch.name == "SC_Grandma") { chosenMatName = "SimpleCitizens_Grandma_White"; chosenTexName = "SimpleCitizens_Grandma_White"; break; }
+                if (ch.name == "SC_Grandpa") { chosenMatName = "SimpleCitizens_Grandpa_White"; chosenTexName = "SimpleCitizens_Grandpa_White"; break; }
+                if (ch.name == "SC_Hippie") { chosenMatName = "SimpleCitizens_Hippie_White"; chosenTexName = "SimpleCitizens_Hippie_White"; break; }
+                if (ch.name == "SC_Luchador") { chosenMatName = "SimpleCitizens_Luchador_White"; chosenTexName = "SimpleCitizens_Luchador_White"; break; }
+                if (ch.name == "SC_Mountie") { chosenMatName = "SimpleCitizens_Mountie_White"; chosenTexName = "SimpleCitizens_Mountie_White"; break; }
+                if (ch.name == "SC_Nerd") { chosenMatName = "SimpleCitizens_Nerd_White"; chosenTexName = "SimpleCitizens_Nerd_White"; break; }
+                if (ch.name == "SC_Prisoner") { chosenMatName = "SimpleCitizens_Prisoner_White"; chosenTexName = "SimpleCitizens_Prisoner_White"; break; }
+                if (ch.name == "SC_Tourist") { chosenMatName = "SimpleCitizens_Tourist_Brown"; chosenTexName = "SimpleCitizens_Tourist_Brown"; break; }
+                if (ch.name == "SC_ShopKeeper") { chosenMatName = "SimpleCitizens_ShopKeeper_White"; chosenTexName = "SimpleCitizens_ShopKeeper_White"; break; }
+            }
         }
-        if (cName.Contains("Naya") || cName.Contains("BeachBabe"))
+
+        if (string.IsNullOrEmpty(chosenMatName))
         {
-            EnsureCharacterMaterial(character, "SimplePeople_BeachBabe_Black",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_BeachBabe_Black.mat");
-            return;
+            chosenMatName = cName;
+            chosenTexName = cName;
         }
-        if (cName.Contains("PetugasParkir") || cName.Contains("Roadworker") || cName.Contains("RoadWorker"))
-        {
-            EnsureCharacterMaterial(character, "SimplePeople_RoadWorker_White",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_RoadWorker_White.mat");
-            return;
-        }
-        if (cName.Contains("Police") || cName.Contains("Cop"))
-        {
-            EnsureCharacterMaterial(character, "SimplePeople_Police_White",
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/SimplePeople_Police_White.mat");
-            return;
-        }
-        string matPath = $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/{cName}.mat";
+
+        string matPath = $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Materials/{chosenMatName}.mat";
         if (AssetDatabase.LoadAssetAtPath<Material>(matPath) == null)
         {
-            matPath = $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/{cName}.mat";
+            matPath = $"Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Materials/{chosenMatName}.mat";
         }
-        EnsureCharacterMaterial(character, cName, matPath);
+
+        EnsureCharacterMaterial(character, chosenTexName, matPath);
 #endif
     }
 

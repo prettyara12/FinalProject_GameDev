@@ -47,6 +47,7 @@ public class DeliveryGameManager : MonoBehaviour
     [SerializeField] private int packagesDelivered = 0;
     [SerializeField] private int totalPackages = 5;
     [SerializeField] private int wrongDeliveryCount = 0;
+    [SerializeField] private bool isGameStarted = false;
     [SerializeField] private bool isTimerRunning = false;
     [SerializeField] private bool isDroppedPackageRevealed = false;
     [SerializeField] private DeliveryMissionState currentState = DeliveryMissionState.Prolog;
@@ -56,6 +57,7 @@ public class DeliveryGameManager : MonoBehaviour
     public int PackagesDelivered => packagesDelivered;
     public int TotalPackages => totalPackages;
     public int WrongDeliveryCount => wrongDeliveryCount;
+    public bool IsGameStarted => isGameStarted;
     public bool IsTimerRunning => isTimerRunning;
     public bool IsDroppedPackageRevealed => isDroppedPackageRevealed;
     public DeliveryMissionState CurrentState => currentState;
@@ -87,15 +89,22 @@ public class DeliveryGameManager : MonoBehaviour
         }
 
         timeRemaining = totalTimeLimit;
+        isGameStarted = false;
+        isTimerRunning = false;
     }
 
     private void Start()
     {
-        StartGame();
+        // Jangan jalankan timer otomatis sebelum pemain menekan 'Mulai Permainan' di Main Menu
+        if (!isGameStarted)
+        {
+            isTimerRunning = false;
+        }
     }
 
     public void StartGame()
     {
+        isGameStarted = true;
         timeRemaining = totalTimeLimit;
         packagesDelivered = 0;
         wrongDeliveryCount = 0;
@@ -103,6 +112,21 @@ public class DeliveryGameManager : MonoBehaviour
         currentState = DeliveryMissionState.Prolog;
         finalEnding = GameEnding.None;
         isTimerRunning = true;
+
+        // Posisikan kembali Rian (Player) ke depan Mall & aktifkan kontrol
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null)
+        {
+            player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+            player.transform.rotation = Quaternion.identity;
+            player.SetMovementFrozen(false);
+        }
+
+        // Sembunyikan Main Menu jika terbuka
+        if (DeliveryHUD.Instance != null)
+        {
+            DeliveryHUD.Instance.HideMainMenu();
+        }
 
         OnTimerTick?.Invoke(timeRemaining);
         OnMissionChanged?.Invoke(currentState);
@@ -356,6 +380,50 @@ public class DeliveryGameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Mengembalikan pemain ke Main Menu dan mereset status permainan.
+    /// </summary>
+    public void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        isGameStarted = false;
+        isTimerRunning = false;
+        finalEnding = GameEnding.None;
+        packagesDelivered = 0;
+        wrongDeliveryCount = 0;
+        timeRemaining = totalTimeLimit;
+        isDroppedPackageRevealed = false;
+        currentState = DeliveryMissionState.Prolog;
+
+        // Tutup dialog aktif & sembunyikan modal ending
+        NPCDialogueOverlay.EndSequentialDialogue();
+
+        // Tampilkan Main Menu di HUD
+        if (DeliveryHUD.Instance != null)
+        {
+            DeliveryHUD.Instance.HideEndingModal();
+            DeliveryHUD.Instance.ShowMainMenu();
+        }
+
+        // Posisikan kembali Rian (Player) ke depan Mall & bekukan kontrol
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null)
+        {
+            player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+            player.transform.rotation = Quaternion.identity;
+            player.SetMovementFrozen(true);
+        }
+
+        // Sembunyikan paket kardus yang terjatuh
+        DroppedPackageItem dropItem = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        if (dropItem != null)
+        {
+            dropItem.gameObject.SetActive(false);
+        }
+
+        Debug.Log("[DeliveryGameManager] Kembali ke Main Menu berhasil!");
+    }
+
+    /// <summary>
     /// Merestart game secara in-place di scene yang sama tanpa berpindah scene,
     /// sehingga permainan terulang terus menerus secara instan dan mulus.
     /// </summary>
@@ -371,12 +439,14 @@ public class DeliveryGameManager : MonoBehaviour
         isDroppedPackageRevealed = false;
         currentState = DeliveryMissionState.Prolog;
         isTimerRunning = true;
+        isGameStarted = true;
 
         // 2. Tutup dialog aktif & sembunyikan modal ending
         NPCDialogueOverlay.EndSequentialDialogue();
         if (DeliveryHUD.Instance != null)
         {
             DeliveryHUD.Instance.HideEndingModal();
+            DeliveryHUD.Instance.HideMainMenu();
         }
 
         // 3. Posisikan kembali Rian (Player) ke titik awal di depan Mall & unfreeze kontrol
