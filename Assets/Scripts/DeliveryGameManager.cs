@@ -48,6 +48,7 @@ public class DeliveryGameManager : MonoBehaviour
     [SerializeField] private int totalPackages = 5;
     [SerializeField] private int wrongDeliveryCount = 0;
     [SerializeField] private bool isTimerRunning = false;
+    [SerializeField] private bool isDroppedPackageRevealed = false;
     [SerializeField] private DeliveryMissionState currentState = DeliveryMissionState.Prolog;
     [SerializeField] private GameEnding finalEnding = GameEnding.None;
 
@@ -56,6 +57,7 @@ public class DeliveryGameManager : MonoBehaviour
     public int TotalPackages => totalPackages;
     public int WrongDeliveryCount => wrongDeliveryCount;
     public bool IsTimerRunning => isTimerRunning;
+    public bool IsDroppedPackageRevealed => isDroppedPackageRevealed;
     public DeliveryMissionState CurrentState => currentState;
     public GameEnding FinalEnding => finalEnding;
 
@@ -97,6 +99,7 @@ public class DeliveryGameManager : MonoBehaviour
         timeRemaining = totalTimeLimit;
         packagesDelivered = 0;
         wrongDeliveryCount = 0;
+        isDroppedPackageRevealed = false;
         currentState = DeliveryMissionState.Prolog;
         finalEnding = GameEnding.None;
         isTimerRunning = true;
@@ -184,10 +187,23 @@ public class DeliveryGameManager : MonoBehaviour
         {
             if (currentState == DeliveryMissionState.Package4_DroppedPackage)
             {
-                string[] droppedClues = recipient.successDialogueLines != null && recipient.successDialogueLines.Length > 0
-                    ? recipient.successDialogueLines
-                    : recipient.introDialogueLines;
-                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", droppedClues);
+                string[] droppedClues = isDroppedPackageRevealed
+                    ? new string[]
+                    {
+                        "Kotak paket kardusmu ada di jalan aspal dekat pembatas beton sebelah pos Fire Station.",
+                        "Cepat ambil dengan tombol [E] sebelum kendaraan lain melindasnya!"
+                    }
+                    : (recipient.successDialogueLines != null && recipient.successDialogueLines.Length > 0
+                        ? recipient.successDialogueLines
+                        : recipient.introDialogueLines);
+
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", droppedClues, () =>
+                {
+                    if (!isDroppedPackageRevealed)
+                    {
+                        RevealDroppedPackage();
+                    }
+                });
             }
             else
             {
@@ -315,17 +331,39 @@ public class DeliveryGameManager : MonoBehaviour
     {
         currentState = nextState;
         OnMissionChanged?.Invoke(currentState);
+    }
 
-        // Jika masuk ke Misi 4, pastikan paket fisik di depan karakter aktif dan di posisinya
-        if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+    /// <summary>
+    /// Mengaktifkan paket kardus di jalan setelah Rian mendapatkan info lokasi dari Petugas Parkir.
+    /// </summary>
+    public void RevealDroppedPackage()
+    {
+        isDroppedPackageRevealed = true;
+
+        DroppedPackageItem pkg = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        if (pkg != null)
         {
-            DroppedPackageItem pkg = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
-            if (pkg != null)
-            {
-                pkg.gameObject.SetActive(true);
-                pkg.transform.position = new Vector3(301.4f, 0.15f, 6.8f);
-            }
+            pkg.gameObject.SetActive(true);
         }
+        else
+        {
+            GameObject go = GameObject.Find("CardboardBox_02");
+            if (go == null) go = GameObject.Find("DroppedPackage_Mission4");
+            if (go != null) go.SetActive(true);
+        }
+
+        OnMissionChanged?.Invoke(currentState);
+    }
+
+    /// <summary>
+    /// Memuat ulang scene permainan untuk restart / main lagi.
+    /// </summary>
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (string.IsNullOrEmpty(activeScene)) activeScene = "Module 2";
+        UnityEngine.SceneManagement.SceneManager.LoadScene(activeScene);
     }
 
     private void HandleTimeExpired()

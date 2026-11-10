@@ -53,8 +53,19 @@ public class DeliveryHUD : MonoBehaviour
         instance = null;
     }
 
+    public static void EnsureEventSystem()
+    {
+        if (Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
+        {
+            GameObject esGo = new GameObject("EventSystem");
+            esGo.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            esGo.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+        }
+    }
+
     public static void EnsureInstance()
     {
+        EnsureEventSystem();
         GameObject go = GameObject.Find("DeliveryHUDSystem");
         if (go == null)
         {
@@ -74,6 +85,7 @@ public class DeliveryHUD : MonoBehaviour
 
     private void Awake()
     {
+        EnsureEventSystem();
         if (instance == null) instance = this;
         else if (instance != this)
         {
@@ -570,7 +582,7 @@ public class DeliveryHUD : MonoBehaviour
         restartButton = btnGo.AddComponent<Button>();
         restartButton.onClick.AddListener(() =>
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            RestartGame();
         });
 
         GameObject btnTxtGo = new GameObject("ButtonText");
@@ -587,13 +599,38 @@ public class DeliveryHUD : MonoBehaviour
         btnTxt.fontStyle = FontStyle.Bold;
         btnTxt.color = Color.white;
         btnTxt.alignment = TextAnchor.MiddleCenter;
-        btnTxt.text = "Main Lagi (Restart)";
+        btnTxt.text = "Main Lagi (Klik / Tekan [R])";
 
         endingModalObj.SetActive(false);
     }
 
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        if (DeliveryGameManager.Instance != null)
+        {
+            DeliveryGameManager.Instance.RestartGame();
+        }
+        else
+        {
+            string activeScene = SceneManager.GetActiveScene().name;
+            if (string.IsNullOrEmpty(activeScene)) activeScene = "Module 2";
+            SceneManager.LoadScene(activeScene);
+        }
+    }
+
     private void Update()
     {
+        // Restart game via keyboard shortcut saat modal ending terbuka
+        if (endingModalObj != null && endingModalObj.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
+            {
+                RestartGame();
+                return;
+            }
+        }
+
         // Toggle Peta [M]
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -709,8 +746,16 @@ public class DeliveryHUD : MonoBehaviour
                 missionClueText.text = "Label basah: 'Di...s' - Pegawai pos pemadam kebakaran (Fire Station) di sebelah barat deretan toko.";
                 break;
             case DeliveryMissionState.Package4_DroppedPackage:
-                missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
-                missionClueText.text = "Gawat! Kotak paket kardusmu terjatuh di jalan aspal dekat pembatas beton. Dekati dan tekan [E] untuk memungutnya!";
+                if (DeliveryGameManager.Instance != null && !DeliveryGameManager.Instance.IsDroppedPackageRevealed)
+                {
+                    missionTitleText.text = "Tujuan: Tanya Petugas Parkir (Area Parkir)";
+                    missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Dimas menyuruhmu bertanya ke Petugas Parkir untuk mengetahui lokasi persis paketmu!";
+                }
+                else
+                {
+                    missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
+                    missionClueText.text = "Kotak paket kardus terlihat di jalan aspal dekat pembatas beton sebelah Fire Station. Dekati dan tekan [E] untuk memungutnya!";
+                }
                 break;
             case DeliveryMissionState.Package5_Apartment:
                 missionTitleText.text = "Tujuan: Naya di Gedung Apartemen";
@@ -744,6 +789,9 @@ public class DeliveryHUD : MonoBehaviour
     public void ShowEndingModal(GameEnding ending)
     {
         if (endingModalObj == null) return;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
         endingModalObj.SetActive(true);
 

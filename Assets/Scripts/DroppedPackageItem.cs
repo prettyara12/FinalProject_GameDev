@@ -13,14 +13,18 @@ public class DroppedPackageItem : MonoBehaviour
 
     private void Awake()
     {
-        // Pastikan scale kotak kardus tepat 0.1 di seluruh sumbu (X, Y, Z)
-        transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
     }
 
     private void Start()
     {
-        transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         FindPlayer();
+
+        // Paket tersembunyi hingga diungkap oleh Petugas Parkir
+        DeliveryGameManager gm = DeliveryGameManager.Instance;
+        if (gm != null && !gm.IsDroppedPackageRevealed)
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private void FindPlayer()
@@ -47,12 +51,6 @@ public class DroppedPackageItem : MonoBehaviour
             if (playerTransform == null) return;
         }
 
-        // Pastikan scale kotak kardus selalu tepat 0.1 di seluruh sumbu sesuai gambar
-        if (transform.localScale != new Vector3(0.1f, 0.1f, 0.1f))
-        {
-            transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        }
-
         // Gunakan jarak horizontal 2D (XZ) agar perbedaan elevasi tanah tidak menghalangi
         float dist = Vector2.Distance(
             new Vector2(transform.position.x, transform.position.z),
@@ -63,7 +61,7 @@ public class DroppedPackageItem : MonoBehaviour
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
             DeliveryGameManager gm = DeliveryGameManager.Instance;
-            bool canPickup = (gm == null || gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage || gm.CurrentState == DeliveryMissionState.Package3_HardwareStore);
+            bool canPickup = (gm == null || (gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage && gm.IsDroppedPackageRevealed));
 
             if (canPickup)
             {

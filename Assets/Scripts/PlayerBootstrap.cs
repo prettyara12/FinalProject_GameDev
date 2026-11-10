@@ -680,8 +680,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             new string[]
             {
                 "Wah pas sekali, perlengkapan darurat dan suku cadang pesanan tim pemadam sudah tiba. Terima kasih kurir!",
-                "Gawat Rian! Tadi kulihat ada satu kotak paket kardusmu yang terjatuh di jalan aspal dekat pembatas beton di depan sana!",
-                "Cepat kembali ke jalan dan ambil paket kardus itu sebelum terlindas kendaraan melintas!"
+                "Gawat Rian! Tadi kulihat ada satu kotak paketmu yang terjatuh di jalan saat kamu terburu-buru!",
+                "Coba cepat tanya Petugas Parkir di area parkir sana, dia yang mengawasi jalan dan tahu persis di mana paketmu terjatuh!"
             },
             new string[]
             {
@@ -708,8 +708,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             },
             new string[]
             {
-                "Hei kurir! Tadi kulihat kotak paket kardusmu terjatuh di jalan aspal dekat pembatas beton di depan sana saat kamu melintas.",
-                "Cepat dekati kotak paket kardus itu di jalan dan tekan tombol [E] untuk mengambilnya sebelum terlindas kendaraan!"
+                "Hei kurir! Tadi kulihat kotak paket kardusmu terjatuh di jalan aspal dekat pembatas beton sebelah pos pemadam kebakaran (Fire Station) saat kamu melintas.",
+                "Cepat kembali ke sana dan ambil paket kardus itu dengan tombol [E] sebelum terlindas kendaraan!"
             },
             new string[]
             {
@@ -1010,7 +1010,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     private static void SetupDroppedPackageItem()
     {
-        // 1. Hapus paket lama (kubus primitif yang sebelumnya digunakan)
+        // 1. Hapus paket lama (kubus primitif yang sebelumnya digunakan jika ada)
         GameObject[] allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var go in allGo)
         {
@@ -1025,7 +1025,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        // 2. Dapatkan objek paket kardus (CardboardBox_01) persis sesuai gambar pengguna
+        // 2. Dapatkan objek paket kardus (CardboardBox_02) yang sudah diletakkan pengguna di scene
+        bool wasAlreadyInScene = false;
         GameObject pkgGo = null;
         allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var go in allGo)
@@ -1034,6 +1035,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             if (go.name.Contains("CardboardBox") || go.name == "DroppedPackage_Mission4")
             {
                 pkgGo = go;
+                wasAlreadyInScene = true;
                 break;
             }
         }
@@ -1042,7 +1044,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         {
 #if UNITY_EDITOR
             GameObject boxPref = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleProps/_Prefabs/CardboardBox_01.prefab");
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleProps/_Prefabs/CardboardBox_02.prefab");
+            if (boxPref == null)
+            {
+                boxPref = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleProps/_Prefabs/CardboardBox_01.prefab");
+            }
             if (boxPref != null)
             {
                 pkgGo = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(boxPref);
@@ -1051,16 +1058,19 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 #endif
             if (pkgGo == null)
             {
-                pkgGo = new GameObject("CardboardBox_01");
+                pkgGo = new GameObject("CardboardBox_02");
             }
+            // Posisi default sesuai lokasi pada gambar referensi pengguna di scene Module 2
+            pkgGo.transform.position = new Vector3(300.478f, 0.026f, 2.246f);
+            pkgGo.transform.rotation = Quaternion.identity;
         }
 
-        pkgGo.name = "DroppedPackage_Mission4";
-        // Atur Scale tepat 0.1 di seluruh sumbu sesuai permintaan pengguna
-        pkgGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        // Posisikan di jalan aspal dekat pembatas beton sesuai foto referensi pengguna
-        pkgGo.transform.position = new Vector3(301.4f, 0.02f, 6.8f);
-        pkgGo.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
+        // PERTAHANKAN POSISI DAN ROTASI YANG SUDAH DITENTUKAN MANUAL OLEH PENGGUNA DI SCENE!
+        // Jangan pernah mengubah atau menimpa lokasi paket yang sudah ditaruh pengguna di scene.
+        if (wasAlreadyInScene)
+        {
+            Debug.Log($"[PlayerBootstrap] Mempertahankan lokasi paket manual di scene: {pkgGo.transform.position}");
+        }
 
         // Pastikan material CardboardBox URP terpasang
         MeshRenderer rend = pkgGo.GetComponentInChildren<MeshRenderer>();
@@ -1079,14 +1089,17 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         BoxCollider bc = pkgGo.GetComponent<BoxCollider>();
         if (bc == null) bc = pkgGo.AddComponent<BoxCollider>();
         bc.isTrigger = true;
-        bc.size = new Vector3(2.5f, 2.5f, 2.5f);
+        bc.size = new Vector3(3.0f, 3.0f, 3.0f);
         bc.center = new Vector3(0f, 0.5f, 0f);
 
         DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();
         drop.interactionRadius = 3.5f;
 
-        pkgGo.SetActive(true);
+        // Paket baru boleh terlihat setelah Rian selesai percakapan dengan Petugas Parkir
+        DeliveryGameManager gm = DeliveryGameManager.Instance;
+        bool isRevealed = (gm != null && gm.IsDroppedPackageRevealed);
+        pkgGo.SetActive(isRevealed);
     }
 
     /// <summary>
