@@ -52,7 +52,7 @@ public class PlayerController : MonoBehaviour
     public float bodyHeight = 0.18f;
 
     [Tooltip("Tinggi maksimal undakan/trotoar yang bisa dinaiki otomatis.")]
-    public float maxStepHeight = 0.06f;
+    public float maxStepHeight = 0.02f;
 
     [Tooltip("Jarak aman permukaan untuk mencegah rounding error.")]
     public float skinWidth = 0.003f;
@@ -171,6 +171,7 @@ public class PlayerController : MonoBehaviour
             float scaleX = Mathf.Abs(transform.lossyScale.x);
             bodyRadius = Mathf.Max(0.035f, ownCapsule.radius * scaleX);
             bodyHeight = Mathf.Max(0.16f, ownCapsule.height * currentScaleY);
+            maxStepHeight = 0.02f;
         }
 
         if (animator != null)
@@ -395,6 +396,8 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void MoveWithCollision(Vector3 horizontalStep)
     {
+        DepenetrateObstaclesOnly();
+
         Vector3 moveRemaining = horizontalStep;
         int maxBounces = 3;
 
@@ -423,6 +426,20 @@ public class PlayerController : MonoBehaviour
             if (hasHit && (hit.collider.isTrigger || hit.collider == ownCapsule || hit.collider.transform.IsChildOf(transform)))
             {
                 hasHit = false;
+            }
+
+            // Pengecekan tambahan di level kaki (feet level) agar objek rendah/beton/divider tidak luput
+            if (!hasHit)
+            {
+                Vector3 feetOrigin = transform.position + Vector3.up * (maxStepHeight + 0.01f);
+                if (Physics.SphereCast(feetOrigin, r * 0.75f, moveDir, out RaycastHit lowHit, moveDist + skinWidth, obstacleMask, QueryTriggerInteraction.Ignore))
+                {
+                    if (!lowHit.collider.isTrigger && lowHit.collider != ownCapsule && !lowHit.collider.transform.IsChildOf(transform) && IsObstacle(lowHit.collider))
+                    {
+                        hit = lowHit;
+                        hasHit = true;
+                    }
+                }
             }
 
             if (hasHit)
@@ -478,6 +495,45 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void DepenetrateObstaclesOnly()
+    {
+        if (ownCapsule == null) ownCapsule = GetComponent<CapsuleCollider>();
+        if (ownCapsule == null) return;
+
+        Vector3 worldCenter = transform.TransformPoint(ownCapsule.center);
+        float worldHeight = ownCapsule.height * Mathf.Abs(transform.lossyScale.y);
+
+        Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.85f, obstacleMask, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < overlaps.Length; i++)
+        {
+            Collider other = overlaps[i];
+            if (other == null || other.isTrigger || other == ownCapsule || other.transform.IsChildOf(transform))
+                continue;
+
+            if (IsObstacle(other))
+            {
+                if (Physics.ComputePenetration(
+                    ownCapsule, transform.position, transform.rotation,
+                    other, other.transform.position, other.transform.rotation,
+                    out Vector3 direction, out float distance))
+                {
+                    if (distance > 0.0001f)
+                    {
+                        Vector3 push = new Vector3(direction.x, 0f, direction.z);
+                        if (push.sqrMagnitude > 0.00001f)
+                        {
+                            push.Normalize();
+                            transform.position += push * (distance + 0.002f);
+                            lastBlockedObstacle = other.gameObject.name;
+                            lastBlockedTime = Time.time;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// Mendeteksi jika karakter sedikit menembus/bersentuhan dengan objek lain
     /// dan secara matematis mendorong keluar ke batas luar (0% tembus dinding/planter/gedung).
@@ -490,7 +546,7 @@ public class PlayerController : MonoBehaviour
         Vector3 worldCenter = transform.TransformPoint(ownCapsule.center);
         float worldHeight = ownCapsule.height * Mathf.Abs(transform.lossyScale.y);
 
-        Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.75f, obstacleMask, QueryTriggerInteraction.Ignore);
+        Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.85f, obstacleMask, QueryTriggerInteraction.Ignore);
 
         for (int i = 0; i < overlaps.Length; i++)
         {
@@ -498,8 +554,7 @@ public class PlayerController : MonoBehaviour
             if (other == null || other.isTrigger || other == ownCapsule || other.transform.IsChildOf(transform))
                 continue;
 
-            // Cek apakah collider berada di level lantai/tanah/trotoar rendah
-            bool isGroundLevel = other.bounds.max.y <= transform.position.y + maxStepHeight + 0.015f;
+            bool isObstacle = IsObstacle(other);
 
             if (Physics.ComputePenetration(
                 ownCapsule, transform.position, transform.rotation,
@@ -508,24 +563,93 @@ public class PlayerController : MonoBehaviour
             {
                 if (distance > 0.0001f)
                 {
-                    // Penetrasi ke lantai / trotoar / tanah / undakan rendah -> dorong ke atas
-                    if (isGroundLevel || direction.y > 0.65f)
+                    // Penetrasi murni ke lantai / tanah datar -> dorong ke atas
+                    if (!isObstacle && direction.y > 0.75f)
                     {
                         transform.position += Vector3.up * distance;
                         if (verticalVelocity < 0f) verticalVelocity = 0f;
                         isGrounded = true;
                     }
-                    else if (Mathf.Abs(direction.y) < 0.65f)
+                    else
                     {
-                        // Dorong keluar secara horizontal jika menabrak dinding / planter tinggi / bangunan
-                        Vector3 push = new Vector3(direction.x, 0f, direction.z).normalized * (distance + 0.001f);
-                        transform.position += push;
-                        lastBlockedObstacle = other.gameObject.name;
-                        lastBlockedTime = Time.time;
+                        // SELURUH RINTANGAN (beton, rumah, orang, mobil, pagar, dsb) SELALU DIDORONG KELUAR SECARA HORIZONTAL!
+                        Vector3 push = new Vector3(direction.x, 0f, direction.z);
+                        if (push.sqrMagnitude > 0.00001f)
+                        {
+                            push.Normalize();
+                            transform.position += push * (distance + 0.002f);
+                            lastBlockedObstacle = other.gameObject.name;
+                            lastBlockedTime = Time.time;
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Menentukan apakah suatu collider merupakan rintangan fisik padat yang tidak boleh ditembus sama sekali
+    /// (beton, rumah, orang, mobil, pagar, pohon, dsb).
+    /// </summary>
+    public static bool IsObstacle(Collider col)
+    {
+        if (col == null || col.isTrigger) return false;
+
+        // Orang / Karakter / NPC
+        if (col.GetComponentInParent<Animator>() != null || col.CompareTag("NPC") || col.CompareTag("Player"))
+            return true;
+
+        string n = col.gameObject.name.ToLower();
+        string p = col.transform.parent != null ? col.transform.parent.name.ToLower() : "";
+
+        // Beton, pembatas, planter, barrier
+        if (n.Contains("planter") || n.Contains("divider") || n.Contains("barrier") || 
+            n.Contains("curb") || n.Contains("beton") || n.Contains("seawall") || 
+            p.Contains("planter") || p.Contains("divider") || p.Contains("barrier"))
+            return true;
+
+        // Rumah, gedung, bangunan, toko, pos
+        if (n.Contains("building") || n.Contains("bangunan") || n.Contains("house") || 
+            n.Contains("rumah") || n.Contains("shop") || n.Contains("store") || 
+            n.Contains("office") || n.Contains("station") || n.Contains("fire") || 
+            n.Contains("police") || n.Contains("petrol") || n.Contains("hospital") || 
+            n.Contains("church") || n.Contains("factory") || n.Contains("town_hall") || 
+            n.Contains("hall") || n.Contains("mall") || n.Contains("garage") || 
+            n.Contains("hotel") || n.Contains("motel") || n.Contains("diner") || 
+            n.Contains("warehouse") || n.Contains("hangar") || n.Contains("tower") || 
+            n.Contains("apartment") || n.Contains("terminal") || n.Contains("baber") || 
+            n.Contains("barber") || n.Contains("donut") || n.Contains("burger") ||
+            p.Contains("building") || p.Contains("bangunan") || p.Contains("house"))
+            return true;
+
+        // Kendaraan (mobil, truk, bus)
+        if (n.Contains("veh_") || n.Contains("car") || n.Contains("truck") || 
+            n.Contains("bus") || n.Contains("van") || n.Contains("cop") || 
+            n.Contains("ambo") || n.Contains("ute") || n.Contains("taxi") || 
+            p.Contains("cars") || p.Contains("veh"))
+            return true;
+
+        // Pagar, tembok, pohon, batu, tiang, dsb.
+        if (n.Contains("wall") || n.Contains("dinding") || n.Contains("fence") || 
+            n.Contains("pagar") || n.Contains("tree") || n.Contains("pohon") || 
+            n.Contains("palm") || n.Contains("rock") || n.Contains("batu") || 
+            n.Contains("bench") || n.Contains("bin") || n.Contains("trash") || 
+            n.Contains("dumpster") || n.Contains("post") || n.Contains("pole") || 
+            n.Contains("hydrant") || n.Contains("memorial") || n.Contains("statue") ||
+            p.Contains("wall") || p.Contains("pagar") || p.Contains("pohon"))
+            return true;
+
+        // Objek dengan tinggi > 3.5 cm di world space yang bukan tanah/jalan/trotoar datar
+        bool isGroundName = n.Contains("road") || n.Contains("jalan") || n.Contains("asphalt") || 
+                            n.Contains("aspal") || n.Contains("ground") || n.Contains("plane") || 
+                            n.Contains("sidewalk") || n.Contains("trotoar") || n.Contains("grass") || 
+                            n.Contains("tile") || n.Contains("floor") || n.Contains("runway");
+        if (!isGroundName && col.bounds.size.y > 0.035f)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -559,6 +683,9 @@ public class PlayerController : MonoBehaviour
         foreach (var h in hits)
         {
             if (h.collider == null || h.collider.isTrigger) continue;
+
+            // Jangan pernah menempel di atas rintangan fisik (beton, rumah, orang, mobil, pagar, dsb.)
+            if (IsObstacle(h.collider)) continue;
 
             // Abaikan collider tubuh sendiri
             bool isSelf = false;

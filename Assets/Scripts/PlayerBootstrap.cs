@@ -431,7 +431,10 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 2. Pastikan rintangan/gedung memiliki collider dasar agar tidak tembus
         EnsureEnvironmentColliders();
 
-        // 3. Setup PLAYER (Bisa digerakkan dengan Keyboard WASD)
+        // 3. Pastikan seluruh karakter (orang) memiliki collider solid agar tidak bisa ditembus
+        EnsureAllCharacterColliders();
+
+        // 4. Setup PLAYER (Bisa digerakkan dengan Keyboard WASD)
         GameObject playerGo = EnsurePlayerCharacter();
 
         // 4. Setup KAMERA (Pemandangan Kota Luas & Third-Person Follow)
@@ -495,6 +498,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         // 3. Setup 6 Karakter Utama dengan DeliveryRecipient
         SetupKurirRecipients(playerGo);
+        EnsureAllCharacterColliders();
 
         // 4. Setup Objek Paket Jatuh di Area Parkir (Misi 4)
         SetupDroppedPackageItem();
@@ -2301,9 +2305,9 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     }
 
     /// <summary>
-    /// Memastikan seluruh bangunan dan rintangan fisik memiliki collider agar tidak tertembus.
-    /// Jalan raya, trotoar, marka jalan, ubin lantai datar, serta ornamen jalan (papan reklame/billboard melayang,
-    /// lampu lalu lintas, tiang, gerobak, tempat sampah) dibebaskan dari collider penghalang agar tidak menghalangi jalan.
+    /// Memastikan seluruh bangunan (rumah, gedung, pos, toko), rintangan beton (planter, divider, barrier),
+    /// kendaraan, pagar, tembok, pohon, dan benda-benda fisik memiliki collider solid agar tidak tembus.
+    /// Permukaan tanah, aspal jalan, dan trotoar datar dibersihkan dari collider penghalang agar gerakan WASD mulus.
     /// </summary>
     public static int EnsureEnvironmentColliders()
     {
@@ -2331,7 +2335,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 mr.sharedMaterial = townMat;
             }
 
-            // Cek apakah objek ini adalah permukaan tanah, jalan, trotoar, marka jalan, ubin, atau ornamen lantai datar
+            // Objek visual melayang di udara (billboard reklame melayang, antena, piringan satelit)
+            bool isOverheadNonPhysical =
+                lowerName.Contains("billboard") || lowerName.Contains("aerial") || lowerName.Contains("dish") ||
+                lowerName.Contains("flag") || lowerName.Contains("cloud") || lowerName.Contains("skybox");
+
+            // Permukaan jalan, aspal, trotoar, dan tanah datar
             bool isGroundOrStreet = 
                 lowerName.Contains("road") || lowerName.Contains("jalan") || lowerName.Contains("runway") || 
                 lowerName.Contains("plane") || lowerName.Contains("ground") || lowerName.Contains("floor") ||
@@ -2339,69 +2348,109 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 lowerName.Contains("asphalt") || lowerName.Contains("aspal") || lowerName.Contains("dirt") ||
                 lowerName.Contains("grass") || lowerName.Contains("rumput") || lowerName.Contains("paper") ||
                 lowerName.Contains("rolledpaper") || lowerName.Contains("line") || lowerName.Contains("garis") ||
-                lowerName.Contains("marking") || lowerName.Contains("curb") || lowerName.Contains("divider") ||
-                lowerName.Contains("connector") || lowerName.Contains("crossing") || lowerName.Contains("carpet") ||
+                lowerName.Contains("marking") || lowerName.Contains("crossing") || lowerName.Contains("carpet") ||
                 lowerName.Contains("water") ||
                 lowerParent.Contains("road") || lowerParent.Contains("jalan") || lowerParent.Contains("plane") ||
                 lowerParent.Contains("ground") || lowerParent.Contains("floor") || lowerParent.Contains("sidewalk") ||
-                lowerParent.Contains("trotoar") || lowerParent.Contains("dinding") || lowerParent.Contains("runway");
+                lowerParent.Contains("trotoar") || lowerParent.Contains("runway");
 
-            // Cek ornamen jalan, papan reklame melayang, lampu lalu lintas, tiang, gerobak, tempat sampah
-            // Objek-objek ini tidak boleh memiliki BoxCollider raksasa yang menutupi/memblokir jalan raya
-            bool isStreetDecorOrOverhead =
-                lowerName.Contains("billboard") || lowerName.Contains("traffic_light") ||
-                lowerName.Contains("grave") || lowerName.Contains("sign") ||
-                lowerName.Contains("light") || lowerName.Contains("lamp") ||
-                lowerName.Contains("pole") || lowerName.Contains("cart") ||
-                lowerName.Contains("bin") || lowerName.Contains("hydrant") ||
-                lowerName.Contains("bench") || lowerName.Contains("trash") ||
-                lowerName.Contains("post") || lowerName.Contains("planter02") ||
-                lowerName.Contains("planter03");
+            // Murni permukaan lantai datar (tebal < 3.5 cm)
+            bool isActuallyFlatGround = isGroundOrStreet && mr.bounds.size.y <= 0.035f;
 
-            // Cek juga berdasarkan tinggi bounding box mesh di world space (di bawah 8 cm = permukaan lantai/marka datar)
-            bool isFlatSurface = mr.bounds.size.y < 0.08f;
-
-            if (isGroundOrStreet || isFlatSurface || isStreetDecorOrOverhead)
+            if (isActuallyFlatGround || isOverheadNonPhysical)
             {
-                // Hapus BoxCollider atau collider penghalang jika ada agar karakter tidak tertahan dinding tak kasat mata
+                // Bersihkan collider dari permukaan aspal datar agar tidak menimbulkan benturan mikro
                 Collider existingCol = go.GetComponent<Collider>();
-                if (existingCol != null)
+                if (existingCol != null && !(existingCol is MeshCollider))
                 {
                     DestroyComponentSafe(existingCol);
                 }
                 continue;
             }
 
-            // Pasang BoxCollider hanya untuk bangunan, gedung, rumah, tembok batas, kendaraan, dan pohon
+            // Seluruh rintangan fisik: Beton, Rumah, Gedung, Kendaraan, Tembok, Pagar, Pohon, Props
             bool isActualObstacle =
-                lowerName.Contains("building") || lowerName.Contains("bangunan") || lowerName.Contains("house") ||
-                lowerName.Contains("shop") || lowerName.Contains("store") || lowerName.Contains("office") ||
-                lowerName.Contains("cinema") || lowerName.Contains("gym") || lowerName.Contains("stripclub") ||
-                lowerName.Contains("drivethru") || lowerName.Contains("repair") || lowerName.Contains("pawn") ||
-                lowerName.Contains("veh_") || lowerName.Contains("car") || lowerName.Contains("truck") ||
-                lowerName.Contains("palm") || lowerName.Contains("tree") || lowerName.Contains("wall") ||
-                lowerName.Contains("fence") ||
-                lowerParent.Contains("bangunan") || lowerParent.Contains("cars") || lowerParent.Contains("pohon") ||
-                lowerParent.Contains("wall") || lowerParent.Contains("pagar");
+                lowerName.Contains("building") || lowerName.Contains("bangunan") || lowerName.Contains("house") || lowerName.Contains("rumah") ||
+                lowerName.Contains("shop") || lowerName.Contains("toko") || lowerName.Contains("store") || lowerName.Contains("office") ||
+                lowerName.Contains("cinema") || lowerName.Contains("gym") || lowerName.Contains("stripclub") || lowerName.Contains("drivethru") ||
+                lowerName.Contains("repair") || lowerName.Contains("pawn") || lowerName.Contains("station") || lowerName.Contains("fire") ||
+                lowerName.Contains("police") || lowerName.Contains("petrol") || lowerName.Contains("gas") || lowerName.Contains("hospital") ||
+                lowerName.Contains("church") || lowerName.Contains("factory") || lowerName.Contains("town_hall") || lowerName.Contains("hall") ||
+                lowerName.Contains("mall") || lowerName.Contains("garage") || lowerName.Contains("hotel") || lowerName.Contains("motel") ||
+                lowerName.Contains("diner") || lowerName.Contains("warehouse") || lowerName.Contains("hangar") || lowerName.Contains("tower") ||
+                lowerName.Contains("apartment") || lowerName.Contains("terminal") || lowerName.Contains("baber") || lowerName.Contains("barber") ||
+                lowerName.Contains("cafe") || lowerName.Contains("donut") || lowerName.Contains("burger") || lowerName.Contains("icecream") ||
+                lowerName.Contains("planter") || lowerName.Contains("divider") || lowerName.Contains("barrier") || lowerName.Contains("curb") ||
+                lowerName.Contains("concrete") || lowerName.Contains("beton") || lowerName.Contains("seawall") ||
+                lowerName.Contains("veh_") || lowerName.Contains("car") || lowerName.Contains("truck") || lowerName.Contains("bus") ||
+                lowerName.Contains("van") || lowerName.Contains("cop") || lowerName.Contains("ambo") || lowerName.Contains("ute") ||
+                lowerName.Contains("taxi") || lowerName.Contains("wagon") || lowerName.Contains("fire_truck") ||
+                lowerName.Contains("wall") || lowerName.Contains("dinding") || lowerName.Contains("fence") || lowerName.Contains("pagar") ||
+                lowerName.Contains("hedge") || lowerName.Contains("gate") || lowerName.Contains("spike") ||
+                lowerName.Contains("tree") || lowerName.Contains("pohon") || lowerName.Contains("palm") || lowerName.Contains("rock") ||
+                lowerName.Contains("batu") || lowerName.Contains("boulder") ||
+                lowerName.Contains("dumpster") || lowerName.Contains("bin") || lowerName.Contains("trash") || lowerName.Contains("barrel") ||
+                lowerName.Contains("bench") || lowerName.Contains("hydrant") || lowerName.Contains("post") || lowerName.Contains("pole") ||
+                lowerName.Contains("memorial") || lowerName.Contains("table") || lowerName.Contains("cart") || lowerName.Contains("prop_") ||
+                lowerParent.Contains("bangunan") || lowerParent.Contains("building") || lowerParent.Contains("cars") || 
+                lowerParent.Contains("pohon") || lowerParent.Contains("wall") || lowerParent.Contains("dinding") || 
+                lowerParent.Contains("pagar") || lowerParent.Contains("fence") || lowerParent.Contains("planter");
 
-            if (isActualObstacle)
+            // Pasang BoxCollider jika merupakan rintangan atau objek 3D fisik dengan tinggi >= 3.5 cm
+            if (isActualObstacle || mr.bounds.size.y >= 0.035f)
             {
                 Collider col = go.GetComponent<Collider>();
                 if (col == null)
                 {
-                    go.AddComponent<BoxCollider>();
+                    col = go.AddComponent<BoxCollider>();
                     count++;
                 }
-            }
-            else
-            {
-                // Objek lain di luar rintangan utama dibersihkan collidernya agar jalan 100% mulus
-                Collider extraCol = go.GetComponent<Collider>();
-                if (extraCol != null)
+                if (col != null)
                 {
-                    DestroyComponentSafe(extraCol);
+                    col.isTrigger = false;
                 }
             }
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Memastikan SELURUH orang / karakter / NPC di kota memiliki CapsuleCollider padat (solid)
+    /// dan Rigidbody Kinematic sehingga Rian tidak bisa menembus orang yang sedang berdiri atau berjalan.
+    /// </summary>
+    public static int EnsureAllCharacterColliders()
+    {
+        int count = 0;
+        GameObject[] allObjects = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
+        foreach (var go in allObjects)
+        {
+            if (go == null || go.CompareTag("Player")) continue;
+
+            string n = go.name;
+            bool isChar = go.GetComponent<Animator>() != null ||
+                          n.StartsWith("SimplePeople") ||
+                          n.StartsWith("SimpleCitizens") ||
+                          n.StartsWith("NPC_") ||
+                          go.GetComponent<DeliveryRecipient>() != null ||
+                          go.GetComponent<NPCWalker>() != null;
+
+            if (!isChar || n.Contains("Camera") || n.Contains("Light")) continue;
+
+            // Pastikan memiliki CapsuleCollider padat (solid, isTrigger = false)
+            CapsuleCollider col = go.GetComponent<CapsuleCollider>();
+            if (col == null) col = go.AddComponent<CapsuleCollider>();
+            col.height = 1.8f;
+            col.radius = 0.35f;
+            col.center = new Vector3(0f, 0.9f, 0f);
+            col.isTrigger = false;
+
+            // Pastikan Rigidbody Kinematic agar posisinya stabil
+            Rigidbody rb = go.GetComponent<Rigidbody>();
+            if (rb == null) rb = go.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
+            count++;
         }
         return count;
     }
