@@ -142,6 +142,11 @@ public class DeliveryRecipient : MonoBehaviour
 
     private string GetInteractionPromptText()
     {
+        if (recipientType == RecipientType.PetugasParkir)
+        {
+            return "Bertanya kepada Petugas Parkir";
+        }
+
         if (DeliveryGameManager.Instance == null) return "Bicara";
 
         var state = DeliveryGameManager.Instance.CurrentState;

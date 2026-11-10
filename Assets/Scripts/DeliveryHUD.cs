@@ -347,7 +347,7 @@ public class DeliveryHUD : MonoBehaviour
         ipRT.anchorMin = new Vector2(0.5f, 0.16f);
         ipRT.anchorMax = new Vector2(0.5f, 0.16f);
         ipRT.pivot = new Vector2(0.5f, 0.5f);
-        ipRT.sizeDelta = new Vector2(340f, 44f);
+        ipRT.sizeDelta = new Vector2(380f, 44f);
 
         Image ipBg = interactPromptObj.AddComponent<Image>();
         ipBg.color = new Color(0.04f, 0.08f, 0.18f, 0.95f);
