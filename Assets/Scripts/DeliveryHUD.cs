@@ -46,6 +46,7 @@ public class DeliveryHUD : MonoBehaviour
     private Text endingStoryText;
     private Text endingStatsText;
     private Button restartButton;
+    private float endingModalOpenTime = 0f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
@@ -582,6 +583,8 @@ public class DeliveryHUD : MonoBehaviour
         restartButton = btnGo.AddComponent<Button>();
         restartButton.onClick.AddListener(() =>
         {
+            // Cegah klik tidak sengaja yang tersisa dari dialog terakhir
+            if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
             RestartGame();
         });
 
@@ -599,9 +602,17 @@ public class DeliveryHUD : MonoBehaviour
         btnTxt.fontStyle = FontStyle.Bold;
         btnTxt.color = Color.white;
         btnTxt.alignment = TextAnchor.MiddleCenter;
-        btnTxt.text = "Main Lagi (Klik / Tekan [R])";
+        btnTxt.text = "Main Lagi";
 
         endingModalObj.SetActive(false);
+    }
+
+    public void HideEndingModal()
+    {
+        if (endingModalObj != null)
+        {
+            endingModalObj.SetActive(false);
+        }
     }
 
     public void RestartGame()
@@ -611,26 +622,10 @@ public class DeliveryHUD : MonoBehaviour
         {
             DeliveryGameManager.Instance.RestartGame();
         }
-        else
-        {
-            string activeScene = SceneManager.GetActiveScene().name;
-            if (string.IsNullOrEmpty(activeScene)) activeScene = "Module 2";
-            SceneManager.LoadScene(activeScene);
-        }
     }
 
     private void Update()
     {
-        // Restart game via keyboard shortcut saat modal ending terbuka
-        if (endingModalObj != null && endingModalObj.activeSelf)
-        {
-            if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
-            {
-                RestartGame();
-                return;
-            }
-        }
-
         // Toggle Peta [M]
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -792,6 +787,7 @@ public class DeliveryHUD : MonoBehaviour
 
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+        endingModalOpenTime = Time.unscaledTime;
 
         endingModalObj.SetActive(true);
 

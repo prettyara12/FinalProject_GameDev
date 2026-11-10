@@ -356,14 +356,51 @@ public class DeliveryGameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Memuat ulang scene permainan untuk restart / main lagi.
+    /// Merestart game secara in-place di scene yang sama tanpa berpindah scene,
+    /// sehingga permainan terulang terus menerus secara instan dan mulus.
     /// </summary>
     public void RestartGame()
     {
         Time.timeScale = 1f;
-        string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        if (string.IsNullOrEmpty(activeScene)) activeScene = "Module 2";
-        UnityEngine.SceneManagement.SceneManager.LoadScene(activeScene);
+
+        // 1. Reset status misi, paket, penalti, dan timer
+        finalEnding = GameEnding.None;
+        packagesDelivered = 0;
+        wrongDeliveryCount = 0;
+        timeRemaining = totalTimeLimit;
+        isDroppedPackageRevealed = false;
+        currentState = DeliveryMissionState.Prolog;
+        isTimerRunning = true;
+
+        // 2. Tutup dialog aktif & sembunyikan modal ending
+        NPCDialogueOverlay.EndSequentialDialogue();
+        if (DeliveryHUD.Instance != null)
+        {
+            DeliveryHUD.Instance.HideEndingModal();
+        }
+
+        // 3. Posisikan kembali Rian (Player) ke titik awal di depan Mall & unfreeze kontrol
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null)
+        {
+            player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+            player.transform.rotation = Quaternion.identity;
+            player.SetMovementFrozen(false);
+        }
+
+        // 4. Sembunyikan kembali paket kardus yang terjatuh (baru aktif saat Misi 4 Petugas Parkir)
+        DroppedPackageItem dropItem = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        if (dropItem != null)
+        {
+            dropItem.gameObject.SetActive(false);
+        }
+
+        // 5. Perbarui HUD ke kondisi awal pengiriman
+        OnTimerTick?.Invoke(timeRemaining);
+        OnMissionChanged?.Invoke(currentState);
+        OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+
+        Debug.Log("[DeliveryGameManager] Game berhasil di-restart in-place di scene saat ini!");
     }
 
     private void HandleTimeExpired()

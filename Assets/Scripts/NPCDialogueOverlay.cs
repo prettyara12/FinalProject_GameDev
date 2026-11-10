@@ -189,7 +189,7 @@ public class NPCDialogueOverlay : MonoBehaviour
         overheadBubbleRect.anchorMin = new Vector2(0.5f, 0.5f);
         overheadBubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
         overheadBubbleRect.pivot = new Vector2(0.5f, 0f); // Pivot di bagian bawah tengah balon
-        overheadBubbleRect.sizeDelta = new Vector2(440f, 88f); // Ukuran proporsional
+        overheadBubbleRect.sizeDelta = new Vector2(520f, 95f); // Ukuran proporsional lega
 
         overheadBg = overheadBubbleObj.AddComponent<Image>();
         overheadBg.color = new Color(1f, 1f, 1f, 0.98f); // Putih bersih solid
@@ -228,18 +228,18 @@ public class NPCDialogueOverlay : MonoBehaviour
         RectTransform textRT = textObj.AddComponent<RectTransform>();
         textRT.anchorMin = Vector2.zero;
         textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = new Vector2(16f, 10f);
-        textRT.offsetMax = new Vector2(-16f, -10f);
+        textRT.offsetMin = new Vector2(20f, 14f);
+        textRT.offsetMax = new Vector2(-20f, -14f);
 
         overheadText = textObj.AddComponent<Text>();
         overheadText.font = mainFont;
-        overheadText.fontSize = 19; // Ukuran proporsional, rapi dan tetap sangat jelas
+        overheadText.fontSize = 17; // Ukuran proporsional, rapi dan pas di dalam balon
         overheadText.fontStyle = FontStyle.Bold;
-        overheadText.lineSpacing = 1.2f;
+        overheadText.lineSpacing = 1.15f;
         overheadText.alignment = TextAnchor.MiddleCenter;
         overheadText.color = new Color(0.06f, 0.08f, 0.14f, 1f); // Hitam pekat kontras tinggi
         overheadText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        overheadText.verticalOverflow = VerticalWrapMode.Overflow;
+        overheadText.verticalOverflow = VerticalWrapMode.Truncate;
 
         // 3. SUBTITLE BAR (Panel Dialog Bawah Layar Berukuran Pas & Elegan)
         subtitleBarObj = new GameObject("SubtitleDialogueBar");
@@ -375,7 +375,22 @@ public class NPCDialogueOverlay : MonoBehaviour
         instance.activeSpeakerName = speakerName;
         instance.activeMessage = line;
 
-        if (instance.overheadText != null) instance.overheadText.text = line;
+        if (instance.overheadText != null)
+        {
+            instance.overheadText.text = line;
+
+            // Hitung tinggi balon percakapan secara dinamis agar seluruh teks muat rapi di dalam kotak putih
+            float bubbleWidth = 520f;
+            float padH = 40f;
+            float padV = 28f;
+
+            TextGenerationSettings settings = instance.overheadText.GetGenerationSettings(new Vector2(bubbleWidth - padH, 0f));
+            float textH = instance.overheadText.cachedTextGeneratorForLayout.GetPreferredHeight(line, settings);
+            if (textH <= 0f) textH = instance.overheadText.preferredHeight;
+
+            float bubbleHeight = Mathf.Clamp(textH + padV, 95f, 220f);
+            instance.overheadBubbleRect.sizeDelta = new Vector2(bubbleWidth, bubbleHeight);
+        }
         if (instance.subtitleSpeakerText != null) instance.subtitleSpeakerText.text = "◆  " + speakerName;
         if (instance.subtitleMessageText != null) instance.subtitleMessageText.text = "\"" + line.Replace("\n", " ") + "\"";
 
