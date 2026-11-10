@@ -7,7 +7,7 @@ using UnityEngine;
 public class DroppedPackageItem : MonoBehaviour
 {
     [Tooltip("Radius jarak interaksi pemungutan paket.")]
-    public float interactionRadius = 3.0f;
+    public float interactionRadius = 2.0f;
 
     private Transform playerTransform;
 
@@ -22,9 +22,20 @@ public class DroppedPackageItem : MonoBehaviour
         // Paket tersembunyi hingga diungkap oleh Petugas Parkir saat Misi 4,
         // dan harus tetap tersembunyi jika sudah pernah dipungut
         DeliveryGameManager gm = DeliveryGameManager.Instance;
-        if (gm != null && (!gm.IsDroppedPackageRevealed || gm.IsDroppedPackagePickedUp))
+        bool shouldBeVisible = (gm != null && gm.IsDroppedPackageRevealed && !gm.IsDroppedPackagePickedUp);
+        SetPackageVisible(shouldBeVisible);
+    }
+
+    public void SetPackageVisible(bool visible)
+    {
+        Renderer[] rends = GetComponentsInChildren<Renderer>(true);
+        foreach (var r in rends) r.enabled = visible;
+        Collider[] cols = GetComponentsInChildren<Collider>(true);
+        foreach (var c in cols) c.enabled = visible;
+
+        if (gameObject.activeSelf != visible)
         {
-            gameObject.SetActive(false);
+            gameObject.SetActive(visible);
         }
     }
 
@@ -57,10 +68,24 @@ public class DroppedPackageItem : MonoBehaviour
         // Jika paket sudah dipungut, pastikan objek benar-benar tidak aktif dan keluar dari Update
         if (gm != null && gm.IsDroppedPackagePickedUp)
         {
-            Renderer[] rList = GetComponentsInChildren<Renderer>(true);
-            foreach (var r in rList) r.enabled = false;
-            gameObject.SetActive(false);
+            SetPackageVisible(false);
             return;
+        }
+
+        // Jika belum diungkap oleh Petugas Parkir, sembunyikan objek dan keluar
+        if (gm != null && !gm.IsDroppedPackageRevealed)
+        {
+            SetPackageVisible(false);
+            return;
+        }
+        else if (gm != null && gm.IsDroppedPackageRevealed && !gm.IsDroppedPackagePickedUp)
+        {
+            // Pastikan renderer aktif terlihat di aspal
+            Renderer[] rends = GetComponentsInChildren<Renderer>(true);
+            foreach (var r in rends)
+            {
+                if (!r.enabled) r.enabled = true;
+            }
         }
 
         // Gunakan jarak horizontal 2D (XZ) agar perbedaan elevasi tanah tidak menghalangi
@@ -122,12 +147,7 @@ public class DroppedPackageItem : MonoBehaviour
         if (NPCDialogueOverlay.IsDialogueActive) return;
 
         // Matikan langsung seluruh visual renderer & collider agar seketika lenyap dari jalan aspal
-        Renderer[] rends = GetComponentsInChildren<Renderer>(true);
-        foreach (var r in rends) r.enabled = false;
-        Collider[] cols = GetComponentsInChildren<Collider>(true);
-        foreach (var c in cols) c.enabled = false;
-
-        gameObject.SetActive(false);
+        SetPackageVisible(false);
 
         if (DeliveryGameManager.Instance != null)
         {

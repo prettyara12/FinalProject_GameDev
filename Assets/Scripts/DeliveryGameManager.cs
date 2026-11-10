@@ -250,10 +250,7 @@ public class DeliveryGameManager : MonoBehaviour
 
                     NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", droppedClues, () =>
                     {
-                        if (!isDroppedPackageRevealed)
-                        {
-                            RevealDroppedPackage();
-                        }
+                        RevealDroppedPackage();
                     });
                 }
             }
@@ -417,16 +414,24 @@ public class DeliveryGameManager : MonoBehaviour
 
         isDroppedPackageRevealed = true;
 
-        DroppedPackageItem pkg = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
-        if (pkg != null)
+        DroppedPackageItem[] pkgs = Object.FindObjectsByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        foreach (var pkg in pkgs)
         {
-            pkg.gameObject.SetActive(true);
+            if (pkg != null)
+            {
+                pkg.SetPackageVisible(true);
+            }
         }
-        else
+
+        GameObject[] allBoxes = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var b in allBoxes)
         {
-            GameObject go = GameObject.Find("CardboardBox_02");
-            if (go == null) go = GameObject.Find("DroppedPackage_Mission4");
-            if (go != null) go.SetActive(true);
+            if (b != null && b.name.Contains("CardboardBox_02"))
+            {
+                b.SetActive(true);
+                foreach (var r in b.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
+                foreach (var c in b.GetComponentsInChildren<Collider>(true)) c.enabled = true;
+            }
         }
 
         OnMissionChanged?.Invoke(currentState);
@@ -468,10 +473,10 @@ public class DeliveryGameManager : MonoBehaviour
         }
 
         // Sembunyikan paket kardus yang terjatuh
-        DroppedPackageItem dropItem = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
-        if (dropItem != null)
+        DroppedPackageItem[] allDropItems = Object.FindObjectsByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        foreach (var dropItem in allDropItems)
         {
-            dropItem.gameObject.SetActive(false);
+            if (dropItem != null) dropItem.SetPackageVisible(false);
         }
 
         Debug.Log("[DeliveryGameManager] Kembali ke Main Menu berhasil!");
@@ -514,10 +519,10 @@ public class DeliveryGameManager : MonoBehaviour
         }
 
         // 4. Sembunyikan kembali paket kardus yang terjatuh (baru aktif saat Misi 4 Petugas Parkir)
-        DroppedPackageItem dropItem = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
-        if (dropItem != null)
+        DroppedPackageItem[] resetDropItems = Object.FindObjectsByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        foreach (var dropItem in resetDropItems)
         {
-            dropItem.gameObject.SetActive(false);
+            if (dropItem != null) dropItem.SetPackageVisible(false);
         }
 
         // 5. Perbarui HUD ke kondisi awal pengiriman

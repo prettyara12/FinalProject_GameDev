@@ -1124,19 +1124,18 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         BoxCollider bc = pkgGo.GetComponent<BoxCollider>();
         if (bc == null) bc = pkgGo.AddComponent<BoxCollider>();
         bc.isTrigger = true;
-        bc.size = new Vector3(3.0f, 3.0f, 3.0f);
-        bc.center = new Vector3(0f, 0.5f, 0f);
+        bc.size = new Vector3(1.5f, 1.5f, 1.5f);
+        bc.center = new Vector3(0f, 0.25f, 0f);
 
         DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();
-        drop.interactionRadius = 3.5f;
+        drop.interactionRadius = 2.0f;
 
         // Paket baru boleh terlihat setelah Rian selesai percakapan dengan Petugas Parkir (Misi 4),
         // dan harus tetap sembunyi/hilang jika sudah pernah diambil
         DeliveryGameManager gm = DeliveryGameManager.Instance;
         bool isRevealed = (gm != null && gm.IsDroppedPackageRevealed && !gm.IsDroppedPackagePickedUp);
-        pkgGo.SetActive(isRevealed);
-        if (rend != null) rend.enabled = isRevealed;
+        drop.SetPackageVisible(isRevealed);
     }
 
     /// <summary>
