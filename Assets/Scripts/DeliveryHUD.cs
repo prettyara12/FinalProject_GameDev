@@ -513,11 +513,23 @@ public class DeliveryHUD : MonoBehaviour
         cRT.sizeDelta = new Vector2(720f, 480f);
 
         Image cImg = card.AddComponent<Image>();
-        cImg.color = new Color(0.05f, 0.08f, 0.16f, 0.98f);
+        cImg.color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
 
         Outline cOutline = card.AddComponent<Outline>();
-        cOutline.effectColor = new Color(0.3f, 0.7f, 1f, 0.9f);
-        cOutline.effectDistance = new Vector2(2f, -2f);
+        cOutline.effectColor = new Color(0.18f, 0.24f, 0.33f, 0.9f);
+        cOutline.effectDistance = new Vector2(1f, -1f);
+
+        // Header Strip Amber Accent
+        GameObject strip = new GameObject("EndingStrip", typeof(RectTransform));
+        strip.transform.SetParent(card.transform, false);
+        RectTransform srt = strip.GetComponent<RectTransform>();
+        srt.anchorMin = new Vector2(0f, 1f);
+        srt.anchorMax = new Vector2(1f, 1f);
+        srt.pivot = new Vector2(0.5f, 1f);
+        srt.anchoredPosition = Vector2.zero;
+        srt.sizeDelta = new Vector2(0f, 3f);
+        Image stripImg = strip.AddComponent<Image>();
+        stripImg.color = new Color(0.96f, 0.58f, 0.12f, 1f);
 
         // Judul Ending
         GameObject titleGo = new GameObject("EndingTitle");
@@ -533,7 +545,7 @@ public class DeliveryHUD : MonoBehaviour
         endingTitleText.fontSize = 24;
         endingTitleText.fontStyle = FontStyle.Bold;
         endingTitleText.alignment = TextAnchor.MiddleCenter;
-        endingTitleText.color = new Color(1f, 0.85f, 0.2f, 1f);
+        endingTitleText.color = new Color(0.98f, 0.98f, 1f, 1f);
         endingTitleText.text = "ENDING 1: KURIR TERPERCAYA";
 
         // Narasi Epilog
@@ -547,10 +559,10 @@ public class DeliveryHUD : MonoBehaviour
 
         endingStoryText = storyGo.AddComponent<Text>();
         endingStoryText.font = mainFont;
-        endingStoryText.fontSize = 16;
+        endingStoryText.fontSize = 15;
         endingStoryText.fontStyle = FontStyle.Normal;
-        endingStoryText.color = Color.white;
-        endingStoryText.lineSpacing = 1.3f;
+        endingStoryText.color = new Color(0.88f, 0.90f, 0.94f, 1f);
+        endingStoryText.lineSpacing = 1.35f;
         endingStoryText.alignment = TextAnchor.MiddleCenter;
         endingStoryText.horizontalOverflow = HorizontalWrapMode.Wrap;
         endingStoryText.text = "Epilog permainan...";
@@ -568,7 +580,7 @@ public class DeliveryHUD : MonoBehaviour
         endingStatsText.font = mainFont;
         endingStatsText.fontSize = 15;
         endingStatsText.fontStyle = FontStyle.Bold;
-        endingStatsText.color = new Color(0.4f, 0.85f, 1f, 1f);
+        endingStatsText.color = new Color(0.96f, 0.65f, 0.20f, 1f);
         endingStatsText.lineSpacing = 1.25f;
         endingStatsText.alignment = TextAnchor.MiddleCenter;
         endingStatsText.text = "Waktu Tersisa: 00:00 | Paket: 5/5 | Salah Antar: 0";
@@ -580,17 +592,27 @@ public class DeliveryHUD : MonoBehaviour
         bRT.anchorMin = new Vector2(0.5f, 0f);
         bRT.anchorMax = new Vector2(0.5f, 0f);
         bRT.pivot = new Vector2(0.5f, 0f);
-        bRT.anchoredPosition = new Vector2(-120f, 32f);
-        bRT.sizeDelta = new Vector2(200f, 50f);
+        bRT.anchoredPosition = new Vector2(-115f, 32f);
+        bRT.sizeDelta = new Vector2(210f, 48f);
 
         Image btnImg = btnGo.AddComponent<Image>();
-        btnImg.color = new Color(0.12f, 0.38f, 0.85f, 1f);
+        btnImg.color = Color.white;
 
         Outline btnOutline = btnGo.AddComponent<Outline>();
-        btnOutline.effectColor = new Color(0.3f, 0.8f, 1f, 0.9f);
-        btnOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        btnOutline.effectColor = new Color(1f, 0.75f, 0.35f, 0.35f);
+        btnOutline.effectDistance = new Vector2(1f, -1f);
 
         restartButton = btnGo.AddComponent<Button>();
+        restartButton.targetGraphic = btnImg;
+        ColorBlock rcb = restartButton.colors;
+        rcb.colorMultiplier = 1f;
+        rcb.fadeDuration = 0.08f;
+        rcb.normalColor = new Color(0.85f, 0.45f, 0.08f, 1f);
+        rcb.highlightedColor = new Color(0.96f, 0.58f, 0.12f, 1f);
+        rcb.pressedColor = new Color(0.68f, 0.32f, 0.04f, 1f);
+        rcb.selectedColor = rcb.normalColor;
+        restartButton.colors = rcb;
+
         restartButton.onClick.AddListener(() =>
         {
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
@@ -607,7 +629,7 @@ public class DeliveryHUD : MonoBehaviour
 
         Text btnTxt = btnTxtGo.AddComponent<Text>();
         btnTxt.font = mainFont;
-        btnTxt.fontSize = 17;
+        btnTxt.fontSize = 16;
         btnTxt.fontStyle = FontStyle.Bold;
         btnTxt.color = Color.white;
         btnTxt.alignment = TextAnchor.MiddleCenter;
@@ -620,17 +642,27 @@ public class DeliveryHUD : MonoBehaviour
         mbRT.anchorMin = new Vector2(0.5f, 0f);
         mbRT.anchorMax = new Vector2(0.5f, 0f);
         mbRT.pivot = new Vector2(0.5f, 0f);
-        mbRT.anchoredPosition = new Vector2(120f, 32f);
-        mbRT.sizeDelta = new Vector2(200f, 50f);
+        mbRT.anchoredPosition = new Vector2(115f, 32f);
+        mbRT.sizeDelta = new Vector2(210f, 48f);
 
         Image menuBtnImg = menuBtnGo.AddComponent<Image>();
-        menuBtnImg.color = new Color(0.12f, 0.18f, 0.30f, 1f);
+        menuBtnImg.color = Color.white;
 
         Outline menuBtnOutline = menuBtnGo.AddComponent<Outline>();
-        menuBtnOutline.effectColor = new Color(0.4f, 0.6f, 0.8f, 0.9f);
-        menuBtnOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        menuBtnOutline.effectColor = new Color(0.28f, 0.36f, 0.48f, 0.6f);
+        menuBtnOutline.effectDistance = new Vector2(1f, -1f);
 
         mainMenuButton = menuBtnGo.AddComponent<Button>();
+        mainMenuButton.targetGraphic = menuBtnImg;
+        ColorBlock mcb = mainMenuButton.colors;
+        mcb.colorMultiplier = 1f;
+        mcb.fadeDuration = 0.08f;
+        mcb.normalColor = new Color(0.14f, 0.18f, 0.25f, 1f);
+        mcb.highlightedColor = new Color(0.22f, 0.28f, 0.38f, 1f);
+        mcb.pressedColor = new Color(0.10f, 0.13f, 0.18f, 1f);
+        mcb.selectedColor = mcb.normalColor;
+        mainMenuButton.colors = mcb;
+
         mainMenuButton.onClick.AddListener(() =>
         {
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
@@ -654,7 +686,7 @@ public class DeliveryHUD : MonoBehaviour
 
         Text menuTxt = menuTxtGo.AddComponent<Text>();
         menuTxt.font = mainFont;
-        menuTxt.fontSize = 17;
+        menuTxt.fontSize = 16;
         menuTxt.fontStyle = FontStyle.Bold;
         menuTxt.color = Color.white;
         menuTxt.alignment = TextAnchor.MiddleCenter;
@@ -675,7 +707,7 @@ public class DeliveryHUD : MonoBehaviour
         mmRT.offsetMax = Vector2.zero;
 
         Image bg = mainMenuObj.AddComponent<Image>();
-        bg.color = new Color(0.04f, 0.07f, 0.14f, 0.88f); // Latar belakang semi-transparan elegan
+        bg.color = new Color(0.04f, 0.06f, 0.10f, 0.92f);
 
         // Kartu Kontainer Menu
         GameObject card = new GameObject("MenuContainer", typeof(RectTransform));
@@ -685,16 +717,16 @@ public class DeliveryHUD : MonoBehaviour
         cRT.anchorMax = new Vector2(0.5f, 0.5f);
         cRT.pivot = new Vector2(0.5f, 0.5f);
         cRT.anchoredPosition = Vector2.zero;
-        cRT.sizeDelta = new Vector2(560f, 490f);
+        cRT.sizeDelta = new Vector2(540f, 470f);
 
         Image cImg = card.AddComponent<Image>();
-        cImg.color = new Color(0.06f, 0.10f, 0.20f, 0.95f);
+        cImg.color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
 
         Outline cOutline = card.AddComponent<Outline>();
-        cOutline.effectColor = new Color(0.2f, 0.6f, 1f, 0.8f);
-        cOutline.effectDistance = new Vector2(2f, -2f);
+        cOutline.effectColor = new Color(0.18f, 0.24f, 0.33f, 0.9f);
+        cOutline.effectDistance = new Vector2(1f, -1f);
 
-        // Header Strip Cyan
+        // Header Strip Amber Accent
         GameObject strip = new GameObject("MenuStrip", typeof(RectTransform));
         strip.transform.SetParent(card.transform, false);
         RectTransform sRT = strip.GetComponent<RectTransform>();
@@ -702,9 +734,27 @@ public class DeliveryHUD : MonoBehaviour
         sRT.anchorMax = new Vector2(1f, 1f);
         sRT.pivot = new Vector2(0.5f, 1f);
         sRT.anchoredPosition = Vector2.zero;
-        sRT.sizeDelta = new Vector2(0f, 4f);
+        sRT.sizeDelta = new Vector2(0f, 3f);
         Image sImg = strip.AddComponent<Image>();
-        sImg.color = new Color(0.25f, 0.85f, 1f, 1f);
+        sImg.color = new Color(0.96f, 0.58f, 0.12f, 1f);
+
+        // Eyebrow Tagline
+        GameObject eyeGo = new GameObject("EyebrowText", typeof(RectTransform));
+        eyeGo.transform.SetParent(card.transform, false);
+        RectTransform eyeRT = eyeGo.GetComponent<RectTransform>();
+        eyeRT.anchorMin = new Vector2(0f, 1f);
+        eyeRT.anchorMax = new Vector2(1f, 1f);
+        eyeRT.pivot = new Vector2(0.5f, 1f);
+        eyeRT.anchoredPosition = new Vector2(0f, -28f);
+        eyeRT.sizeDelta = new Vector2(0f, 20f);
+
+        Text eyeTxt = eyeGo.AddComponent<Text>();
+        eyeTxt.font = mainFont;
+        eyeTxt.fontSize = 11;
+        eyeTxt.fontStyle = FontStyle.Bold;
+        eyeTxt.alignment = TextAnchor.MiddleCenter;
+        eyeTxt.color = new Color(0.55f, 0.62f, 0.72f, 1f);
+        eyeTxt.text = "KOTA METROPOLIS  •  SIMULASI PENGANTARAN";
 
         // Judul Game: KURIR TERAKHIR
         GameObject titleGo = new GameObject("TitleText", typeof(RectTransform));
@@ -713,19 +763,19 @@ public class DeliveryHUD : MonoBehaviour
         tRT.anchorMin = new Vector2(0f, 1f);
         tRT.anchorMax = new Vector2(1f, 1f);
         tRT.pivot = new Vector2(0.5f, 1f);
-        tRT.anchoredPosition = new Vector2(0f, -36f);
-        tRT.sizeDelta = new Vector2(0f, 52f);
+        tRT.anchoredPosition = new Vector2(0f, -54f);
+        tRT.sizeDelta = new Vector2(0f, 46f);
 
         Text titleTxt = titleGo.AddComponent<Text>();
         titleTxt.font = mainFont;
-        titleTxt.fontSize = 38;
+        titleTxt.fontSize = 34;
         titleTxt.fontStyle = FontStyle.Bold;
         titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.color = new Color(1f, 0.82f, 0.2f, 1f); // Gold Amber
+        titleTxt.color = new Color(0.98f, 0.98f, 1f, 1f);
         titleTxt.text = "KURIR TERAKHIR";
 
         Outline tOutline = titleGo.AddComponent<Outline>();
-        tOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+        tOutline.effectColor = new Color(0f, 0f, 0f, 0.6f);
         tOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
         // Subtitle
@@ -735,37 +785,20 @@ public class DeliveryHUD : MonoBehaviour
         subRT.anchorMin = new Vector2(0f, 1f);
         subRT.anchorMax = new Vector2(1f, 1f);
         subRT.pivot = new Vector2(0.5f, 1f);
-        subRT.anchoredPosition = new Vector2(0f, -92f);
-        subRT.sizeDelta = new Vector2(0f, 26f);
+        subRT.anchoredPosition = new Vector2(0f, -98f);
+        subRT.sizeDelta = new Vector2(0f, 22f);
 
         Text subTxt = subGo.AddComponent<Text>();
         subTxt.font = mainFont;
-        subTxt.fontSize = 16;
-        subTxt.fontStyle = FontStyle.Bold;
+        subTxt.fontSize = 13;
         subTxt.alignment = TextAnchor.MiddleCenter;
-        subTxt.color = new Color(0.4f, 0.85f, 1f, 1f); // Sky Blue
-        subTxt.text = "Misi Pengantaran Paket Kota";
+        subTxt.color = new Color(0.62f, 0.70f, 0.80f, 1f);
+        subTxt.text = "Antarkan Seluruh Paket Sebelum Batas Waktu Habis";
 
-        // Tagline
-        GameObject tagGo = new GameObject("TaglineText", typeof(RectTransform));
-        tagGo.transform.SetParent(card.transform, false);
-        RectTransform tagRT = tagGo.GetComponent<RectTransform>();
-        tagRT.anchorMin = new Vector2(0f, 1f);
-        tagRT.anchorMax = new Vector2(1f, 1f);
-        tagRT.pivot = new Vector2(0.5f, 1f);
-        tagRT.anchoredPosition = new Vector2(0f, -120f);
-        tagRT.sizeDelta = new Vector2(0f, 22f);
-
-        Text tagTxt = tagGo.AddComponent<Text>();
-        tagTxt.font = mainFont;
-        tagTxt.fontSize = 13;
-        tagTxt.alignment = TextAnchor.MiddleCenter;
-        tagTxt.color = new Color(0.7f, 0.8f, 0.9f, 0.9f);
-        tagTxt.text = "Tepat Waktu  •  Kenali Alamat  •  Hindari Lalu Lintas";
-
-        // Tombol 1: Mulai Permainan
-        CreateMenuButton(card.transform, "Btn_Play", "Mulai Permainan", new Vector2(0f, -175f), new Vector2(280f, 52f),
-            new Color(0.12f, 0.38f, 0.85f, 1f), new Color(0.3f, 0.8f, 1f, 1f), 18, () =>
+        // Tombol 1: Mulai Permainan (Primary Amber)
+        CreateMenuButton(card.transform, "Btn_Play", "Mulai Permainan", new Vector2(0f, -156f), new Vector2(290f, 50f),
+            new Color(0.85f, 0.45f, 0.08f, 1f), new Color(0.96f, 0.58f, 0.12f, 1f), new Color(0.68f, 0.32f, 0.04f, 1f),
+            new Color(1f, 0.75f, 0.35f, 0.35f), 16, () =>
             {
                 if (DeliveryGameManager.Instance != null)
                 {
@@ -777,16 +810,18 @@ public class DeliveryHUD : MonoBehaviour
                 }
             });
 
-        // Tombol 2: Cara Bermain
-        CreateMenuButton(card.transform, "Btn_HowToPlay", "Cara Bermain", new Vector2(0f, -238f), new Vector2(280f, 48f),
-            new Color(0.12f, 0.18f, 0.30f, 1f), new Color(0.3f, 0.5f, 0.7f, 0.8f), 16, () =>
+        // Tombol 2: Cara Bermain (Secondary Dark Slate)
+        CreateMenuButton(card.transform, "Btn_HowToPlay", "Cara Bermain", new Vector2(0f, -218f), new Vector2(290f, 46f),
+            new Color(0.14f, 0.18f, 0.25f, 1f), new Color(0.22f, 0.28f, 0.38f, 1f), new Color(0.10f, 0.13f, 0.18f, 1f),
+            new Color(0.28f, 0.36f, 0.48f, 0.6f), 15, () =>
             {
                 ShowHowToPlay(true);
             });
 
-        // Tombol 3: Keluar
-        CreateMenuButton(card.transform, "Btn_Quit", "Keluar", new Vector2(0f, -298f), new Vector2(280f, 48f),
-            new Color(0.20f, 0.08f, 0.10f, 1f), new Color(0.85f, 0.25f, 0.25f, 0.8f), 16, () =>
+        // Tombol 3: Keluar (Tertiary Dark)
+        CreateMenuButton(card.transform, "Btn_Quit", "Keluar", new Vector2(0f, -276f), new Vector2(290f, 44f),
+            new Color(0.09f, 0.12f, 0.16f, 0.95f), new Color(0.35f, 0.12f, 0.15f, 1f), new Color(0.22f, 0.08f, 0.10f, 1f),
+            new Color(0.22f, 0.26f, 0.34f, 0.5f), 14, () =>
             {
                 QuitGame();
             });
@@ -803,14 +838,14 @@ public class DeliveryHUD : MonoBehaviour
 
         Text fTxt = footerGo.AddComponent<Text>();
         fTxt.font = mainFont;
-        fTxt.fontSize = 12;
+        fTxt.fontSize = 11;
         fTxt.alignment = TextAnchor.MiddleCenter;
-        fTxt.color = new Color(0.45f, 0.55f, 0.65f, 0.9f);
-        fTxt.text = "Final Project - Introduction to Game Development";
+        fTxt.color = new Color(0.40f, 0.46f, 0.55f, 0.85f);
+        fTxt.text = "Final Project  •  Introduction to Game Development";
     }
 
     private Button CreateMenuButton(Transform parent, string goName, string text, Vector2 anchoredPos, Vector2 size,
-        Color bgColor, Color outlineColor, int fontSize, System.Action onClick)
+        Color normalColor, Color hoverColor, Color pressedColor, Color outlineColor, int fontSize, System.Action onClick)
     {
         GameObject btnGo = new GameObject(goName, typeof(RectTransform));
         btnGo.transform.SetParent(parent, false);
@@ -823,13 +858,28 @@ public class DeliveryHUD : MonoBehaviour
         rt.sizeDelta = size;
 
         Image img = btnGo.AddComponent<Image>();
-        img.color = bgColor;
+        img.color = Color.white;
 
-        Outline outline = btnGo.AddComponent<Outline>();
-        outline.effectColor = outlineColor;
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        if (outlineColor.a > 0.01f)
+        {
+            Outline outline = btnGo.AddComponent<Outline>();
+            outline.effectColor = outlineColor;
+            outline.effectDistance = new Vector2(1f, -1f);
+        }
 
         Button btn = btnGo.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        ColorBlock cb = btn.colors;
+        cb.colorMultiplier = 1f;
+        cb.fadeDuration = 0.08f;
+        cb.normalColor = normalColor;
+        cb.highlightedColor = hoverColor;
+        cb.pressedColor = pressedColor;
+        cb.selectedColor = normalColor;
+        cb.disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+        btn.colors = cb;
+
         btn.onClick.AddListener(() => onClick?.Invoke());
 
         GameObject txtGo = new GameObject("Text", typeof(RectTransform));
@@ -863,7 +913,7 @@ public class DeliveryHUD : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         Image bg = howToPlayModalObj.AddComponent<Image>();
-        bg.color = new Color(0f, 0f, 0f, 0.75f);
+        bg.color = new Color(0.04f, 0.06f, 0.10f, 0.90f);
 
         GameObject card = new GameObject("Card", typeof(RectTransform));
         card.transform.SetParent(howToPlayModalObj.transform, false);
@@ -871,55 +921,72 @@ public class DeliveryHUD : MonoBehaviour
         cRT.anchorMin = new Vector2(0.5f, 0.5f);
         cRT.anchorMax = new Vector2(0.5f, 0.5f);
         cRT.pivot = new Vector2(0.5f, 0.5f);
-        cRT.sizeDelta = new Vector2(660f, 460f);
+        cRT.sizeDelta = new Vector2(660f, 480f);
 
         Image cImg = card.AddComponent<Image>();
-        cImg.color = new Color(0.06f, 0.10f, 0.20f, 0.98f);
+        cImg.color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
 
         Outline cOutline = card.AddComponent<Outline>();
-        cOutline.effectColor = new Color(0.2f, 0.6f, 1f, 0.85f);
-        cOutline.effectDistance = new Vector2(2f, -2f);
+        cOutline.effectColor = new Color(0.18f, 0.24f, 0.33f, 0.9f);
+        cOutline.effectDistance = new Vector2(1f, -1f);
 
-        // Judul
+        // Header Strip Amber Accent
+        GameObject strip = new GameObject("HowToPlayStrip", typeof(RectTransform));
+        strip.transform.SetParent(card.transform, false);
+        RectTransform sRT = strip.GetComponent<RectTransform>();
+        sRT.anchorMin = new Vector2(0f, 1f);
+        sRT.anchorMax = new Vector2(1f, 1f);
+        sRT.pivot = new Vector2(0.5f, 1f);
+        sRT.anchoredPosition = Vector2.zero;
+        sRT.sizeDelta = new Vector2(0f, 3f);
+        Image sImg = strip.AddComponent<Image>();
+        sImg.color = new Color(0.96f, 0.58f, 0.12f, 1f);
+
+        // Judul Modal
         GameObject titleGo = new GameObject("Title");
         titleGo.transform.SetParent(card.transform, false);
         RectTransform tRT = titleGo.AddComponent<RectTransform>();
         tRT.anchorMin = new Vector2(0f, 1f);
         tRT.anchorMax = new Vector2(1f, 1f);
-        tRT.anchoredPosition = new Vector2(0f, -28f);
-        tRT.sizeDelta = new Vector2(0f, 36f);
+        tRT.pivot = new Vector2(0.5f, 1f);
+        tRT.anchoredPosition = new Vector2(0f, -24f);
+        tRT.sizeDelta = new Vector2(0f, 32f);
 
         Text titleTxt = titleGo.AddComponent<Text>();
         titleTxt.font = mainFont;
-        titleTxt.fontSize = 22;
+        titleTxt.fontSize = 20;
         titleTxt.fontStyle = FontStyle.Bold;
         titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.color = new Color(1f, 0.85f, 0.2f, 1f);
+        titleTxt.color = new Color(0.98f, 0.98f, 1f, 1f);
         titleTxt.text = "PANDUAN CARA BERMAIN";
 
-        // Teks Kontrol & Aturan
+        // Teks Kontrol & Aturan (diletakkan rapi di dalam card, margin kiri-kanan jelas)
         GameObject bodyGo = new GameObject("BodyText");
         bodyGo.transform.SetParent(card.transform, false);
         RectTransform bRT = bodyGo.AddComponent<RectTransform>();
         bRT.anchorMin = new Vector2(0f, 1f);
-        bRT.anchorMax = new Vector2(1f, 1f);
-        bRT.anchoredPosition = new Vector2(0f, -70f);
-        bRT.sizeDelta = new Vector2(600f, 290f);
+        bRT.anchorMax = new Vector2(0f, 1f);
+        bRT.pivot = new Vector2(0f, 1f);
+        bRT.anchoredPosition = new Vector2(45f, -65f);
+        bRT.sizeDelta = new Vector2(570f, 340f);
 
         Text bodyTxt = bodyGo.AddComponent<Text>();
         bodyTxt.font = mainFont;
-        bodyTxt.fontSize = 14;
+        bodyTxt.fontSize = 12;
         bodyTxt.lineSpacing = 1.35f;
-        bodyTxt.color = Color.white;
+        bodyTxt.color = new Color(0.90f, 0.92f, 0.95f, 1f);
         bodyTxt.alignment = TextAnchor.UpperLeft;
+        bodyTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
+        bodyTxt.verticalOverflow = VerticalWrapMode.Overflow;
+        bodyTxt.supportRichText = true;
         bodyTxt.text =
-            "KONTROL KARAKTER:\n" +
-            "  • [W] [A] [S] [D]  : Bergerak & Berjalan melintasi jalan dan trotoar kota\n" +
-            "  • [Left Shift]     : Berlari lebih cepat (Sprint)\n" +
-            "  • [Mouse]          : Mengarahkan kamera pandangan Rian\n" +
-            "  • [E]              : Berbicara dengan warga, bertanya arah, dan mengambil paket\n" +
-            "  • [M]              : Membuka denah peta kota & lokasi pertokoan\n\n" +
-            "ATURAN PERMAINAN & MISI:\n" +
+            "<b><color=#F59E0B>KONTROL KARAKTER:</color></b>\n" +
+            "  • <b>[W] [A] [S] [D]</b>  : Bergerak & berjalan melintasi jalan dan trotoar kota\n" +
+            "  • <b>[Left Shift]</b>      : Berlari lebih cepat (Sprint)\n" +
+            "  • <b>[Mouse]</b>           : Mengarahkan kamera pandangan Rian\n" +
+            "  • <b>[E]</b>               : Berbicara dengan warga, bertanya arah, dan mengambil paket\n" +
+            "  • <b>[M]</b>               : Membuka denah peta kota & lokasi pertokoan\n\n" +
+            "<b><color=#F59E0B>ATURAN PERMAINAN & MISI:</color></b>\n" +
             "  1. Ambil 5 paket dari Pak Beni di depan Mall untuk memulai pengantaran.\n" +
             "  2. Antarkan seluruh 5 paket ke toko yang sesuai sebelum batas waktu 10 menit habis.\n" +
             "  3. Hati-hati menyeberang jalan raya! Terserempet mobil mengurangi sisa waktu (-5 dtk).\n" +
@@ -927,8 +994,9 @@ public class DeliveryHUD : MonoBehaviour
             "  5. Jika ada paket terjatuh di jalan, tanyakan lokasinya ke Petugas Parkir!";
 
         // Tombol Tutup
-        CreateMenuButton(card.transform, "Btn_Close", "Tutup", new Vector2(0f, -395f), new Vector2(180f, 44f),
-            new Color(0.12f, 0.38f, 0.85f, 1f), new Color(0.3f, 0.8f, 1f, 1f), 15, () =>
+        CreateMenuButton(card.transform, "Btn_Close", "Tutup", new Vector2(0f, -422f), new Vector2(170f, 40f),
+            new Color(0.14f, 0.18f, 0.25f, 1f), new Color(0.22f, 0.28f, 0.38f, 1f), new Color(0.10f, 0.13f, 0.18f, 1f),
+            new Color(0.28f, 0.36f, 0.48f, 0.6f), 14, () =>
             {
                 ShowHowToPlay(false);
             });
