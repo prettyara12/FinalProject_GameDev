@@ -1125,6 +1125,13 @@ public class DeliveryHUD : MonoBehaviour
                 {
                     interactPromptText.text = "[E] " + currentInteractableText;
                 }
+
+                // Eksekusi interaksi tombol [E] secara terpusat untuk aksi yang sedang aktif tampil di layar
+                if (Input.GetKeyDown(KeyCode.E) && !NPCDialogueOverlay.IsDialogueActive)
+                {
+                    GameAudioManager.Instance?.PlayUIClick();
+                    currentInteractCallback?.Invoke();
+                }
             }
             else
             {

@@ -1020,7 +1020,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         recipient.introDialogueLines = introLines;
         recipient.successDialogueLines = successLines;
         recipient.wrongDeliveryLines = wrongLines;
-        recipient.interactionRadius = 3.5f;
+        recipient.interactionRadius = (type == DeliveryRecipient.RecipientType.PetugasParkir) ? 2.0f : 3.5f;
 
         return npcGo;
     }
@@ -1129,7 +1129,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         DroppedPackageItem drop = pkgGo.GetComponent<DroppedPackageItem>();
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();
-        drop.interactionRadius = 2.0f;
+        drop.interactionRadius = 2.5f;
 
         // Paket baru boleh terlihat setelah Rian selesai percakapan dengan Petugas Parkir (Misi 4),
         // dan harus tetap sembunyi/hilang jika sudah pernah diambil

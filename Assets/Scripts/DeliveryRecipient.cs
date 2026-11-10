@@ -126,8 +126,13 @@ public class DeliveryRecipient : MonoBehaviour
                 }
             }
 
-            // Saat Misi 4 (paket terjatuh di dekat pos), Dimas tidak membajak prompt tombol [E] dari paket
-            if (recipientType == RecipientType.Dimas && DeliveryGameManager.Instance != null && DeliveryGameManager.Instance.CurrentState == DeliveryMissionState.Package4_DroppedPackage)
+            // Saat Misi 4 dan paket kardus sudah terungkap di jalan aspal tapi belum diambil,
+            // Dimas dan Petugas Parkir tidak boleh membajak prompt tombol [E] agar pemain dapat memungut paket tanpa gangguan
+            if ((recipientType == RecipientType.Dimas || recipientType == RecipientType.PetugasParkir) &&
+                DeliveryGameManager.Instance != null &&
+                DeliveryGameManager.Instance.CurrentState == DeliveryMissionState.Package4_DroppedPackage &&
+                DeliveryGameManager.Instance.IsDroppedPackageRevealed &&
+                !DeliveryGameManager.Instance.IsDroppedPackagePickedUp)
             {
                 return;
             }

@@ -7,7 +7,7 @@ using UnityEngine;
 public class DroppedPackageItem : MonoBehaviour
 {
     [Tooltip("Radius jarak interaksi pemungutan paket.")]
-    public float interactionRadius = 2.0f;
+    public float interactionRadius = 2.5f;
 
     private Transform playerTransform;
 
@@ -144,8 +144,6 @@ public class DroppedPackageItem : MonoBehaviour
 
     public void PickUp()
     {
-        if (NPCDialogueOverlay.IsDialogueActive) return;
-
         // Matikan langsung seluruh visual renderer & collider agar seketika lenyap dari jalan aspal
         SetPackageVisible(false);
 

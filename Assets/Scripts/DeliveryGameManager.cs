@@ -365,9 +365,7 @@ public class DeliveryGameManager : MonoBehaviour
         {
             if (p != null)
             {
-                p.gameObject.SetActive(false);
-                Renderer[] rList = p.GetComponentsInChildren<Renderer>(true);
-                foreach (var r in rList) r.enabled = false;
+                p.SetPackageVisible(false);
             }
         }
         GameObject[] allBoxes = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
@@ -378,25 +376,27 @@ public class DeliveryGameManager : MonoBehaviour
                 b.SetActive(false);
                 Renderer[] rList = b.GetComponentsInChildren<Renderer>(true);
                 foreach (var r in rList) r.enabled = false;
+                Collider[] cList = b.GetComponentsInChildren<Collider>(true);
+                foreach (var c in cList) c.enabled = false;
             }
         }
 
+        // Perbarui progress paket dan lanjutkan misi ke Naya seketika saat paket diambil!
+        packagesDelivered = Mathf.Max(packagesDelivered, 4);
+        OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+        AdvanceMission(DeliveryMissionState.Package5_Apartment);
+
         string[] pickupMsg = new string[]
         {
-            "Kotak paket kardus berhasil dipungut dari jalan!",
-            "Label alamat: Naya - Penghuni Apartemen bertingkat tinggi di ujung jalan.",
-            "Cepat antarkan ke Naya sebelum toko-toko menutup pintunya!"
+            "Kotak paket kardus berhasil diambil dari jalan aspal!",
+            "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Gedung Apartemen.",
+            "Cepat antarkan ke Naya sebelum batas waktu 10 menit habis!"
         };
 
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         Transform targetTr = player != null ? player.transform : transform;
 
-        NPCDialogueOverlay.ShowSequentialDialogue(targetTr, "Rian (Kurir)", pickupMsg, () =>
-        {
-            packagesDelivered = Mathf.Max(packagesDelivered, 4);
-            OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
-            AdvanceMission(DeliveryMissionState.Package5_Apartment);
-        });
+        NPCDialogueOverlay.ShowSequentialDialogue(targetTr, "Rian (Kurir)", pickupMsg);
     }
 
     private void AdvanceMission(DeliveryMissionState nextState)
