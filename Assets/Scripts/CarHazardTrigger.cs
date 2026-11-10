@@ -47,6 +47,8 @@ public class CarHazardTrigger : MonoBehaviour
         Vector3 force = pushDir * knockbackStrength;
         player.ApplyKnockback(force, 0.75f);
 
+        GameAudioManager.Instance?.PlayCarHonk();
+
         if (DeliveryGameManager.Instance != null)
         {
             DeliveryGameManager.Instance.ApplyCarHitPenalty();

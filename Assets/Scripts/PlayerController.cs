@@ -89,6 +89,7 @@ public class PlayerController : MonoBehaviour
     private Collider[] ownColliders;
     private string lastBlockedObstacle = null;
     private float lastBlockedTime = -999f;
+    private float footstepTimer = 0f;
 
     private void Awake()
     {
@@ -387,6 +388,22 @@ public class PlayerController : MonoBehaviour
             }
 
             if (hasParamSpeedF) animator.SetFloat(ParamSpeedF, animSpeed);
+        }
+
+        // 12. Efek Suara Langkah Kaki (Footstep SFX)
+        if (isGrounded && inputMagnitude > 0.1f)
+        {
+            footstepTimer -= Time.deltaTime;
+            float stepInterval = isSprinting ? 0.28f : 0.42f;
+            if (footstepTimer <= 0f)
+            {
+                footstepTimer = stepInterval;
+                GameAudioManager.Instance?.PlayFootstep(isSprinting ? 0.45f : 0.35f);
+            }
+        }
+        else
+        {
+            footstepTimer = 0.1f;
         }
     }
 

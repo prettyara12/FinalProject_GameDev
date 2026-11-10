@@ -115,6 +115,17 @@ public class DeliveryRecipient : MonoBehaviour
             // Jangan trigger jika dialog berurutan sedang aktif
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
+            // Syarat Alur Misi: Rian harus pergi ke Dimas terlebih dahulu!
+            // Teks dan interaksi bertanya kepada Petugas Parkir HANYA boleh muncul setelah Rian ke Dimas (Misi 4)
+            if (recipientType == RecipientType.PetugasParkir)
+            {
+                DeliveryGameManager gm = DeliveryGameManager.Instance;
+                if (gm == null || gm.CurrentState < DeliveryMissionState.Package4_DroppedPackage)
+                {
+                    return;
+                }
+            }
+
             // Saat Misi 4 (paket terjatuh di dekat pos), Dimas tidak membajak prompt tombol [E] dari paket
             if (recipientType == RecipientType.Dimas && DeliveryGameManager.Instance != null && DeliveryGameManager.Instance.CurrentState == DeliveryMissionState.Package4_DroppedPackage)
             {
@@ -142,14 +153,18 @@ public class DeliveryRecipient : MonoBehaviour
 
     private string GetInteractionPromptText()
     {
+        var state = DeliveryGameManager.Instance != null ? DeliveryGameManager.Instance.CurrentState : DeliveryMissionState.Prolog;
+
         if (recipientType == RecipientType.PetugasParkir)
         {
-            return "Bertanya kepada Petugas Parkir";
+            if (state == DeliveryMissionState.Package4_DroppedPackage)
+            {
+                return "Bertanya kepada Petugas Parkir";
+            }
+            return "Bicara dengan Petugas Parkir";
         }
 
         if (DeliveryGameManager.Instance == null) return "Bicara";
-
-        var state = DeliveryGameManager.Instance.CurrentState;
         if (state == DeliveryMissionState.Prolog && recipientType == RecipientType.PakBeni)
         {
             return "Bicara dengan Pak Beni";

@@ -50,6 +50,7 @@ public class DeliveryGameManager : MonoBehaviour
     [SerializeField] private bool isGameStarted = false;
     [SerializeField] private bool isTimerRunning = false;
     [SerializeField] private bool isDroppedPackageRevealed = false;
+    [SerializeField] private bool isDroppedPackagePickedUp = false;
     [SerializeField] private DeliveryMissionState currentState = DeliveryMissionState.Prolog;
     [SerializeField] private GameEnding finalEnding = GameEnding.None;
 
@@ -60,6 +61,7 @@ public class DeliveryGameManager : MonoBehaviour
     public bool IsGameStarted => isGameStarted;
     public bool IsTimerRunning => isTimerRunning;
     public bool IsDroppedPackageRevealed => isDroppedPackageRevealed;
+    public bool IsDroppedPackagePickedUp => isDroppedPackagePickedUp;
     public DeliveryMissionState CurrentState => currentState;
     public GameEnding FinalEnding => finalEnding;
 
@@ -156,6 +158,8 @@ public class DeliveryGameManager : MonoBehaviour
         timeRemaining = Mathf.Max(0f, timeRemaining - wrongDeliveryPenalty);
         wrongDeliveryCount++;
 
+        GameAudioManager.Instance?.PlayWrongDelivery();
+
         OnPenaltyApplied?.Invoke(wrongDeliveryPenalty, "Salah Alamat! -20s");
         OnTimerTick?.Invoke(timeRemaining);
 
@@ -170,6 +174,8 @@ public class DeliveryGameManager : MonoBehaviour
         if (finalEnding != GameEnding.None) return;
 
         timeRemaining = Mathf.Max(0f, timeRemaining - carHitPenalty);
+
+        GameAudioManager.Instance?.PlayTrafficPenalty();
 
         OnPenaltyApplied?.Invoke(carHitPenalty, "Tertabrak Kendaraan! -5s");
         OnTimerTick?.Invoke(timeRemaining);
@@ -206,40 +212,59 @@ public class DeliveryGameManager : MonoBehaviour
             return;
         }
 
-        // 2. Petugas Parkir: Mengatur kendaraan dan memberi info jalur terhalang & rute alternatif (serta petunjuk paket jatuh pada Misi 4)
+        // 2. Petugas Parkir: Hanya aktif memberikan petunjuk saat Misi 4 (setelah Rian bicara dengan Dimas)
         if (recipient.recipientType == DeliveryRecipient.RecipientType.PetugasParkir)
         {
-            if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+            if (currentState < DeliveryMissionState.Package4_DroppedPackage)
             {
-                string[] droppedClues = isDroppedPackageRevealed
-                    ? new string[]
-                    {
-                        "Kotak paket kardusmu ada di jalan aspal dekat pembatas beton sebelah pos Fire Station.",
-                        "Cepat ambil dengan tombol [E] sebelum kendaraan lain melindasnya!"
-                    }
-                    : (recipient.successDialogueLines != null && recipient.successDialogueLines.Length > 0
-                        ? recipient.successDialogueLines
-                        : recipient.introDialogueLines);
-
-                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", droppedClues, () =>
+                // Rian belum menyelesaikan pengantaran ke Dimas
+                string[] advice = new string[]
                 {
-                    if (!isDroppedPackageRevealed)
+                    "Halo Rian! Selesaikan dulu tugas pengantaran paketmu ke pelanggan di kota sebelum bertanya hal lain.",
+                    "Fokus antarkan paket ke tujuan yang sesuai dengan label alamat di HUD!"
+                };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", advice);
+            }
+            else if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+            {
+                if (isDroppedPackagePickedUp)
+                {
+                    string[] alreadyPicked = new string[]
                     {
-                        RevealDroppedPackage();
-                    }
-                });
+                        "Bagus Rian, kotak paket kardusmu sudah berhasil kamu ambil dari jalan aspal!",
+                        "Sekarang lekas antarkan paket tersebut ke Naya di gedung apartemen."
+                    };
+                    NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", alreadyPicked);
+                }
+                else
+                {
+                    string[] droppedClues = isDroppedPackageRevealed
+                        ? new string[]
+                        {
+                            "Kotak paket kardusmu ada di jalan aspal dekat pembatas beton sebelah pos Fire Station.",
+                            "Cepat kembali ke sana dan ambil dengan tombol [E] sebelum terlindas kendaraan!"
+                        }
+                        : (recipient.successDialogueLines != null && recipient.successDialogueLines.Length > 0
+                            ? recipient.successDialogueLines
+                            : recipient.introDialogueLines);
+
+                    NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", droppedClues, () =>
+                    {
+                        if (!isDroppedPackageRevealed)
+                        {
+                            RevealDroppedPackage();
+                        }
+                    });
+                }
             }
             else
             {
-                string[] trafficAdvice = recipient.introDialogueLines != null && recipient.introDialogueLines.Length > 0
-                    ? recipient.introDialogueLines
-                    : new string[]
-                    {
-                        "Halo Rian! Jalur utama kendaraan sedang padat, hati-hati saat melintas di jalan raya.",
-                        "Gunakan trotoar pejalan kaki dan lorong antar gedung untuk rute alternatif yang lebih cepat dan aman!",
-                        "Waspadalah saat menyeberang jalan raya, kendaraan bergerak kencang!"
-                    };
-                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", trafficAdvice);
+                string[] doneAdvice = new string[]
+                {
+                    "Bagus Rian, paket yang terjatuh sudah berhasil kamu selamatkan!",
+                    "Lanjutkan pengantaran paket terakhirmu ke Naya di apartemen sebelum waktu habis."
+                };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, "Petugas Parkir", doneAdvice);
             }
             return;
         }
@@ -289,6 +314,7 @@ public class DeliveryGameManager : MonoBehaviour
         if (isCorrectRecipient)
         {
             // Penerima Benar!
+            GameAudioManager.Instance?.PlayDeliverySuccess();
             NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, recipient.successDialogueLines, () =>
             {
                 packagesDelivered++;
@@ -333,6 +359,31 @@ public class DeliveryGameManager : MonoBehaviour
     {
         if (finalEnding != GameEnding.None) return;
 
+        isDroppedPackagePickedUp = true;
+        GameAudioManager.Instance?.PlayPackagePickup();
+
+        // Segera hilangkan dan sembunyikan semua objek paket di scene
+        DroppedPackageItem[] pkgs = Object.FindObjectsByType<DroppedPackageItem>(FindObjectsInactive.Include);
+        foreach (var p in pkgs)
+        {
+            if (p != null)
+            {
+                p.gameObject.SetActive(false);
+                Renderer[] rList = p.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in rList) r.enabled = false;
+            }
+        }
+        GameObject[] allBoxes = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var b in allBoxes)
+        {
+            if (b != null && b.name.Contains("CardboardBox_02"))
+            {
+                b.SetActive(false);
+                Renderer[] rList = b.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in rList) r.enabled = false;
+            }
+        }
+
         string[] pickupMsg = new string[]
         {
             "Kotak paket kardus berhasil dipungut dari jalan!",
@@ -362,6 +413,8 @@ public class DeliveryGameManager : MonoBehaviour
     /// </summary>
     public void RevealDroppedPackage()
     {
+        if (isDroppedPackagePickedUp) return;
+
         isDroppedPackageRevealed = true;
 
         DroppedPackageItem pkg = Object.FindAnyObjectByType<DroppedPackageItem>(FindObjectsInactive.Include);
@@ -392,6 +445,7 @@ public class DeliveryGameManager : MonoBehaviour
         wrongDeliveryCount = 0;
         timeRemaining = totalTimeLimit;
         isDroppedPackageRevealed = false;
+        isDroppedPackagePickedUp = false;
         currentState = DeliveryMissionState.Prolog;
 
         // Tutup dialog aktif & sembunyikan modal ending
@@ -437,6 +491,7 @@ public class DeliveryGameManager : MonoBehaviour
         wrongDeliveryCount = 0;
         timeRemaining = totalTimeLimit;
         isDroppedPackageRevealed = false;
+        isDroppedPackagePickedUp = false;
         currentState = DeliveryMissionState.Prolog;
         isTimerRunning = true;
         isGameStarted = true;

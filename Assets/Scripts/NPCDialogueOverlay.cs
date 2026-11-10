@@ -451,6 +451,7 @@ public class NPCDialogueOverlay : MonoBehaviour
         }
 
         string line = currentSequentialLines[currentSequentialIndex];
+        GameAudioManager.Instance?.PlayDialogueAdvance();
         ShowDialogue(speakerTransform, speakerName, line, true, heightOffset);
 
         if (subtitleContinuePromptText != null)

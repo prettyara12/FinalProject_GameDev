@@ -369,6 +369,7 @@ public class DeliveryHUD : MonoBehaviour
         Button ipBtn = interactPromptObj.AddComponent<Button>();
         ipBtn.onClick.AddListener(() =>
         {
+            GameAudioManager.Instance?.PlayUIClick();
             currentInteractCallback?.Invoke();
         });
 
@@ -616,6 +617,7 @@ public class DeliveryHUD : MonoBehaviour
         restartButton.onClick.AddListener(() =>
         {
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
+            GameAudioManager.Instance?.PlayUIClick();
             RestartGame();
         });
 
@@ -666,6 +668,7 @@ public class DeliveryHUD : MonoBehaviour
         mainMenuButton.onClick.AddListener(() =>
         {
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
+            GameAudioManager.Instance?.PlayUIClick();
             if (DeliveryGameManager.Instance != null)
             {
                 DeliveryGameManager.Instance.GoToMainMenu();
@@ -880,7 +883,11 @@ public class DeliveryHUD : MonoBehaviour
         cb.disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
         btn.colors = cb;
 
-        btn.onClick.AddListener(() => onClick?.Invoke());
+        btn.onClick.AddListener(() =>
+        {
+            GameAudioManager.Instance?.PlayUIClick();
+            onClick?.Invoke();
+        });
 
         GameObject txtGo = new GameObject("Text", typeof(RectTransform));
         txtGo.transform.SetParent(btnGo.transform, false);
@@ -1144,6 +1151,7 @@ public class DeliveryHUD : MonoBehaviour
     {
         if (mapModalObj == null) return;
         isMapOpen = !isMapOpen;
+        GameAudioManager.Instance?.PlayUIClick();
         mapModalObj.SetActive(isMapOpen);
     }
 

@@ -19,9 +19,10 @@ public class DroppedPackageItem : MonoBehaviour
     {
         FindPlayer();
 
-        // Paket tersembunyi hingga diungkap oleh Petugas Parkir
+        // Paket tersembunyi hingga diungkap oleh Petugas Parkir saat Misi 4,
+        // dan harus tetap tersembunyi jika sudah pernah dipungut
         DeliveryGameManager gm = DeliveryGameManager.Instance;
-        if (gm != null && !gm.IsDroppedPackageRevealed)
+        if (gm != null && (!gm.IsDroppedPackageRevealed || gm.IsDroppedPackagePickedUp))
         {
             gameObject.SetActive(false);
         }
@@ -51,6 +52,17 @@ public class DroppedPackageItem : MonoBehaviour
             if (playerTransform == null) return;
         }
 
+        DeliveryGameManager gm = DeliveryGameManager.Instance;
+
+        // Jika paket sudah dipungut, pastikan objek benar-benar tidak aktif dan keluar dari Update
+        if (gm != null && gm.IsDroppedPackagePickedUp)
+        {
+            Renderer[] rList = GetComponentsInChildren<Renderer>(true);
+            foreach (var r in rList) r.enabled = false;
+            gameObject.SetActive(false);
+            return;
+        }
+
         // Gunakan jarak horizontal 2D (XZ) agar perbedaan elevasi tanah tidak menghalangi
         float dist = Vector2.Distance(
             new Vector2(transform.position.x, transform.position.z),
@@ -60,8 +72,7 @@ public class DroppedPackageItem : MonoBehaviour
         {
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
-            DeliveryGameManager gm = DeliveryGameManager.Instance;
-            bool canPickup = (gm == null || (gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage && gm.IsDroppedPackageRevealed));
+            bool canPickup = (gm == null || (gm.CurrentState == DeliveryMissionState.Package4_DroppedPackage && gm.IsDroppedPackageRevealed && !gm.IsDroppedPackagePickedUp));
 
             if (canPickup)
             {
@@ -110,12 +121,18 @@ public class DroppedPackageItem : MonoBehaviour
     {
         if (NPCDialogueOverlay.IsDialogueActive) return;
 
+        // Matikan langsung seluruh visual renderer & collider agar seketika lenyap dari jalan aspal
+        Renderer[] rends = GetComponentsInChildren<Renderer>(true);
+        foreach (var r in rends) r.enabled = false;
+        Collider[] cols = GetComponentsInChildren<Collider>(true);
+        foreach (var c in cols) c.enabled = false;
+
+        gameObject.SetActive(false);
+
         if (DeliveryGameManager.Instance != null)
         {
             DeliveryGameManager.Instance.PickUpDroppedPackage();
         }
-
-        gameObject.SetActive(false);
     }
 }
 

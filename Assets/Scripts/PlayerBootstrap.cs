@@ -536,6 +536,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         DeliveryHUD.EnsureInstance();
         NPCDialogueOverlay.EnsureInstance();
+        GameAudioManager.EnsureInstance();
 
         Debug.Log("[PlayerBootstrap] ⭐ Game 'Kurir Terakhir' Berhasil Dikonfigurasi Lengkap!");
     }
@@ -1026,15 +1027,18 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     private static void SetupDroppedPackageItem()
     {
-        // 1. Hapus paket lama (kubus primitif yang sebelumnya digunakan jika ada)
+        // 1. Hapus paket lama / objek duplikat jika ada
         GameObject[] allGo = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var go in allGo)
         {
             if (go == null) continue;
             if (go.name == "DroppedPackage_Mission4")
             {
-                MeshFilter mf = go.GetComponent<MeshFilter>();
-                if (mf != null && (mf.sharedMesh == null || mf.sharedMesh.name == "Cube"))
+                if (Application.isPlaying)
+                {
+                    Object.Destroy(go);
+                }
+                else
                 {
                     Object.DestroyImmediate(go);
                 }
@@ -1048,11 +1052,26 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         foreach (var go in allGo)
         {
             if (go == null) continue;
-            if (go.name.Contains("CardboardBox") || go.name == "DroppedPackage_Mission4")
+            if (go.name.Equals("CardboardBox_02") || go.name.Contains("CardboardBox_02"))
             {
                 pkgGo = go;
                 wasAlreadyInScene = true;
                 break;
+            }
+        }
+
+        // Fallback jika tidak ditemukan dengan nama persis CardboardBox_02
+        if (pkgGo == null)
+        {
+            foreach (var go in allGo)
+            {
+                if (go == null) continue;
+                if (go.name.Contains("CardboardBox"))
+                {
+                    pkgGo = go;
+                    wasAlreadyInScene = true;
+                    break;
+                }
             }
         }
 
@@ -1112,10 +1131,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (drop == null) drop = pkgGo.AddComponent<DroppedPackageItem>();
         drop.interactionRadius = 3.5f;
 
-        // Paket baru boleh terlihat setelah Rian selesai percakapan dengan Petugas Parkir
+        // Paket baru boleh terlihat setelah Rian selesai percakapan dengan Petugas Parkir (Misi 4),
+        // dan harus tetap sembunyi/hilang jika sudah pernah diambil
         DeliveryGameManager gm = DeliveryGameManager.Instance;
-        bool isRevealed = (gm != null && gm.IsDroppedPackageRevealed);
+        bool isRevealed = (gm != null && gm.IsDroppedPackageRevealed && !gm.IsDroppedPackagePickedUp);
         pkgGo.SetActive(isRevealed);
+        if (rend != null) rend.enabled = isRevealed;
     }
 
     /// <summary>
