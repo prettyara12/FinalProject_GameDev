@@ -43,7 +43,6 @@ public static class PlayerBootstrap
         var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
         string[] subScenePaths = new string[]
         {
-            "Assets/Module 2_Stage2.unity",
             "Assets/Scenes/SubScenes/SubScene_0_0.unity",
             "Assets/Scenes/SubScenes/SubScene_0_1.unity",
             "Assets/Scenes/SubScenes/SubScene_0_2.unity",

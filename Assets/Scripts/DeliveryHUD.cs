@@ -1494,11 +1494,11 @@ public class DeliveryHUD : MonoBehaviour
             // Level 1 (Module 2)
             if (ending == GameEnding.Ending1_KurirTerpercaya)
             {
-                // Menang di Level 1: Tampilkan 3 tombol (Lanjut ke Level 2, Main Lagi, Menu Utama)
+                bool hasStage2 = Application.CanStreamedLevelBeLoaded("Module 2_Stage2");
                 if (nextLevelButton != null)
                 {
-                    nextLevelButton.gameObject.SetActive(true);
-                    if (nextLevelButtonRect != null)
+                    nextLevelButton.gameObject.SetActive(hasStage2);
+                    if (nextLevelButtonRect != null && hasStage2)
                     {
                         nextLevelButtonRect.anchoredPosition = new Vector2(-225f, 32f);
                         nextLevelButtonRect.sizeDelta = new Vector2(205f, 48f);
@@ -1506,13 +1506,13 @@ public class DeliveryHUD : MonoBehaviour
                 }
                 if (restartButtonRect != null)
                 {
-                    restartButtonRect.anchoredPosition = new Vector2(0f, 32f);
-                    restartButtonRect.sizeDelta = new Vector2(185f, 48f);
+                    restartButtonRect.anchoredPosition = hasStage2 ? new Vector2(0f, 32f) : new Vector2(-115f, 32f);
+                    restartButtonRect.sizeDelta = hasStage2 ? new Vector2(185f, 48f) : new Vector2(210f, 48f);
                 }
                 if (mainMenuButtonRect != null)
                 {
-                    mainMenuButtonRect.anchoredPosition = new Vector2(215f, 32f);
-                    mainMenuButtonRect.sizeDelta = new Vector2(185f, 48f);
+                    mainMenuButtonRect.anchoredPosition = hasStage2 ? new Vector2(215f, 32f) : new Vector2(115f, 32f);
+                    mainMenuButtonRect.sizeDelta = hasStage2 ? new Vector2(185f, 48f) : new Vector2(210f, 48f);
                 }
 
                 if (endingTitleText != null)
