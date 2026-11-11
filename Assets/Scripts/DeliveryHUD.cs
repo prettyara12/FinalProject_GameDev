@@ -481,19 +481,19 @@ public class DeliveryHUD : MonoBehaviour
         layoutTxt.alignment = TextAnchor.UpperLeft;
         layoutTxt.text = isLevel2
             ? "📍 AREA UTAMA KOTA LEVEL 2 (TATA LETAK BARU):\n\n" +
-              "1. POS PUSAT PENGIRIMAN (Depan Mega Mall):\n" +
+              "1. POS PUSAT PENGIRIMAN (Center Plaza - Depan Mega Mall):\n" +
               "   • Titik Awal Rian & Pos Pak Beni (Misi Awal & Akhir)\n\n" +
-              "2. COFFEE SHOP (Plaza Barat - Bekas Balai Kota):\n" +
+              "2. COFFEE SHOP (Koridor Utara Barat):\n" +
               "   • Kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
-              "3. DRUG STORE (Pertokoan Selatan):\n" +
-              "   • Toko obat farmasi cabang selatan milik Pak Joko (Paket 2)\n\n" +
-              "4. FIRE STATION (Blok Utara - Bekas Bioskop):\n" +
-              "   • Pos pemadam tempat Dimas bertugas (Paket 3)\n\n" +
-              "5. PERSIMPANGAN UTAMA & PAKET JATUH:\n" +
-              "   • Petugas Parkir (Info) & Paket Jatuh dekat Toko Donat Utara (Misi 4)\n\n" +
-              "6. HUNIAN DERETAN TIMUR:\n" +
-              "   • Rumah tinggal tempat Naya menunggu dokumen (Paket 5)\n\n" +
-              "⚠️ AWAS: Barikade perbaikan jalan menutup jalur lurus! Manfaatkan gang & trotoar."
+              "3. DRUG STORE (Koridor Selatan Barat):\n" +
+              "   • Toko obat farmasi cabang milik Pak Joko (Paket 2)\n\n" +
+              "4. FIRE STATION (Koridor Utara Timur):\n" +
+              "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
+              "5. PERSIMPANGAN TENGAH & PAKET JATUH:\n" +
+              "   • Petugas Parkir (Info) & Paket Jatuh di Gang Tengah dekat Donut Shop (Misi 4)\n\n" +
+              "6. GEDUNG APARTEMEN MERAH (Koridor Selatan Timur):\n" +
+              "   • Gedung apartemen tempat Naya menunggu dokumen (Paket 5)\n\n" +
+              "⚠️ AWAS: Mobil melaju kencang di Koridor Utara & Selatan! Gunakan gang pejalan kaki."
             : "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
               "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
               "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
@@ -1298,39 +1298,39 @@ public class DeliveryHUD : MonoBehaviour
             {
                 case DeliveryMissionState.Prolog:
                     missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman (Level 2)";
-                    missionClueText.text = "Ambil 5 paket baru dari Pak Beni di depan Mall. Perhatikan denah rute baru [M] dan selesaikan sebelum batas waktu 7 menit habis!";
+                    missionClueText.text = "Ambil 5 paket baru dari Pak Beni di Center Plaza depan Mall. Perhatikan denah koridor baru [M] dan selesaikan sebelum batas waktu 7 menit habis!";
                     break;
                 case DeliveryMissionState.Package1_CoffeeShop:
-                    missionTitleText.text = "Tujuan: Clara di Coffee Shop (Plaza Barat)";
-                    missionClueText.text = "Label basah: 'C...ra' - Kedai kopi cabang barat di plaza barat kota (bekas lokasi balai kota).";
+                    missionTitleText.text = "Tujuan: Clara di Coffee Shop (Koridor Utara Barat)";
+                    missionClueText.text = "Label basah: 'C...ra' - Kedai kopi di trotoar Koridor Utara sebelah barat.";
                     break;
                 case DeliveryMissionState.Package2_DrugStore:
-                    missionTitleText.text = "Tujuan: Pak Joko di Drug Store (Selatan)";
-                    missionClueText.text = "Label basah: 'Pak J...o' - Apotek cabang selatan di sudut deretan pertokoan bawah.";
+                    missionTitleText.text = "Tujuan: Pak Joko di Drug Store (Koridor Selatan Barat)";
+                    missionClueText.text = "Label basah: 'Pak J...o' - Apotek cabang selatan di trotoar Koridor Selatan sebelah barat.";
                     break;
                 case DeliveryMissionState.Package3_HardwareStore:
-                    missionTitleText.text = "Tujuan: Dimas di Fire Station (Blok Utara)";
-                    missionClueText.text = "Label basah: 'Di...s' - Pos pemadam kebakaran blok utara di samping bekas bioskop.";
+                    missionTitleText.text = "Tujuan: Dimas di Fire Station (Koridor Utara Timur)";
+                    missionClueText.text = "Label basah: 'Di...s' - Pos pemadam kebakaran di trotoar Koridor Utara sebelah timur.";
                     break;
                 case DeliveryMissionState.Package4_DroppedPackage:
                     if (DeliveryGameManager.Instance != null && !DeliveryGameManager.Instance.IsDroppedPackageRevealed)
                     {
-                        missionTitleText.text = "Tujuan: Tanya Petugas Parkir (Persimpangan Utama)";
-                        missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Tanyakan lokasinya ke Petugas Parkir di persimpangan utama!";
+                        missionTitleText.text = "Tujuan: Tanya Petugas Parkir (Persimpangan Tengah)";
+                        missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Tanyakan lokasinya ke Petugas Parkir di persimpangan tengah!";
                     }
                     else
                     {
                         missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
-                        missionClueText.text = "Kotak paket kardus terlihat di jalan aspal dekat trotoar toko donat sebelah utara. Dekati dan tekan [E] untuk memungutnya!";
+                        missionClueText.text = "Kotak paket kardus terlihat di jalan aspal gang tengah dekat toko donat. Dekati dan tekan [E] untuk memungutnya!";
                     }
                     break;
                 case DeliveryMissionState.Package5_Apartment:
-                    missionTitleText.text = "Tujuan: Naya di Hunian Deretan Timur";
-                    missionClueText.text = "Label basah: 'N...a' - Pengiriman dokumen darurat ke rumah tinggal di deretan timur kota.";
+                    missionTitleText.text = "Tujuan: Naya di Apartemen (Koridor Selatan Timur)";
+                    missionClueText.text = "Label basah: 'N...a' - Pengiriman dokumen darurat ke gedung apartemen merah di Koridor Selatan sebelah timur.";
                     break;
                 case DeliveryMissionState.Final_ReturnToHub:
-                    missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Depan Mall!";
-                    missionClueText.text = "Seluruh 5 paket Level 2 selesai dikirim! Segera kembali ke Pak Beni sebelum batas waktu berakhir!";
+                    missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Center Plaza!";
+                    missionClueText.text = "Seluruh 5 paket Level 2 selesai dikirim! Segera kembali ke Pak Beni di Center Plaza depan Mall sebelum batas waktu berakhir!";
                     break;
                 case DeliveryMissionState.Completed:
                     missionTitleText.text = "Level 2 Selesai!";

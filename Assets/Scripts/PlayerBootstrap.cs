@@ -558,13 +558,20 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// </summary>
     public static void SetupCityLevel2(GameObject playerGo)
     {
+        // 0. Bangun Kota Baru Level 2 (jika belum ada)
+        GameObject cityRoot = GameObject.Find(Level2CityGenerator.RootCityName);
+        if (cityRoot == null)
+        {
+            Level2CityGenerator.BuildLevel2City(true);
+        }
+
         // 1. Bersihkan elemen tugas modul lama dan karakter tersembunyi
         CleanupLegacyModuleObjects();
 
-        // 2. Posisikan Rian (Player) di depan Mega Mall
+        // 2. Posisikan Rian (Player) di depan Mega Mall di Center Plaza
         if (playerGo != null)
         {
-            playerGo.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+            playerGo.transform.position = new Vector3(0f, 0.02f, -2f);
             playerGo.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
             PlayerController pc = playerGo.GetComponent<PlayerController>();
             if (pc != null)
@@ -584,17 +591,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 5. Setup Barikade / Rintangan Jalan Level 2
         SetupLevel2RoadObstacles();
 
-        // 6. Setup Mobil Berjalan & Hazard Tabrakan
-        try
-        {
-            CityCarManager.SetupUserManualCars();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning($"[PlayerBootstrap] Peringatan saat setup mobil Level 2: {ex.Message}");
-        }
-
-        // 7. Setup DeliveryGameManager & DeliveryHUD
+        // 6. Setup DeliveryGameManager & DeliveryHUD
         GameObject gmGo = GameObject.Find("DeliveryGameManager");
         if (gmGo == null) gmGo = new GameObject("DeliveryGameManager");
         DeliveryGameManager gm = gmGo.GetComponent<DeliveryGameManager>();
@@ -609,21 +606,21 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
     private static void SetupKurirRecipientsLevel2(GameObject playerGo)
     {
-        // 1. PAK BENI (Depan Mall - Pusat Pengiriman Awal)
+        // 1. PAK BENI (Center Plaza - Depan Mega Mall)
         EnsureRecipientNPCLevel2(
             "NPC_PakBeni",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Sheriff_Black.prefab",
             "SimplePeople_Sheriff_Black",
-            new Vector3(310.05f, 0.02f, 6.06f),
-            Quaternion.Euler(0f, 180f, 0f),
+            new Vector3(0f, 0.02f, -3.5f),
+            Quaternion.Euler(0f, 0f, 0f),
             "Pak Beni (Pusat Pengiriman)",
             DeliveryRecipient.RecipientType.PakBeni,
             DeliveryMissionState.Prolog,
             new string[]
             {
                 "Rian! Luar biasa kamu berhasil melewati pengiriman pertama.",
-                "Tapi sekarang giliran tantangan sesungguhnya: Kota mengalami perbaikan jalan dan tata letak toko telah berubah drastis!",
-                "Kamu harus mengantarkan 5 paket baru ke pelanggan di lokasi yang berbeda. Waktumu 7 menit! Mulailah dengan mengantar paket pertama ke Clara yang kini pindah ke barat laut kota."
+                "Tapi sekarang giliran tantangan sesungguhnya: Kota ini memiliki tata letak jalan koridor baru dan toko-toko berada di lokasi berbeda!",
+                "Kamu harus mengantarkan 5 paket baru ke pelanggan di lokasi yang berbeda. Waktumu 7 menit! Mulailah dengan mengantar paket pertama ke Clara di Coffee Shop Koridor Utara sebelah barat."
             },
             new string[]
             {
@@ -637,77 +634,77 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 2. CLARA (Pindah ke Area Plaza Barat Kota - Bekas Town Hall)
+        // 2. CLARA (Coffee Shop - Koridor Utara Barat)
         EnsureRecipientNPCLevel2(
             "NPC_Clara",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Waitress_White.prefab",
             "SimplePeople_Waitress_White",
-            new Vector3(287.5f, 0.02f, 4.36f),
-            Quaternion.Euler(0f, -90f, 0f),
-            "Clara (Coffee Shop Plaza Barat)",
+            new Vector3(-25f, 0.02f, 17f),
+            Quaternion.Euler(0f, 180f, 0f),
+            "Clara (Coffee Shop Koridor Utara)",
             DeliveryRecipient.RecipientType.Clara,
             DeliveryMissionState.Package1_CoffeeShop,
             new string[]
             {
-                "Selamat datang di kedai kopi Clara cabang Plaza Barat! Apakah kamu membawa paket biji kopi segar pesanan kami?"
+                "Selamat datang di kedai kopi Clara cabang Koridor Utara! Apakah kamu membawa paket biji kopi segar pesanan kami?"
             },
             new string[]
             {
-                "Terima kasih banyak Mas Rian! Kedai kopi kami yang baru pindah ke plaza barat ini sangat terbantu pasokan ini.",
-                "Tadi Pak Joko dari Drug Store mengabari kalau tokonya sekarang pindah ke area pertokoan selatan!"
+                "Terima kasih banyak Mas Rian! Kedai kopi kami di Koridor Utara Barat ini sangat terbantu pasokan ini.",
+                "Tadi Pak Joko dari Drug Store mengabari kalau tokonya sekarang berada di Koridor Selatan sebelah barat!"
             },
             new string[]
             {
-                "Maaf mas, ini kedai kopi Clara di plaza barat. Saya tidak memesan paket ini! Coba periksa alamat toko lain."
+                "Maaf mas, ini kedai kopi Clara di Koridor Utara. Saya tidak memesan paket ini! Coba periksa alamat toko lain."
             },
             playerGo
         );
 
-        // 3. PAK JOKO (Pindah ke Area Pertokoan Selatan)
+        // 3. PAK JOKO (Drug Store - Koridor Selatan Barat)
         EnsureRecipientNPCLevel2(
             "NPC_PakJoko",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Prostitute_Brown.prefab",
             "SimplePeople_Prostitute_Brown",
-            new Vector3(303.8f, 0.02f, -7.17f),
-            Quaternion.Euler(0f, -90f, 0f),
-            "Pak Joko (Drug Store Selatan)",
+            new Vector3(-25f, 0.02f, -17f),
+            Quaternion.Euler(0f, 0f, 0f),
+            "Pak Joko (Drug Store Koridor Selatan)",
             DeliveryRecipient.RecipientType.PakJoko,
             DeliveryMissionState.Package2_DrugStore,
             new string[]
             {
-                "Halo anak muda! Saya Pak Joko. Sedang mengantar pasokan obat darurat ke apotek cabang selatan ini?"
+                "Halo anak muda! Saya Pak Joko. Sedang mengantar pasokan obat darurat ke apotek cabang Koridor Selatan ini?"
             },
             new string[]
             {
                 "Terima kasih banyak Mas Rian! Pasokan obat ini sangat dibutuhkan warga kawasan selatan.",
-                "Kalau kamu mencari Dimas, pos pemadam kebakarannya sekarang dipindahkan ke blok utara dekat toko donat!"
+                "Kalau kamu mencari Dimas, pos pemadam kebakarannya berada di Koridor Utara sebelah timur!"
             },
             new string[]
             {
-                "Maaf mas, ini Drug Store cabang selatan. Saya tidak memesan perkakas atau paket ini! Jangan sampai salah alamat."
+                "Maaf mas, ini Drug Store Koridor Selatan. Saya tidak memesan perkakas atau paket ini! Jangan sampai salah alamat."
             },
             playerGo
         );
 
-        // 4. DIMAS (Pindah ke Area Blok Utara Dekat Toko Donat)
+        // 4. DIMAS (Fire Station - Koridor Utara Timur)
         EnsureRecipientNPCLevel2(
             "NPC_Dimas",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Brown.prefab",
             "SimplePeople_StreetMan_Brown",
-            new Vector3(307.55f, 0.02f, 9.2f),
+            new Vector3(25f, 0.02f, 17f),
             Quaternion.Euler(0f, 180f, 0f),
-            "Dimas (Fire Station Blok Utara)",
+            "Dimas (Fire Station Koridor Utara)",
             DeliveryRecipient.RecipientType.Dimas,
             DeliveryMissionState.Package3_HardwareStore,
             new string[]
             {
-                "Halo kurir! Ini pos pemadam dan siaga darurat blok utara. Ada paket perlengkapan darurat untuk tim kami?"
+                "Halo kurir! Ini pos pemadam dan siaga darurat Koridor Utara Timur. Ada paket perlengkapan darurat untuk tim kami?"
             },
             new string[]
             {
                 "Sip, perlengkapan darurat tim pos utara sudah tiba! Terima kasih kurir!",
-                "Gawat Rian! Tadi kulihat ada satu kotak paketmu yang terjatuh di jalan aspal dekat toko donat sebelah utara saat kamu melintas cepat!",
-                "Coba cepat tanyakan ke Petugas Parkir yang berjaga di persimpangan utama untuk mengetahui lokasi persisnya!"
+                "Gawat Rian! Tadi kulihat ada satu kotak paketmu yang terjatuh di jalan aspal dekat toko donat gang tengah saat kamu melintas cepat!",
+                "Coba cepat tanyakan ke Petugas Parkir yang berjaga di persimpangan tengah untuk mengetahui lokasi persisnya!"
             },
             new string[]
             {
@@ -716,55 +713,55 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             playerGo
         );
 
-        // 5. PETUGAS PARKIR (Persimpangan Jalan Utama)
+        // 5. PETUGAS PARKIR (Persimpangan Tengah)
         EnsureRecipientNPCLevel2(
             "NPC_PetugasParkir",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_RoadWorker_White.prefab",
             "SimplePeople_RoadWorker_White",
-            new Vector3(310.5f, 0.02f, 6.5f),
-            Quaternion.Euler(0f, -45f, 0f),
-            "Petugas Parkir (Persimpangan Utama)",
+            new Vector3(0f, 0.02f, 10f),
+            Quaternion.Euler(0f, 180f, 0f),
+            "Petugas Parkir (Persimpangan Tengah)",
             DeliveryRecipient.RecipientType.PetugasParkir,
             DeliveryMissionState.Package4_DroppedPackage,
             new string[]
             {
-                "Halo Rian! Hati-hati ya, jalan utama sedang dipasangi barikade pekerjaan jalan di beberapa titik.",
-                "Gunakan trotoar pejalan kaki dan lorong antar gedung untuk rute yang lebih aman!"
+                "Halo Rian! Hati-hati ya, kedua koridor jalan raya dilintasi mobil-mobil yang melaju kencang.",
+                "Gunakan trotoar pejalan kaki dan gang liku tengah untuk rute yang lebih aman!"
             },
             new string[]
             {
-                "Hei Rian! Tadi kulihat satu kotak paket kardusmu terjatuh di jalan aspal dekat trotoar toko donat sebelah utara saat kamu berbelok!",
-                "Cepat lari ke utara dekat deretan toko donat dan ambil paket kardus itu dengan tombol [E]!"
+                "Hei Rian! Tadi kulihat satu kotak paket kardusmu terjatuh di aspal gang tengah dekat toko donat saat kamu berbelok!",
+                "Cepat lari ke gang tengah dekat toko donat dan ambil paket kardus itu dengan tombol [E]!"
             },
             new string[]
             {
-                "Saya petugas pengatur lalu lintas persimpangan jalan utama. Banyak rintangan jalan, hati-hati melintas!"
+                "Saya petugas pengatur lalu lintas persimpangan jalan utama. Banyak mobil melintas, hati-hati menyeberang jalan!"
             },
             playerGo
         );
 
-        // 6. NAYA (Pindah ke Gedung Hunian Deretan Timur)
+        // 6. NAYA (Apartemen Merah - Koridor Selatan Timur)
         EnsureRecipientNPCLevel2(
             "NPC_Naya",
             "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_BeachBabe_Black.prefab",
             "SimplePeople_BeachBabe_Black",
-            new Vector3(312.8f, 0.02f, 2.77f),
-            Quaternion.Euler(0f, -90f, 0f),
-            "Naya (Hunian Deretan Timur)",
+            new Vector3(25f, 0.02f, -17f),
+            Quaternion.Euler(0f, 0f, 0f),
+            "Naya (Apartemen Koridor Selatan)",
             DeliveryRecipient.RecipientType.Naya,
             DeliveryMissionState.Package5_Apartment,
             new string[]
             {
-                "Halo, aku Naya. Apakah kamu membawa dokumen penting yang dikirimkan keluargaku ke hunian deretan timur ini?"
+                "Halo, aku Naya. Apakah kamu membawa dokumen penting yang dikirimkan keluargaku ke apartemen merah Koridor Selatan Timur ini?"
             },
             new string[]
             {
-                "Syukurlah dokumen penting ini sampai juga tepat waktu di hunian timur kami! Terima kasih banyak Mas Rian!",
+                "Syukurlah dokumen penting ini sampai juga tepat waktu di apartemen kami! Terima kasih banyak Mas Rian!",
                 "Semua tugas paketmu sudah selesai! Lekas kembali ke Pak Beni di depan Mega Mall untuk menyelesaikan tugas malam ini!"
             },
             new string[]
             {
-                "Maaf mas, saya Naya di hunian timur. Saya hanya menunggu kiriman dokumen penting keluarga saya!"
+                "Maaf mas, saya Naya di apartemen selatan timur. Saya hanya menunggu kiriman dokumen penting keluarga saya!"
             },
             playerGo
         );
@@ -898,8 +895,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        // Posisi baru di Level 2: di jalan aspal dekat trotoar toko donat (307.06, 0.026, 12.8)
-        pkgGo.transform.position = new Vector3(307.06f, 0.026f, 12.8f);
+        // Posisi baru di Level 2: di jalan aspal gang tengah dekat toko donat (10, 0.026, 3)
+        pkgGo.transform.position = new Vector3(10f, 0.026f, 3f);
         pkgGo.transform.rotation = Quaternion.identity;
 
         MeshRenderer rend = pkgGo.GetComponentInChildren<MeshRenderer>();
@@ -938,11 +935,11 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             obstaclesRoot = new GameObject("Level2_RoadObstacles");
         }
 
-        // Barikade 1: Menutup jalur lurus timur antara Mall dan pertokoan timur
-        CreateRoadBarricade(obstaclesRoot, new Vector3(313.2f, 0.02f, 5.0f), Quaternion.Euler(0f, 0f, 0f), "Barikade Jalur Timur");
+        // Barikade 1: Menutup jalur lurus utara (North Avenue)
+        CreateRoadBarricade(obstaclesRoot, new Vector3(-8f, 0.02f, 20f), Quaternion.Euler(0f, 0f, 0f), "Barikade Jalur Utara");
 
-        // Barikade 2: Menutup jalur lurus barat antara Mall dan Fire Station
-        CreateRoadBarricade(obstaclesRoot, new Vector3(305.5f, 0.02f, 1.0f), Quaternion.Euler(0f, 90f, 0f), "Barikade Jalur Barat");
+        // Barikade 2: Menutup jalur lurus selatan (South Avenue)
+        CreateRoadBarricade(obstaclesRoot, new Vector3(8f, 0.02f, -20f), Quaternion.Euler(0f, 0f, 0f), "Barikade Jalur Selatan");
     }
 
     private static void CreateRoadBarricade(GameObject parent, Vector3 pos, Quaternion rot, string name)
