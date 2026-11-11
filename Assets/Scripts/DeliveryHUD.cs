@@ -47,6 +47,10 @@ public class DeliveryHUD : MonoBehaviour
     private Text endingStatsText;
     private Button restartButton;
     private Button mainMenuButton;
+    private Button nextLevelButton;
+    private RectTransform restartButtonRect;
+    private RectTransform mainMenuButtonRect;
+    private RectTransform nextLevelButtonRect;
     private float endingModalOpenTime = 0f;
 
     // Main Menu Elemen
@@ -107,7 +111,18 @@ public class DeliveryHUD : MonoBehaviour
     private void Start()
     {
         BindGameManager();
-        ShowMainMenu();
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2")
+        {
+            HideMainMenu();
+            if (DeliveryGameManager.Instance != null)
+            {
+                DeliveryGameManager.Instance.StartGame();
+            }
+        }
+        else
+        {
+            ShowMainMenu();
+        }
     }
 
     private void BindGameManager()
@@ -436,13 +451,17 @@ public class DeliveryHUD : MonoBehaviour
         titleRT.anchoredPosition = new Vector2(0f, -24f);
         titleRT.sizeDelta = new Vector2(0f, 36f);
 
+        bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+
         Text titleTxt = titleGo.AddComponent<Text>();
         titleTxt.font = mainFont;
         titleTxt.fontSize = 22;
         titleTxt.fontStyle = FontStyle.Bold;
         titleTxt.color = new Color(0.35f, 0.85f, 1f, 1f);
         titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.text = "🗺️ DENAH KAWASAN KOTA — KURIR TERAKHIR";
+        titleTxt.text = isLevel2
+            ? "🗺️ DENAH KOTA — LEVEL 2 (RUTE & TATA LETAK BARU)"
+            : "🗺️ DENAH KAWASAN KOTA — KURIR TERAKHIR";
 
         // Layout Lokasi Kota (Grid Panduan Bersih)
         GameObject layoutGo = new GameObject("MapLayoutText");
@@ -460,19 +479,31 @@ public class DeliveryHUD : MonoBehaviour
         layoutTxt.color = Color.white;
         layoutTxt.lineSpacing = 1.35f;
         layoutTxt.alignment = TextAnchor.UpperLeft;
-        layoutTxt.text =
-            "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
-            "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
-            "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
-            "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
-            "2. COFFEE SHOP (Timur Trotoar):\n" +
-            "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
-            "3. DRUG STORE (Sudut Pertokoan Barat):\n" +
-            "   • Toko obat dengan plang nama farmasi milik Pak Joko (Paket 2)\n\n" +
-            "4. FIRE STATION / POS PEMADAM (Barat):\n" +
-            "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
-            "5. GEDUNG APARTEMEN (Utara Ujung Jalan):\n" +
-            "   • Gedung bertingkat tinggi tempat Naya menunggu dokumen (Paket 5)";
+        layoutTxt.text = isLevel2
+            ? "📍 AREA UTAMA KOTA LEVEL 2 (TATA LETAK BARU):\n\n" +
+              "1. POS PUSAT PENGIRIMAN (Depan Mega Mall):\n" +
+              "   • Titik Awal Rian & Pos Pak Beni (Misi Awal & Akhir)\n\n" +
+              "2. COFFEE SHOP (Barat Laut):\n" +
+              "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
+              "3. DRUG STORE (Pertokoan Selatan):\n" +
+              "   • Toko obat farmasi cabang selatan milik Pak Joko (Paket 2)\n\n" +
+              "4. POS KEAMANAN (Timur Laut dekat Donut Shop):\n" +
+              "   • Pos Dimas (Paket 3) & Titik Paket Jatuh di Aspal (Misi 4)\n\n" +
+              "5. PERSIMPANGAN TIMUR & HUNIAN BARAT:\n" +
+              "   • Petugas Parkir untuk info paket & Naya di hunian barat (Paket 5)\n\n" +
+              "⚠️ AWAS: Barikade pekerjaan jalan menutup jalur lurus! Manfaatkan lorong & trotoar."
+            : "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
+              "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
+              "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
+              "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
+              "2. COFFEE SHOP (Timur Trotoar):\n" +
+              "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
+              "3. DRUG STORE (Sudut Pertokoan Barat):\n" +
+              "   • Toko obat dengan plang nama farmasi milik Pak Joko (Paket 2)\n\n" +
+              "4. FIRE STATION / POS PEMADAM (Barat):\n" +
+              "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
+              "5. GEDUNG APARTEMEN (Utara Ujung Jalan):\n" +
+              "   • Gedung bertingkat tinggi tempat Naya menunggu dokumen (Paket 5)";
 
         // Footer Tutup
         GameObject footGo = new GameObject("MapFooter");
@@ -596,12 +627,12 @@ public class DeliveryHUD : MonoBehaviour
         // Tombol 1: Main Lagi (Kiri)
         GameObject btnGo = new GameObject("RestartButton");
         btnGo.transform.SetParent(card.transform, false);
-        RectTransform bRT = btnGo.AddComponent<RectTransform>();
-        bRT.anchorMin = new Vector2(0.5f, 0f);
-        bRT.anchorMax = new Vector2(0.5f, 0f);
-        bRT.pivot = new Vector2(0.5f, 0f);
-        bRT.anchoredPosition = new Vector2(-115f, 32f);
-        bRT.sizeDelta = new Vector2(210f, 48f);
+        restartButtonRect = btnGo.AddComponent<RectTransform>();
+        restartButtonRect.anchorMin = new Vector2(0.5f, 0f);
+        restartButtonRect.anchorMax = new Vector2(0.5f, 0f);
+        restartButtonRect.pivot = new Vector2(0.5f, 0f);
+        restartButtonRect.anchoredPosition = new Vector2(-115f, 32f);
+        restartButtonRect.sizeDelta = new Vector2(210f, 48f);
 
         Image btnImg = btnGo.AddComponent<Image>();
         btnImg.color = Color.white;
@@ -647,12 +678,12 @@ public class DeliveryHUD : MonoBehaviour
         // Tombol 2: Menu Utama (Kanan)
         GameObject menuBtnGo = new GameObject("MainMenuButton");
         menuBtnGo.transform.SetParent(card.transform, false);
-        RectTransform mbRT = menuBtnGo.AddComponent<RectTransform>();
-        mbRT.anchorMin = new Vector2(0.5f, 0f);
-        mbRT.anchorMax = new Vector2(0.5f, 0f);
-        mbRT.pivot = new Vector2(0.5f, 0f);
-        mbRT.anchoredPosition = new Vector2(115f, 32f);
-        mbRT.sizeDelta = new Vector2(210f, 48f);
+        mainMenuButtonRect = menuBtnGo.AddComponent<RectTransform>();
+        mainMenuButtonRect.anchorMin = new Vector2(0.5f, 0f);
+        mainMenuButtonRect.anchorMax = new Vector2(0.5f, 0f);
+        mainMenuButtonRect.pivot = new Vector2(0.5f, 0f);
+        mainMenuButtonRect.anchoredPosition = new Vector2(115f, 32f);
+        mainMenuButtonRect.sizeDelta = new Vector2(210f, 48f);
 
         Image menuBtnImg = menuBtnGo.AddComponent<Image>();
         menuBtnImg.color = Color.white;
@@ -692,6 +723,69 @@ public class DeliveryHUD : MonoBehaviour
         mtRT.anchorMin = Vector2.zero;
         mtRT.anchorMax = Vector2.one;
         mtRT.offsetMin = Vector2.zero;
+        mtRT.offsetMax = Vector2.zero;
+
+        Text menuTxt = menuTxtGo.AddComponent<Text>();
+        menuTxt.font = mainFont;
+        menuTxt.fontSize = 16;
+        menuTxt.fontStyle = FontStyle.Bold;
+        menuTxt.color = Color.white;
+        menuTxt.alignment = TextAnchor.MiddleCenter;
+        menuTxt.text = "Menu Utama";
+
+        // Tombol 3: Lanjut ke Level 2 (Khusus saat menang di Level 1)
+        GameObject nextBtnGo = new GameObject("NextLevelButton");
+        nextBtnGo.transform.SetParent(card.transform, false);
+        nextLevelButtonRect = nextBtnGo.AddComponent<RectTransform>();
+        nextLevelButtonRect.anchorMin = new Vector2(0.5f, 0f);
+        nextLevelButtonRect.anchorMax = new Vector2(0.5f, 0f);
+        nextLevelButtonRect.pivot = new Vector2(0.5f, 0f);
+        nextLevelButtonRect.anchoredPosition = new Vector2(-225f, 32f);
+        nextLevelButtonRect.sizeDelta = new Vector2(205f, 48f);
+
+        Image nextBtnImg = nextBtnGo.AddComponent<Image>();
+        nextBtnImg.color = Color.white;
+
+        Outline nextOutline = nextBtnGo.AddComponent<Outline>();
+        nextOutline.effectColor = new Color(0.2f, 0.8f, 0.4f, 0.5f);
+        nextOutline.effectDistance = new Vector2(1f, -1f);
+
+        nextLevelButton = nextBtnGo.AddComponent<Button>();
+        nextLevelButton.targetGraphic = nextBtnImg;
+        ColorBlock ncb = nextLevelButton.colors;
+        ncb.colorMultiplier = 1f;
+        ncb.fadeDuration = 0.08f;
+        ncb.normalColor = new Color(0.12f, 0.62f, 0.32f, 1f);
+        ncb.highlightedColor = new Color(0.18f, 0.78f, 0.40f, 1f);
+        ncb.pressedColor = new Color(0.08f, 0.45f, 0.22f, 1f);
+        ncb.selectedColor = ncb.normalColor;
+        nextLevelButton.colors = ncb;
+
+        nextLevelButton.onClick.AddListener(() =>
+        {
+            if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
+            GameAudioManager.Instance?.PlayUIClick();
+            Time.timeScale = 1f;
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Module 2_Stage2");
+        });
+
+        GameObject nextTxtGo = new GameObject("ButtonText");
+        nextTxtGo.transform.SetParent(nextBtnGo.transform, false);
+        RectTransform nbtRT = nextTxtGo.AddComponent<RectTransform>();
+        nbtRT.anchorMin = Vector2.zero;
+        nbtRT.anchorMax = Vector2.one;
+        nbtRT.offsetMin = Vector2.zero;
+        nbtRT.offsetMax = Vector2.zero;
+
+        Text nextTxt = nextTxtGo.AddComponent<Text>();
+        nextTxt.font = mainFont;
+        nextTxt.fontSize = 15;
+        nextTxt.fontStyle = FontStyle.Bold;
+        nextTxt.color = Color.white;
+        nextTxt.alignment = TextAnchor.MiddleCenter;
+        nextTxt.text = "Lanjut ke Level 2 ▶";
+
+        nextLevelButton.gameObject.SetActive(false);
         mtRT.offsetMax = Vector2.zero;
 
         Text menuTxt = menuTxtGo.AddComponent<Text>();
@@ -1203,6 +1297,60 @@ public class DeliveryHUD : MonoBehaviour
     {
         if (missionTitleText == null || missionClueText == null) return;
 
+        bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+
+        if (isLevel2)
+        {
+            switch (state)
+            {
+                case DeliveryMissionState.Prolog:
+                    missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman (Level 2)";
+                    missionClueText.text = "Ambil 5 paket baru dari Pak Beni di depan Mall. Perhatikan denah rute baru [M] dan selesaikan sebelum batas waktu 7 menit habis!";
+                    break;
+                case DeliveryMissionState.Package1_CoffeeShop:
+                    missionTitleText.text = "Tujuan: Clara di Coffee Shop (Barat Laut)";
+                    missionClueText.text = "Label basah: 'C...ra' - Kedai kopi cabang barat di dekat bundaran jalan barat laut.";
+                    break;
+                case DeliveryMissionState.Package2_DrugStore:
+                    missionTitleText.text = "Tujuan: Pak Joko di Drug Store (Selatan)";
+                    missionClueText.text = "Label basah: 'Pak J...o' - Apotek cabang selatan di sudut deretan pertokoan bawah.";
+                    break;
+                case DeliveryMissionState.Package3_HardwareStore:
+                    missionTitleText.text = "Tujuan: Dimas di Pos Keamanan (Timur Laut)";
+                    missionClueText.text = "Label basah: 'Di...s' - Pos penjagaan timur laut di samping deretan toko donat.";
+                    break;
+                case DeliveryMissionState.Package4_DroppedPackage:
+                    if (DeliveryGameManager.Instance != null && !DeliveryGameManager.Instance.IsDroppedPackageRevealed)
+                    {
+                        missionTitleText.text = "Tujuan: Tanya Petugas Parkir (Persimpangan Timur)";
+                        missionClueText.text = "Gawat! Satu paket terjatuh di jalan gang. Tanyakan lokasinya ke Petugas Parkir di persimpangan timur!";
+                    }
+                    else
+                    {
+                        missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
+                        missionClueText.text = "Kotak paket kardus terlihat di jalan aspal dekat trotoar toko donat sebelah utara. Dekati dan tekan [E] untuk memungutnya!";
+                    }
+                    break;
+                case DeliveryMissionState.Package5_Apartment:
+                    missionTitleText.text = "Tujuan: Naya di Hunian Barat";
+                    missionClueText.text = "Label basah: 'N...a' - Pengiriman dokumen darurat ke gedung hunian di kawasan barat kota.";
+                    break;
+                case DeliveryMissionState.Final_ReturnToHub:
+                    missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Depan Mall!";
+                    missionClueText.text = "Seluruh 5 paket Level 2 selesai dikirim! Segera kembali ke Pak Beni sebelum batas waktu berakhir!";
+                    break;
+                case DeliveryMissionState.Completed:
+                    missionTitleText.text = "Level 2 Selesai!";
+                    missionClueText.text = "Seluruh paket Level 2 berhasil sampai ke tangan penerima di rute baru.";
+                    break;
+                case DeliveryMissionState.Failed:
+                    missionTitleText.text = "Waktu Habis!";
+                    missionClueText.text = "Batas waktu pengiriman malam ini telah berakhir.";
+                    break;
+            }
+            return;
+        }
+
         switch (state)
         {
             case DeliveryMissionState.Prolog:
@@ -1284,9 +1432,96 @@ public class DeliveryHUD : MonoBehaviour
             endingStatsText.text = $"Sisa Waktu: {min:00}:{sec:00}  |  Paket Terkirim: {delivered}/5  |  Salah Alamat: {wrong} kali";
         }
 
-        switch (ending)
+        bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+
+        if (isLevel2)
         {
-            case GameEnding.Ending1_KurirTerpercaya:
+            // Level 2 Ending Modal: 2 tombol (Main Lagi & Menu Utama)
+            if (nextLevelButton != null) nextLevelButton.gameObject.SetActive(false);
+            if (restartButtonRect != null)
+            {
+                restartButtonRect.anchoredPosition = new Vector2(-115f, 32f);
+                restartButtonRect.sizeDelta = new Vector2(210f, 48f);
+            }
+            if (mainMenuButtonRect != null)
+            {
+                mainMenuButtonRect.anchoredPosition = new Vector2(115f, 32f);
+                mainMenuButtonRect.sizeDelta = new Vector2(210f, 48f);
+            }
+
+            switch (ending)
+            {
+                case GameEnding.Ending1_KurirTerpercaya:
+                    if (endingTitleText != null)
+                    {
+                        endingTitleText.text = "🏆 TAMAT: MASTER KURIR KOTA!";
+                        endingTitleText.color = new Color(1f, 0.85f, 0.2f, 1f);
+                    }
+                    if (endingStoryText != null)
+                    {
+                        endingStoryText.text =
+                            "Semua lima paket Level 2 berhasil diantarkan dengan sempurna melintasi rute baru!\n\n" +
+                            "Rian membuktikan keahlian navigasi terbaiknya dalam menaklukkan tata letak kota yang berubah dan rintangan barikade jalan.\n" +
+                            "Selamat! Kamu telah menamatkan seluruh tantangan dan resmi dinobatkan sebagai Master Kurir Kota!";
+                    }
+                    break;
+
+                case GameEnding.Ending2_PengirimanTerlambat:
+                    if (endingTitleText != null)
+                    {
+                        endingTitleText.text = "⚠️ LEVEL 2: PENGIRIMAN TERLAMBAT";
+                        endingTitleText.color = new Color(1f, 0.55f, 0.15f, 1f);
+                    }
+                    if (endingStoryText != null)
+                    {
+                        endingStoryText.text =
+                            "Waktu pengiriman di kota baru telah habis sebelum semua paket sampai!\n\n" +
+                            "Barikade jalan dan rute baru membuat perjalanan lebih menantang. " +
+                            "Coba lagi untuk menguasai rute kota Level 2!";
+                    }
+                    break;
+
+                case GameEnding.Ending3_GagalBertugas:
+                    if (endingTitleText != null)
+                    {
+                        endingTitleText.text = "❌ LEVEL 2: GAGAL BERTUGAS";
+                        endingTitleText.color = new Color(1f, 0.3f, 0.3f, 1f);
+                    }
+                    if (endingStoryText != null)
+                    {
+                        endingStoryText.text =
+                            "Waktu habis dan kamu belum berhasil menyelesaikan misi Level 2.\n\n" +
+                            "Perhatikan denah peta [M] dan hindari menabrak rintangan barikade jalan untuk menghemat waktu!";
+                    }
+                    break;
+            }
+        }
+        else
+        {
+            // Level 1 (Module 2)
+            if (ending == GameEnding.Ending1_KurirTerpercaya)
+            {
+                // Menang di Level 1: Tampilkan 3 tombol (Lanjut ke Level 2, Main Lagi, Menu Utama)
+                if (nextLevelButton != null)
+                {
+                    nextLevelButton.gameObject.SetActive(true);
+                    if (nextLevelButtonRect != null)
+                    {
+                        nextLevelButtonRect.anchoredPosition = new Vector2(-225f, 32f);
+                        nextLevelButtonRect.sizeDelta = new Vector2(205f, 48f);
+                    }
+                }
+                if (restartButtonRect != null)
+                {
+                    restartButtonRect.anchoredPosition = new Vector2(0f, 32f);
+                    restartButtonRect.sizeDelta = new Vector2(185f, 48f);
+                }
+                if (mainMenuButtonRect != null)
+                {
+                    mainMenuButtonRect.anchoredPosition = new Vector2(215f, 32f);
+                    mainMenuButtonRect.sizeDelta = new Vector2(185f, 48f);
+                }
+
                 if (endingTitleText != null)
                 {
                     endingTitleText.text = "🏆 ENDING 1: KURIR TERPERCAYA";
@@ -1299,37 +1534,53 @@ public class DeliveryHUD : MonoBehaviour
                         "Rian menyelesaikan tugas malam itu dengan sempurna dan membuktikan dedikasinya.\n" +
                         "Mulai besok, Rian resmi mendapat kepercayaan penuh untuk diangkat menjadi kurir tetap di kawasan kota ini!";
                 }
-                break;
+            }
+            else
+            {
+                // Kalah di Level 1: Tampilkan 2 tombol (Main Lagi & Menu Utama)
+                if (nextLevelButton != null) nextLevelButton.gameObject.SetActive(false);
+                if (restartButtonRect != null)
+                {
+                    restartButtonRect.anchoredPosition = new Vector2(-115f, 32f);
+                    restartButtonRect.sizeDelta = new Vector2(210f, 48f);
+                }
+                if (mainMenuButtonRect != null)
+                {
+                    mainMenuButtonRect.anchoredPosition = new Vector2(115f, 32f);
+                    mainMenuButtonRect.sizeDelta = new Vector2(210f, 48f);
+                }
 
-            case GameEnding.Ending2_PengirimanTerlambat:
-                if (endingTitleText != null)
+                if (ending == GameEnding.Ending2_PengirimanTerlambat)
                 {
-                    endingTitleText.text = "⚠️ ENDING 2: PENGIRIMAN TERLAMBAT";
-                    endingTitleText.color = new Color(1f, 0.55f, 0.15f, 1f);
+                    if (endingTitleText != null)
+                    {
+                        endingTitleText.text = "⚠️ ENDING 2: PENGIRIMAN TERLAMBAT";
+                        endingTitleText.color = new Color(1f, 0.55f, 0.15f, 1f);
+                    }
+                    if (endingStoryText != null)
+                    {
+                        endingStoryText.text =
+                            "Waktu pengiriman telah habis sebelum semua paket sampai!\n\n" +
+                            "Sebagian besar paket berhasil sampai kepada penerimanya, namun keterlambatan ini menjadi evaluasi berharga. " +
+                            "Rian harus terus mengasah kemampuannya dalam membaca rute kota dan mengelola waktu di kesempatan berikutnya.";
+                    }
                 }
-                if (endingStoryText != null)
+                else
                 {
-                    endingStoryText.text =
-                        "Waktu pengiriman telah habis sebelum semua paket sampai!\n\n" +
-                        "Sebagian besar paket berhasil sampai kepada penerimanya, namun keterlambatan ini menjadi evaluasi berharga. " +
-                        "Rian harus terus mengasah kemampuannya dalam membaca rute kota dan mengelola waktu di kesempatan berikutnya.";
+                    if (endingTitleText != null)
+                    {
+                        endingTitleText.text = "❌ ENDING 3: GAGAL BERTUGAS";
+                        endingTitleText.color = new Color(1f, 0.3f, 0.3f, 1f);
+                    }
+                    if (endingStoryText != null)
+                    {
+                        endingStoryText.text =
+                            "Waktu telah habis dan sebagian besar toko telah menutup pintunya.\n\n" +
+                            "Paket-paket yang belum terkirim harus dikembalikan ke pusat pengiriman dan tugas malam ini dinyatakan belum berhasil. " +
+                            "Rian perlu berlatih kembali menghafal jalanan kota agar dapat menyelesaikan pengiriman tepat waktu.";
+                    }
                 }
-                break;
-
-            case GameEnding.Ending3_GagalBertugas:
-                if (endingTitleText != null)
-                {
-                    endingTitleText.text = "❌ ENDING 3: GAGAL BERTUGAS";
-                    endingTitleText.color = new Color(1f, 0.3f, 0.3f, 1f);
-                }
-                if (endingStoryText != null)
-                {
-                    endingStoryText.text =
-                        "Waktu telah habis dan sebagian besar toko telah menutup pintunya.\n\n" +
-                        "Paket-paket yang belum terkirim harus dikembalikan ke pusat pengiriman dan tugas malam ini dinyatakan belum berhasil. " +
-                        "Rian perlu berlatih kembali menghafal jalanan kota agar dapat menyelesaikan pengiriman tepat waktu.";
-                }
-                break;
+            }
         }
     }
 }

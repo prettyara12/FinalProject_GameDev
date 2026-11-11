@@ -90,6 +90,8 @@ public class DeliveryGameManager : MonoBehaviour
             return;
         }
 
+        bool isStage2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+        totalTimeLimit = isStage2 ? 420f : 600f; // 7 menit di Stage 2, 10 menit di Stage 1
         timeRemaining = totalTimeLimit;
         isGameStarted = false;
         isTimerRunning = false;
@@ -106,6 +108,8 @@ public class DeliveryGameManager : MonoBehaviour
 
     public void StartGame()
     {
+        bool isStage2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+        totalTimeLimit = isStage2 ? 420f : 600f;
         isGameStarted = true;
         timeRemaining = totalTimeLimit;
         packagesDelivered = 0;
@@ -238,12 +242,19 @@ public class DeliveryGameManager : MonoBehaviour
                 }
                 else
                 {
+                    bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
                     string[] droppedClues = isDroppedPackageRevealed
-                        ? new string[]
-                        {
-                            "Kotak paket kardusmu ada di jalan aspal dekat pembatas beton sebelah pos Fire Station.",
-                            "Cepat kembali ke sana dan ambil dengan tombol [E] sebelum terlindas kendaraan!"
-                        }
+                        ? (isLevel2
+                            ? new string[]
+                            {
+                                "Kotak paket kardusmu ada di jalan aspal dekat trotoar toko donat sebelah utara.",
+                                "Cepat lari ke sana dan tekan [E] untuk memungutnya!"
+                            }
+                            : new string[]
+                            {
+                                "Kotak paket kardusmu ada di jalan aspal dekat pembatas beton sebelah pos Fire Station.",
+                                "Cepat kembali ke sana dan ambil dengan tombol [E] sebelum terlindas kendaraan!"
+                            })
                         : (recipient.successDialogueLines != null && recipient.successDialogueLines.Length > 0
                             ? recipient.successDialogueLines
                             : recipient.introDialogueLines);
@@ -386,12 +397,20 @@ public class DeliveryGameManager : MonoBehaviour
         OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
         AdvanceMission(DeliveryMissionState.Package5_Apartment);
 
-        string[] pickupMsg = new string[]
-        {
-            "Kotak paket kardus berhasil diambil dari jalan aspal!",
-            "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Gedung Apartemen.",
-            "Cepat antarkan ke Naya sebelum batas waktu 10 menit habis!"
-        };
+        bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+        string[] pickupMsg = isLevel2
+            ? new string[]
+            {
+                "Kotak paket kardus berhasil diambil dari jalan dekat toko donat!",
+                "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Hunian Barat.",
+                "Cepat antarkan ke Naya sebelum batas waktu 7 menit habis!"
+            }
+            : new string[]
+            {
+                "Kotak paket kardus berhasil diambil dari jalan aspal!",
+                "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Gedung Apartemen.",
+                "Cepat antarkan ke Naya sebelum batas waktu 10 menit habis!"
+            };
 
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         Transform targetTr = player != null ? player.transform : transform;
@@ -442,6 +461,13 @@ public class DeliveryGameManager : MonoBehaviour
     /// </summary>
     public void GoToMainMenu()
     {
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2")
+        {
+            Time.timeScale = 1f;
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Module 2");
+            return;
+        }
+
         Time.timeScale = 1f;
         isGameStarted = false;
         isTimerRunning = false;
@@ -489,6 +515,9 @@ public class DeliveryGameManager : MonoBehaviour
     public void RestartGame()
     {
         Time.timeScale = 1f;
+
+        bool isStage2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+        totalTimeLimit = isStage2 ? 420f : 600f;
 
         // 1. Reset status misi, paket, penalti, dan timer
         finalEnding = GameEnding.None;
