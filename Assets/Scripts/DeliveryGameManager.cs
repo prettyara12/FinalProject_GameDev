@@ -402,7 +402,7 @@ public class DeliveryGameManager : MonoBehaviour
             ? new string[]
             {
                 "Kotak paket kardus berhasil diambil dari jalan dekat toko donat!",
-                "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Hunian Barat.",
+                "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Hunian Deretan Timur.",
                 "Cepat antarkan ke Naya sebelum batas waktu 7 menit habis!"
             }
             : new string[]
