@@ -786,15 +786,6 @@ public class DeliveryHUD : MonoBehaviour
         nextTxt.text = "Lanjut ke Level 2 ▶";
 
         nextLevelButton.gameObject.SetActive(false);
-        mtRT.offsetMax = Vector2.zero;
-
-        Text menuTxt = menuTxtGo.AddComponent<Text>();
-        menuTxt.font = mainFont;
-        menuTxt.fontSize = 16;
-        menuTxt.fontStyle = FontStyle.Bold;
-        menuTxt.color = Color.white;
-        menuTxt.alignment = TextAnchor.MiddleCenter;
-        menuTxt.text = "Menu Utama";
 
         endingModalObj.SetActive(false);
     }
