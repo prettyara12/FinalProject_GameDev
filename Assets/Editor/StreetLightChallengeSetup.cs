@@ -28,9 +28,9 @@ namespace GameDev.Lighting
         private static void RestoreAllLights()
         {
             Scene activeScene = EditorSceneManager.GetActiveScene();
-            if (activeScene == null || string.IsNullOrEmpty(activeScene.path) || !activeScene.path.Contains("Module 2"))
+            if (activeScene == null || string.IsNullOrEmpty(activeScene.path) || !activeScene.path.Contains("Module 2.unity"))
             {
-                activeScene = EditorSceneManager.OpenScene("Assets/Module 2.unity");
+                return; // Jangan paksa buka Module 2 jika sedang membuka scene lain
             }
 
             // 1. Setup Spot Lights on all lamp_mesh objects (Range 2, Intensity 1)

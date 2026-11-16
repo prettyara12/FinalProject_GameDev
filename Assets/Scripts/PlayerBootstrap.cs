@@ -545,6 +545,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         DeliveryHUD.EnsureInstance();
         NPCDialogueOverlay.EnsureInstance();
         GameAudioManager.EnsureInstance();
+        EnsureRianDeliveryCutsceneSystem(playerGo);
 
         Debug.Log("[PlayerBootstrap] ⭐ Game 'Kurir Terakhir' Berhasil Dikonfigurasi Lengkap!");
     }
@@ -557,13 +558,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// </summary>
     public static void SetupCityLevel2(GameObject playerGo)
     {
-        // 0. Bangun Kota Baru Level 2 (jika belum ada)
-        GameObject cityRoot = GameObject.Find(Level2CityGenerator.RootCityName);
-        if (cityRoot == null)
-        {
-            Level2CityGenerator.BuildLevel2City(true);
-        }
-
         // 1. Bersihkan elemen tugas modul lama dan karakter tersembunyi
         CleanupLegacyModuleObjects();
 
@@ -3897,4 +3891,178 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         return bannerGo;
     }
 
+    /// <summary>
+    /// Menyiapkan sistem Cinemachine & Timeline Cutscene Rian Mengantar Paket (10 Detik) di scene Module 2:
+    /// - Mengonfigurasi CinemachineBrain pada Main Camera.
+    /// - Menyiapkan 3 Virtual Cameras (Pak Beni di depan Mall, Clara di Coffee Shop, Pemandangan Jalan Kota).
+    /// - Memuat Timeline Asset 'Assets/Timelines/RianDeliveryCutsceneTimeline.playable' & PlayableDirector.
+    /// - Mengikat trek Cinemachine & Audio ke scene objects.
+    /// - Memasang dan menginisialisasi controller runtime RianDeliveryCutscene (auto-play, subtitle, instant skip).
+    /// </summary>
+    public static GameObject EnsureRianDeliveryCutsceneSystem(GameObject playerGo = null)
+    {
+        // 1. CinemachineBrain pada Main Camera
+        Camera mainCam = Camera.main;
+        if (mainCam == null) mainCam = Object.FindAnyObjectByType<Camera>();
+        CinemachineBrain brain = null;
+        ThirdPersonCamera tpc = null;
+        if (mainCam != null)
+        {
+            brain = mainCam.GetComponent<CinemachineBrain>();
+            if (brain == null) brain = mainCam.gameObject.AddComponent<CinemachineBrain>();
+            brain.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, 0.6f);
+            brain.UpdateMethod = CinemachineBrain.UpdateMethods.LateUpdate;
+            brain.enabled = false;
+
+            tpc = mainCam.GetComponent<ThirdPersonCamera>();
+        }
+
+        PlayerController pc = playerGo != null ? playerGo.GetComponent<PlayerController>() : null;
+        if (pc == null) pc = Object.FindAnyObjectByType<PlayerController>();
+
+        // 2. Root Container untuk Cutscene
+        GameObject rootGo = GameObject.Find("RianDeliveryCutscene_System");
+        if (rootGo == null)
+        {
+            rootGo = new GameObject("RianDeliveryCutscene_System");
+        }
+        rootGo.transform.position = Vector3.zero;
+        rootGo.transform.rotation = Quaternion.identity;
+
+        // 3. AudioSource untuk Jingle
+        AudioSource audioSrc = rootGo.GetComponent<AudioSource>();
+        if (audioSrc == null) audioSrc = rootGo.AddComponent<AudioSource>();
+        audioSrc.playOnAwake = false;
+        audioSrc.spatialBlend = 0f;
+
+        // 4. PlayableDirector
+        PlayableDirector director = rootGo.GetComponent<PlayableDirector>();
+        if (director == null) director = rootGo.AddComponent<PlayableDirector>();
+        director.playOnAwake = false;
+        director.timeUpdateMode = DirectorUpdateMode.GameTime;
+
+        // 5. Shot 1: Pak Beni & Rian di depan Mall
+        GameObject cam1Go = GameObject.Find("CM_Delivery_Shot1_PakBeni");
+        if (cam1Go == null)
+        {
+            cam1Go = new GameObject("CM_Delivery_Shot1_PakBeni");
+            cam1Go.transform.SetParent(rootGo.transform);
+        }
+        cam1Go.transform.position = new Vector3(311.6f, 0.45f, 4.8f);
+        cam1Go.transform.rotation = Quaternion.Euler(5f, -145f, 0f);
+
+        CinemachineVirtualCamera vcam1 = cam1Go.GetComponent<CinemachineVirtualCamera>();
+        if (vcam1 == null) vcam1 = cam1Go.AddComponent<CinemachineVirtualCamera>();
+        vcam1.Priority = 0;
+        vcam1.m_Lens.FieldOfView = 45f;
+
+        GameObject focus1 = GameObject.Find("Target_DeliveryShot1_Focus");
+        if (focus1 == null)
+        {
+            focus1 = new GameObject("Target_DeliveryShot1_Focus");
+            focus1.transform.SetParent(rootGo.transform);
+        }
+        focus1.transform.position = new Vector3(310.2f, 0.25f, 6.0f);
+        vcam1.m_LookAt = focus1.transform;
+        var comp1 = vcam1.GetCinemachineComponent<CinemachineComposer>();
+        if (comp1 == null) comp1 = vcam1.AddCinemachineComponent<CinemachineComposer>();
+        comp1.m_TrackedObjectOffset = Vector3.zero;
+
+        // Shot 2: Clara & Rian di Coffee Shop
+        GameObject cam2Go = GameObject.Find("CM_Delivery_Shot2_ClaraCoffee");
+        if (cam2Go == null)
+        {
+            cam2Go = new GameObject("CM_Delivery_Shot2_ClaraCoffee");
+            cam2Go.transform.SetParent(rootGo.transform);
+        }
+        cam2Go.transform.position = new Vector3(314.0f, 0.42f, 10.6f);
+        cam2Go.transform.rotation = Quaternion.Euler(6f, -140f, 0f);
+
+        CinemachineVirtualCamera vcam2 = cam2Go.GetComponent<CinemachineVirtualCamera>();
+        if (vcam2 == null) vcam2 = cam2Go.AddComponent<CinemachineVirtualCamera>();
+        vcam2.Priority = 0;
+        vcam2.m_Lens.FieldOfView = 45f;
+
+        GameObject focus2 = GameObject.Find("Target_DeliveryShot2_Focus");
+        if (focus2 == null)
+        {
+            focus2 = new GameObject("Target_DeliveryShot2_Focus");
+            focus2.transform.SetParent(rootGo.transform);
+        }
+        focus2.transform.position = new Vector3(315.2f, 0.25f, 9.1f);
+        vcam2.m_LookAt = focus2.transform;
+        var comp2 = vcam2.GetCinemachineComponent<CinemachineComposer>();
+        if (comp2 == null) comp2 = vcam2.AddCinemachineComponent<CinemachineComposer>();
+        comp2.m_TrackedObjectOffset = Vector3.zero;
+
+        // Shot 3: Pemandangan koridor jalan kota luas
+        GameObject cam3Go = GameObject.Find("CM_Delivery_Shot3_CityStreet");
+        if (cam3Go == null)
+        {
+            cam3Go = new GameObject("CM_Delivery_Shot3_CityStreet");
+            cam3Go.transform.SetParent(rootGo.transform);
+        }
+        cam3Go.transform.position = new Vector3(322.0f, 1.8f, -2.5f);
+        cam3Go.transform.rotation = Quaternion.Euler(14f, -40f, 0f);
+
+        CinemachineVirtualCamera vcam3 = cam3Go.GetComponent<CinemachineVirtualCamera>();
+        if (vcam3 == null) vcam3 = cam3Go.AddComponent<CinemachineVirtualCamera>();
+        vcam3.Priority = 0;
+        vcam3.m_Lens.FieldOfView = 55f;
+
+        GameObject focus3 = GameObject.Find("Target_DeliveryShot3_Focus");
+        if (focus3 == null)
+        {
+            focus3 = new GameObject("Target_DeliveryShot3_Focus");
+            focus3.transform.SetParent(rootGo.transform);
+        }
+        focus3.transform.position = new Vector3(312.0f, 0.4f, 12.0f);
+        vcam3.m_LookAt = focus3.transform;
+        var comp3 = vcam3.GetCinemachineComponent<CinemachineComposer>();
+        if (comp3 == null) comp3 = vcam3.AddCinemachineComponent<CinemachineComposer>();
+        comp3.m_TrackedObjectOffset = Vector3.zero;
+
+        // 6. Muat Timeline Asset
+#if UNITY_EDITOR
+        string timelinePath = "Assets/Timelines/RianDeliveryCutsceneTimeline.playable";
+        TimelineAsset timelineAsset = AssetDatabase.LoadAssetAtPath<TimelineAsset>(timelinePath);
+        if (timelineAsset != null)
+        {
+            director.playableAsset = timelineAsset;
+
+            // Bind clips
+            director.SetReferenceValue("rian_shot1_pakbeni", vcam1);
+            director.SetReferenceValue("rian_shot2_claracoffee", vcam2);
+            director.SetReferenceValue("rian_shot3_citystreet", vcam3);
+
+            // Bind tracks
+            foreach (var track in timelineAsset.GetOutputTracks())
+            {
+                if (track is CinemachineTrack && brain != null)
+                {
+                    director.SetGenericBinding(track, brain);
+                }
+                else if (track is AudioTrack)
+                {
+                    director.SetGenericBinding(track, audioSrc);
+                }
+            }
+        }
+#endif
+
+        // 7. Pasang dan konfigurasi RianDeliveryCutscene
+        RianDeliveryCutscene cutsceneCtrl = rootGo.GetComponent<RianDeliveryCutscene>();
+        if (cutsceneCtrl == null) cutsceneCtrl = rootGo.AddComponent<RianDeliveryCutscene>();
+        cutsceneCtrl.cutsceneDirector = director;
+        cutsceneCtrl.cinemachineBrain = brain;
+        cutsceneCtrl.thirdPersonCamera = tpc;
+        cutsceneCtrl.playerController = pc;
+        cutsceneCtrl.playOnStart = false;
+        cutsceneCtrl.playOnce = true;
+        cutsceneCtrl.allowSkip = true;
+        cutsceneCtrl.showSubtitles = true;
+
+        Debug.Log("[PlayerBootstrap] 🎬 Sistem Cutscene Rian Mengantar Paket (10 Detik) Siap Dijalankan!");
+        return rootGo;
+    }
 }

@@ -59,6 +59,10 @@ public class DeliveryHUD : MonoBehaviour
     private bool isMainMenuOpen = true;
     public bool IsMainMenuOpen => isMainMenuOpen;
 
+    // Radar HUD Kompas Dinamis (Pojok Kanan Atas)
+    private GameObject radarObj;
+    private DeliveryRadarHUD radarComponent;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
     {
@@ -88,7 +92,7 @@ public class DeliveryHUD : MonoBehaviour
         {
             instance = go.GetComponent<DeliveryHUD>();
             if (instance == null) instance = go.AddComponent<DeliveryHUD>();
-            if (instance.timerText == null || instance.missionTitleText == null || instance.dashboardObj == null)
+            if (instance.timerText == null || instance.missionTitleText == null || instance.dashboardObj == null || instance.radarObj == null)
             {
                 instance.BuildUI();
             }
@@ -207,6 +211,7 @@ public class DeliveryHUD : MonoBehaviour
         BuildEndingModal();
         BuildMainMenu();
         BuildHowToPlayModal();
+        BuildRadarHUD();
     }
 
     private void BuildDashboardPanel()
@@ -897,13 +902,24 @@ public class DeliveryHUD : MonoBehaviour
             new Color(0.85f, 0.45f, 0.08f, 1f), new Color(0.96f, 0.58f, 0.12f, 1f), new Color(0.68f, 0.32f, 0.04f, 1f),
             new Color(1f, 0.75f, 0.35f, 0.35f), 16, () =>
             {
-                if (DeliveryGameManager.Instance != null)
+                if (RianDeliveryCutscene.Instance != null && !RianDeliveryCutscene.Instance.HasPlayed)
                 {
-                    DeliveryGameManager.Instance.StartGame();
+                    isMainMenuOpen = false;
+                    if (mainMenuObj != null) mainMenuObj.SetActive(false);
+                    SetDashboardVisible(false);
+                    SetRadarVisible(false);
+                    RianDeliveryCutscene.Instance.StartCutscene();
                 }
                 else
                 {
-                    HideMainMenu();
+                    if (DeliveryGameManager.Instance != null)
+                    {
+                        DeliveryGameManager.Instance.StartGame();
+                    }
+                    else
+                    {
+                        HideMainMenu();
+                    }
                 }
             });
 
@@ -1113,6 +1129,16 @@ public class DeliveryHUD : MonoBehaviour
         }
     }
 
+    private void BuildRadarHUD()
+    {
+        radarComponent = DeliveryRadarHUD.Ensure(transform, mainFont);
+        if (radarComponent != null)
+        {
+            radarObj = radarComponent.gameObject;
+            radarObj.SetActive(!isMainMenuOpen);
+        }
+    }
+
     public void QuitGame()
     {
 #if UNITY_EDITOR
@@ -1127,6 +1153,7 @@ public class DeliveryHUD : MonoBehaviour
         isMainMenuOpen = true;
         if (mainMenuObj != null) mainMenuObj.SetActive(true);
         if (dashboardObj != null) dashboardObj.SetActive(false);
+        if (radarObj != null) radarObj.SetActive(false);
         if (interactPromptObj != null) interactPromptObj.SetActive(false);
         if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
         if (mapModalObj != null) mapModalObj.SetActive(false);
@@ -1144,7 +1171,38 @@ public class DeliveryHUD : MonoBehaviour
         isMainMenuOpen = false;
         if (mainMenuObj != null) mainMenuObj.SetActive(false);
         if (dashboardObj != null) dashboardObj.SetActive(true);
+        if (radarObj != null && (RianDeliveryCutscene.Instance == null || !RianDeliveryCutscene.Instance.IsPlaying))
+        {
+            radarObj.SetActive(true);
+        }
         if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
+
+        PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+        if (pc != null && (RianDeliveryCutscene.Instance == null || !RianDeliveryCutscene.Instance.IsPlaying))
+        {
+            pc.SetMovementFrozen(false);
+        }
+    }
+
+    public void SetDashboardVisible(bool visible)
+    {
+        if (dashboardObj != null) dashboardObj.SetActive(visible);
+    }
+
+    public void SetRadarVisible(bool visible)
+    {
+        if (radarObj != null) radarObj.SetActive(visible);
+    }
+
+    public void OnCutsceneFinished()
+    {
+        isMainMenuOpen = false;
+        if (mainMenuObj != null) mainMenuObj.SetActive(false);
+        if (dashboardObj != null) dashboardObj.SetActive(true);
+        if (radarObj != null) radarObj.SetActive(true);
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
         PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
         if (pc != null) pc.SetMovementFrozen(false);

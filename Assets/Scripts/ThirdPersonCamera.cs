@@ -76,6 +76,13 @@ public class ThirdPersonCamera : MonoBehaviour
 
         if (target != null)
         {
+            if (target.lossyScale.y > 0.5f)
+            {
+                targetHeight = 1.5f;
+                distance = 6.5f;
+                height = 2.0f;
+                collisionRadius = 0.25f;
+            }
             // Mulai dari belakang pemain
             currentYaw = target.eulerAngles.y;
             currentPitch = 15f;
@@ -109,8 +116,13 @@ public class ThirdPersonCamera : MonoBehaviour
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (Mathf.Abs(scroll) > 0.001f)
             {
-                distance = Mathf.Clamp(distance - scroll * 1.5f, 0.4f, 4.0f);
-                height = Mathf.Clamp(height - scroll * 0.5f, 0.15f, 1.8f);
+                float maxDist = (target != null && target.lossyScale.y > 0.5f) ? 14.0f : 4.0f;
+                float minDist = (target != null && target.lossyScale.y > 0.5f) ? 1.5f : 0.4f;
+                float maxHeight = (target != null && target.lossyScale.y > 0.5f) ? 5.0f : 1.8f;
+                float minHeight = (target != null && target.lossyScale.y > 0.5f) ? 0.5f : 0.15f;
+                float scrollMultiplier = (target != null && target.lossyScale.y > 0.5f) ? 3.0f : 1.5f;
+                distance = Mathf.Clamp(distance - scroll * scrollMultiplier, minDist, maxDist);
+                height = Mathf.Clamp(height - scroll * (scrollMultiplier * 0.35f), minHeight, maxHeight);
             }
         }
     }
@@ -137,7 +149,8 @@ public class ThirdPersonCamera : MonoBehaviour
         bool isManualOrbiting = false;
         if (enableMouseLook)
         {
-            if (Input.GetMouseButton(0) || Input.GetMouseButton(1) || !Input.mousePresent)
+            bool isOverUI = UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+            if (!isOverUI && (Input.GetMouseButton(0) || Input.GetMouseButton(1) || !Input.mousePresent))
             {
                 float mouseX = Input.GetAxis("Mouse X");
                 float mouseY = Input.GetAxis("Mouse Y");
@@ -205,6 +218,13 @@ public class ThirdPersonCamera : MonoBehaviour
     /// </summary>
     public void FindPlayerTarget()
     {
+        GameObject rianObj = GameObject.Find("Rian (Kurir)");
+        if (rianObj != null)
+        {
+            target = rianObj.transform;
+            return;
+        }
+
         GameObject trucker = GameObject.Find("SimplePeople_Trucker_Black");
         if (trucker != null)
         {
@@ -212,10 +232,10 @@ public class ThirdPersonCamera : MonoBehaviour
             return;
         }
 
-        GameObject rianObj = GameObject.Find("Rian (Kurir)");
-        if (rianObj != null)
+        GameObject truckerWhite = GameObject.Find("SimplePeople_Trucker_White");
+        if (truckerWhite != null)
         {
-            target = rianObj.transform;
+            target = truckerWhite.transform;
             return;
         }
 

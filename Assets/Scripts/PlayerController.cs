@@ -185,6 +185,12 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
+        if (transform.lossyScale.y > 0.5f && walkSpeed < 1.0f)
+        {
+            walkSpeed = 4.5f;
+            sprintSpeed = 8.5f;
+            jumpHeight = 1.2f;
+        }
         SnapToGround();
         ResolveDepenetration();
     }
