@@ -92,10 +92,17 @@ public class DeliveryHUD : MonoBehaviour
         {
             instance = go.GetComponent<DeliveryHUD>();
             if (instance == null) instance = go.AddComponent<DeliveryHUD>();
-            if (instance.timerText == null || instance.missionTitleText == null || instance.dashboardObj == null || instance.radarObj == null)
-            {
-                instance.BuildUI();
-            }
+        }
+
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2" || isAirportLevel2)
+        {
+            instance.isMainMenuOpen = false;
+        }
+
+        if (instance.timerText == null || instance.missionTitleText == null || instance.dashboardObj == null || instance.radarObj == null)
+        {
+            instance.BuildUI();
         }
     }
 
@@ -109,13 +116,20 @@ public class DeliveryHUD : MonoBehaviour
             return;
         }
 
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2" || isAirportLevel2)
+        {
+            isMainMenuOpen = false;
+        }
+
         BuildUI();
     }
 
     private void Start()
     {
         BindGameManager();
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2")
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2" || isAirportLevel2)
         {
             HideMainMenu();
             if (DeliveryGameManager.Instance != null)
@@ -181,6 +195,7 @@ public class DeliveryHUD : MonoBehaviour
             Transform ch = transform.GetChild(i);
             if (Application.isPlaying)
             {
+                ch.SetParent(null);
                 Destroy(ch.gameObject);
             }
             else
@@ -456,6 +471,7 @@ public class DeliveryHUD : MonoBehaviour
         titleRT.anchoredPosition = new Vector2(0f, -24f);
         titleRT.sizeDelta = new Vector2(0f, 36f);
 
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
         bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
 
         Text titleTxt = titleGo.AddComponent<Text>();
@@ -464,9 +480,9 @@ public class DeliveryHUD : MonoBehaviour
         titleTxt.fontStyle = FontStyle.Bold;
         titleTxt.color = new Color(0.35f, 0.85f, 1f, 1f);
         titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.text = isLevel2
-            ? "🗺️ DENAH KOTA — LEVEL 2 (RUTE & TATA LETAK BARU)"
-            : "🗺️ DENAH KAWASAN KOTA — KURIR TERAKHIR";
+        titleTxt.text = isAirportLevel2
+            ? "🗺️ DENAH AREA BANDARA — LEVEL 2"
+            : (isLevel2 ? "🗺️ DENAH KOTA — LEVEL 2 (RUTE & TATA LETAK BARU)" : "🗺️ DENAH KAWASAN KOTA — KURIR TERAKHIR");
 
         // Layout Lokasi Kota (Grid Panduan Bersih)
         GameObject layoutGo = new GameObject("MapLayoutText");
@@ -484,33 +500,49 @@ public class DeliveryHUD : MonoBehaviour
         layoutTxt.color = Color.white;
         layoutTxt.lineSpacing = 1.35f;
         layoutTxt.alignment = TextAnchor.UpperLeft;
-        layoutTxt.text = isLevel2
-            ? "📍 AREA UTAMA KOTA LEVEL 2 (TATA LETAK BARU):\n\n" +
-              "1. POS PUSAT PENGIRIMAN (Center Plaza - Depan Mega Mall):\n" +
-              "   • Titik Awal Rian & Pos Pak Beni (Misi Awal & Akhir)\n\n" +
-              "2. COFFEE SHOP (Koridor Utara Barat):\n" +
-              "   • Kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
-              "3. DRUG STORE (Koridor Selatan Barat):\n" +
-              "   • Toko obat farmasi cabang milik Pak Joko (Paket 2)\n\n" +
-              "4. FIRE STATION (Koridor Utara Timur):\n" +
-              "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
-              "5. PERSIMPANGAN TENGAH & PAKET JATUH:\n" +
-              "   • Petugas Parkir (Info) & Paket Jatuh di Gang Tengah dekat Donut Shop (Misi 4)\n\n" +
-              "6. GEDUNG APARTEMEN MERAH (Koridor Selatan Timur):\n" +
-              "   • Gedung apartemen tempat Naya menunggu dokumen (Paket 5)\n\n" +
-              "⚠️ AWAS: Mobil melaju kencang di Koridor Utara & Selatan! Gunakan gang pejalan kaki."
-            : "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
-              "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
-              "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
-              "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
-              "2. COFFEE SHOP (Timur Trotoar):\n" +
-              "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
-              "3. DRUG STORE (Sudut Pertokoan Barat):\n" +
-              "   • Toko obat dengan plang nama farmasi milik Pak Joko (Paket 2)\n\n" +
-              "4. FIRE STATION / POS PEMADAM (Barat):\n" +
-              "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
-              "5. GEDUNG APARTEMEN (Utara Ujung Jalan):\n" +
-              "   • Gedung bertingkat tinggi tempat Naya menunggu dokumen (Paket 5)";
+        layoutTxt.text = isAirportLevel2
+            ? "📍 ALUR PENGANTARAN PAKET AREA BANDARA:\n\n" +
+              "1. PAK BENI 2 (Pusat Pengiriman):\n" +
+              "   • Temui Pak Beni 2 untuk mengambil daftar instruksi 5 paket bandara.\n\n" +
+              "2. NAYA 2 (Paket 1 - Dokumen Penerbangan):\n" +
+              "   • Penerima paket pertama di area terminal bandara.\n\n" +
+              "3. DIMAS 2 (Paket 2 - Suku Cadang Bagasi):\n" +
+              "   • Teknisi penanganan bagasi penerima paket kedua.\n\n" +
+              "4. TUKANG PARKIR 2 (Paket 3 - Rompi & Bendera Apron):\n" +
+              "   • Petugas parkir apron bandara penerima paket ketiga.\n\n" +
+              "5. PAK JOKO 2 (Paket 4 - Logistik Kargo Bandara):\n" +
+              "   • Penanggung jawab kargo bandara penerima paket keempat.\n\n" +
+              "6. CLARA 2 (Paket 5 - Cinderamata Penerbangan):\n" +
+              "   • Penumpang/pengunjung penerima paket cinderamata kelima.\n\n" +
+              "7. KEMBALI KE PAK BENI 2:\n" +
+              "   • Lapor seluruh tugas selesai untuk menyelesaikan misi & mengakhiri permainan!"
+            : (isLevel2
+                ? "📍 AREA UTAMA KOTA LEVEL 2 (TATA LETAK BARU):\n\n" +
+                  "1. POS PUSAT PENGIRIMAN (Center Plaza - Depan Mega Mall):\n" +
+                  "   • Titik Awal Rian & Pos Pak Beni (Misi Awal & Akhir)\n\n" +
+                  "2. COFFEE SHOP (Koridor Utara Barat):\n" +
+                  "   • Kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
+                  "3. DRUG STORE (Koridor Selatan Barat):\n" +
+                  "   • Toko obat farmasi cabang milik Pak Joko (Paket 2)\n\n" +
+                  "4. FIRE STATION (Koridor Utara Timur):\n" +
+                  "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
+                  "5. PERSIMPANGAN TENGAH & PAKET JATUH:\n" +
+                  "   • Petugas Parkir (Info) & Paket Jatuh di Gang Tengah dekat Donut Shop (Misi 4)\n\n" +
+                  "6. GEDUNG APARTEMEN MERAH (Koridor Selatan Timur):\n" +
+                  "   • Gedung apartemen tempat Naya menunggu dokumen (Paket 5)\n\n" +
+                  "⚠️ AWAS: Mobil melaju kencang di Koridor Utara & Selatan! Gunakan gang pejalan kaki."
+                : "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
+                  "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
+                  "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
+                  "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
+                  "2. COFFEE SHOP (Timur Trotoar):\n" +
+                  "   • Konter kedai kopi tempat Clara bertugas (Paket 1)\n\n" +
+                  "3. DRUG STORE (Sudut Pertokoan Barat):\n" +
+                  "   • Toko obat dengan plang nama farmasi milik Pak Joko (Paket 2)\n\n" +
+                  "4. FIRE STATION / POS PEMADAM (Barat):\n" +
+                  "   • Pos pemadam kebakaran tempat Dimas bertugas (Paket 3)\n\n" +
+                  "5. GEDUNG APARTEMEN (Utara Ujung Jalan):\n" +
+                  "   • Gedung bertingkat tinggi tempat Naya menunggu dokumen (Paket 5)");
 
         // Footer Tutup
         GameObject footGo = new GameObject("MapFooter");
@@ -773,7 +805,8 @@ public class DeliveryHUD : MonoBehaviour
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
             GameAudioManager.Instance?.PlayUIClick();
             Time.timeScale = 1f;
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Module 2_Stage2");
+            string nextSceneName = Application.CanStreamedLevelBeLoaded("Level 2 saya") ? "Level 2 saya" : "Module 2_Stage2";
+            UnityEngine.SceneManagement.SceneManager.LoadScene(nextSceneName);
         });
 
         GameObject nextTxtGo = new GameObject("ButtonText");
@@ -902,7 +935,8 @@ public class DeliveryHUD : MonoBehaviour
             new Color(0.85f, 0.45f, 0.08f, 1f), new Color(0.96f, 0.58f, 0.12f, 1f), new Color(0.68f, 0.32f, 0.04f, 1f),
             new Color(1f, 0.75f, 0.35f, 0.35f), 16, () =>
             {
-                if (RianDeliveryCutscene.Instance != null && !RianDeliveryCutscene.Instance.HasPlayed)
+                bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+                if (!isAirport && RianDeliveryCutscene.Instance != null && !RianDeliveryCutscene.Instance.HasPlayed)
                 {
                     isMainMenuOpen = false;
                     if (mainMenuObj != null) mainMenuObj.SetActive(false);
@@ -1131,12 +1165,13 @@ public class DeliveryHUD : MonoBehaviour
 
     private void BuildRadarHUD()
     {
-        radarComponent = DeliveryRadarHUD.Ensure(transform, mainFont);
-        if (radarComponent != null)
-        {
-            radarObj = radarComponent.gameObject;
-            radarObj.SetActive(!isMainMenuOpen);
-        }
+        // Langsung buat DeliveryRadarHUD baru di bawah Canvas ini
+        GameObject radarGo = new GameObject("DeliveryRadarHUD", typeof(RectTransform));
+        radarGo.transform.SetParent(transform, false);
+        radarComponent = radarGo.AddComponent<DeliveryRadarHUD>();
+        radarComponent.BuildUI(mainFont);
+        radarObj = radarGo;
+        radarObj.SetActive(!isMainMenuOpen);
     }
 
     public void QuitGame()
@@ -1348,6 +1383,52 @@ public class DeliveryHUD : MonoBehaviour
     {
         if (missionTitleText == null || missionClueText == null) return;
 
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+
+        if (isAirportLevel2)
+        {
+            switch (state)
+            {
+                case DeliveryMissionState.Prolog:
+                    missionTitleText.text = "Tujuan: Temui Pak Beni 2 di Area Bandara";
+                    missionClueText.text = "Bicara dengan Pak Beni 2 untuk mengambil daftar pengantaran 5 paket bandara.";
+                    break;
+                case DeliveryMissionState.Package1_CoffeeShop:
+                    missionTitleText.text = "Tujuan: Antar Paket 1 ke Naya 2";
+                    missionClueText.text = "Antarkan paket dokumen penerbangan pertama kepada Naya 2 di area terminal bandara.";
+                    break;
+                case DeliveryMissionState.Package2_DrugStore:
+                    missionTitleText.text = "Tujuan: Antar Paket 2 ke Dimas 2";
+                    missionClueText.text = "Antarkan paket suku cadang bagasi kedua kepada Dimas 2.";
+                    break;
+                case DeliveryMissionState.Package3_HardwareStore:
+                    missionTitleText.text = "Tujuan: Antar Paket 3 ke Tukang Parkir 2";
+                    missionClueText.text = "Antarkan paket perlengkapan rompi dan bendera pemandu pesawat ke Tukang Parkir 2.";
+                    break;
+                case DeliveryMissionState.Package4_DroppedPackage:
+                    missionTitleText.text = "Tujuan: Antar Paket 4 ke Pak Joko 2";
+                    missionClueText.text = "Antarkan paket logistik kargo keempat kepada Pak Joko 2.";
+                    break;
+                case DeliveryMissionState.Package5_Apartment:
+                    missionTitleText.text = "Tujuan: Antar Paket 5 ke Clara 2";
+                    missionClueText.text = "Antarkan paket cinderamata terakhir kepada Clara 2.";
+                    break;
+                case DeliveryMissionState.Final_ReturnToHub:
+                    missionTitleText.text = "Tujuan: Lapor Kembali ke Pak Beni 2";
+                    missionClueText.text = "Seluruh 5 paket berhasil diantar! Kembali temui Pak Beni 2 untuk menyelesaikan misi!";
+                    break;
+                case DeliveryMissionState.Completed:
+                    missionTitleText.text = "Misi Selesai: Kurir Terpercaya!";
+                    missionClueText.text = "Selamat! Semua paket telah sampai dengan selamat tepat waktu.";
+                    break;
+                case DeliveryMissionState.Failed:
+                    missionTitleText.text = "Misi Berakhir: Waktu Habis!";
+                    missionClueText.text = "Batas waktu pengiriman di bandara telah habis.";
+                    break;
+            }
+            return;
+        }
+
         bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
 
         if (isLevel2)
@@ -1483,7 +1564,8 @@ public class DeliveryHUD : MonoBehaviour
             endingStatsText.text = $"Sisa Waktu: {min:00}:{sec:00}  |  Paket Terkirim: {delivered}/5  |  Salah Alamat: {wrong} kali";
         }
 
-        bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        bool isLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2" || isAirportLevel2;
 
         if (isLevel2)
         {
@@ -1505,44 +1587,51 @@ public class DeliveryHUD : MonoBehaviour
                 case GameEnding.Ending1_KurirTerpercaya:
                     if (endingTitleText != null)
                     {
-                        endingTitleText.text = "🏆 TAMAT: MASTER KURIR KOTA!";
+                        endingTitleText.text = isAirportLevel2 ? "🏆 TAMAT: KURIR TERPERCAYA BANDARA!" : "🏆 TAMAT: MASTER KURIR KOTA!";
                         endingTitleText.color = new Color(1f, 0.85f, 0.2f, 1f);
                     }
                     if (endingStoryText != null)
                     {
-                        endingStoryText.text =
-                            "Semua lima paket Level 2 berhasil diantarkan dengan sempurna melintasi rute baru!\n\n" +
-                            "Rian membuktikan keahlian navigasi terbaiknya dalam menaklukkan tata letak kota yang berubah dan rintangan barikade jalan.\n" +
-                            "Selamat! Kamu telah menamatkan seluruh tantangan dan resmi dinobatkan sebagai Master Kurir Kota!";
+                        endingStoryText.text = isAirportLevel2
+                            ? "Semua lima paket di Bandara berhasil diantarkan dengan sempurna kepada Naya 2, Dimas 2, Tukang Parkir 2, Pak Joko 2, dan Clara 2!\n\n" +
+                              "Rian telah melapor kembali ke Pak Beni 2 tepat waktu.\n" +
+                              "Selamat! Kamu berhasil menyelesaikan misi pengantaran dan menamatkan permainan!"
+                            : "Semua lima paket Level 2 berhasil diantarkan dengan sempurna melintasi rute baru!\n\n" +
+                              "Rian membuktikan keahlian navigasi terbaiknya dalam menaklukkan tata letak kota yang berubah dan rintangan barikade jalan.\n" +
+                              "Selamat! Kamu telah menamatkan seluruh tantangan dan resmi dinobatkan sebagai Master Kurir Kota!";
                     }
                     break;
 
                 case GameEnding.Ending2_PengirimanTerlambat:
                     if (endingTitleText != null)
                     {
-                        endingTitleText.text = "⚠️ LEVEL 2: PENGIRIMAN TERLAMBAT";
+                        endingTitleText.text = isAirportLevel2 ? "⚠️ BANDARA: PENGIRIMAN TERLAMBAT" : "⚠️ LEVEL 2: PENGIRIMAN TERLAMBAT";
                         endingTitleText.color = new Color(1f, 0.55f, 0.15f, 1f);
                     }
                     if (endingStoryText != null)
                     {
-                        endingStoryText.text =
-                            "Waktu pengiriman di kota baru telah habis sebelum semua paket sampai!\n\n" +
-                            "Barikade jalan dan rute baru membuat perjalanan lebih menantang. " +
-                            "Coba lagi untuk menguasai rute kota Level 2!";
+                        endingStoryText.text = isAirportLevel2
+                            ? "Waktu pengiriman di bandara telah habis sebelum semua paket sampai!\n\n" +
+                              "Coba perhatikan radar dan kompas untuk navigasi lebih cepat di area bandara!"
+                            : "Waktu pengiriman di kota baru telah habis sebelum semua paket sampai!\n\n" +
+                              "Barikade jalan dan rute baru membuat perjalanan lebih menantang. " +
+                              "Coba lagi untuk menguasai rute kota Level 2!";
                     }
                     break;
 
                 case GameEnding.Ending3_GagalBertugas:
                     if (endingTitleText != null)
                     {
-                        endingTitleText.text = "❌ LEVEL 2: GAGAL BERTUGAS";
+                        endingTitleText.text = isAirportLevel2 ? "❌ BANDARA: GAGAL BERTUGAS" : "❌ LEVEL 2: GAGAL BERTUGAS";
                         endingTitleText.color = new Color(1f, 0.3f, 0.3f, 1f);
                     }
                     if (endingStoryText != null)
                     {
-                        endingStoryText.text =
-                            "Waktu habis dan kamu belum berhasil menyelesaikan misi Level 2.\n\n" +
-                            "Perhatikan denah peta [M] dan hindari menabrak rintangan barikade jalan untuk menghemat waktu!";
+                        endingStoryText.text = isAirportLevel2
+                            ? "Waktu habis dan kamu belum berhasil menyelesaikan misi pengiriman bandara.\n\n" +
+                              "Gunakan radar dan perhatikan urutan penerima paket untuk menghemat waktu!"
+                            : "Waktu habis dan kamu belum berhasil menyelesaikan misi Level 2.\n\n" +
+                              "Perhatikan denah peta [M] dan hindari menabrak rintangan barikade jalan untuk menghemat waktu!";
                     }
                     break;
             }
@@ -1552,7 +1641,8 @@ public class DeliveryHUD : MonoBehaviour
             // Level 1 (Module 2)
             if (ending == GameEnding.Ending1_KurirTerpercaya)
             {
-                bool hasStage2 = Application.CanStreamedLevelBeLoaded("Module 2_Stage2");
+                bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+                bool hasStage2 = !isAirport && (Application.CanStreamedLevelBeLoaded("Level 2 saya") || Application.CanStreamedLevelBeLoaded("Module 2_Stage2"));
                 if (nextLevelButton != null)
                 {
                     nextLevelButton.gameObject.SetActive(hasStage2);

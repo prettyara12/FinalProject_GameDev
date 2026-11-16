@@ -40,6 +40,11 @@ public class DeliveryRecipient : MonoBehaviour
 
     private Transform playerTransform;
     private Animator anim;
+    private bool hasParamSpeedF = false;
+    private bool hasParamAnimationInt = false;
+    private bool hasParamStaticB = false;
+    private bool hasParamGrounded = false;
+    private bool hasParamGroundedB = false;
 
     private void Awake()
     {
@@ -50,22 +55,44 @@ public class DeliveryRecipient : MonoBehaviour
             Destroy(walker);
         }
 
-        anim = GetComponent<Animator>();
-        if (anim != null)
-        {
-            anim.applyRootMotion = false;
-            anim.SetFloat("Speed_f", 0f);
-            anim.SetInteger("Animation_int", 0);
-            anim.SetBool("Static_b", false);
-            anim.SetBool("Grounded", true);
-            anim.SetBool("Jump_b", false);
-            anim.SetBool("Crouch_b", false);
-        }
+        CacheAnimatorParams();
     }
 
     private void Start()
     {
         FindPlayer();
+        CacheAnimatorParams();
+    }
+
+    public void CacheAnimatorParams()
+    {
+        if (anim == null) anim = GetComponent<Animator>();
+        if (anim == null) return;
+
+        hasParamSpeedF = false;
+        hasParamAnimationInt = false;
+        hasParamStaticB = false;
+        hasParamGrounded = false;
+        hasParamGroundedB = false;
+
+        if (anim.runtimeAnimatorController != null)
+        {
+            foreach (var p in anim.parameters)
+            {
+                if (p.name == "Speed_f") hasParamSpeedF = true;
+                else if (p.name == "Animation_int") hasParamAnimationInt = true;
+                else if (p.name == "Static_b") hasParamStaticB = true;
+                else if (p.name == "Grounded") hasParamGrounded = true;
+                else if (p.name == "Grounded_b") hasParamGroundedB = true;
+            }
+        }
+
+        anim.applyRootMotion = false;
+        if (hasParamSpeedF) anim.SetFloat("Speed_f", 0f);
+        if (hasParamAnimationInt) anim.SetInteger("Animation_int", 0);
+        if (hasParamStaticB) anim.SetBool("Static_b", false);
+        if (hasParamGrounded) anim.SetBool("Grounded", true);
+        if (hasParamGroundedB) anim.SetBool("Grounded_b", true);
     }
 
     private void FindPlayer()
@@ -89,11 +116,11 @@ public class DeliveryRecipient : MonoBehaviour
         // Kunci parameter animator agar karakter tetap diam sempurna di tempat tanpa menggerakkan kaki
         if (anim != null)
         {
-            if (anim.GetFloat("Speed_f") != 0f)
+            if (hasParamSpeedF && anim.GetFloat("Speed_f") != 0f)
             {
                 anim.SetFloat("Speed_f", 0f);
             }
-            if (anim.GetInteger("Animation_int") != 0)
+            if (hasParamAnimationInt && anim.GetInteger("Animation_int") != 0)
             {
                 anim.SetInteger("Animation_int", 0);
             }
@@ -115,9 +142,10 @@ public class DeliveryRecipient : MonoBehaviour
             // Jangan trigger jika dialog berurutan sedang aktif
             if (NPCDialogueOverlay.IsDialogueActive) return;
 
-            // Syarat Alur Misi: Rian harus pergi ke Dimas terlebih dahulu!
-            // Teks dan interaksi bertanya kepada Petugas Parkir HANYA boleh muncul setelah Rian ke Dimas (Misi 4)
-            if (recipientType == RecipientType.PetugasParkir)
+            // Syarat Alur Misi: Di scene kota, Rian harus pergi ke Dimas terlebih dahulu sebelum bertanya ke Petugas Parkir
+            // Namun di scene Level 2 Bandara, Tukang Parkir 2 adalah penerima langsung paket 3
+            bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+            if (!isAirportLevel2 && recipientType == RecipientType.PetugasParkir)
             {
                 DeliveryGameManager gm = DeliveryGameManager.Instance;
                 if (gm == null || gm.CurrentState < DeliveryMissionState.Package4_DroppedPackage)
@@ -126,9 +154,8 @@ public class DeliveryRecipient : MonoBehaviour
                 }
             }
 
-            // Saat Misi 4 dan paket kardus sudah terungkap di jalan aspal tapi belum diambil,
-            // Dimas dan Petugas Parkir tidak boleh membajak prompt tombol [E] agar pemain dapat memungut paket tanpa gangguan
-            if ((recipientType == RecipientType.Dimas || recipientType == RecipientType.PetugasParkir) &&
+            // Saat Misi 4 kota dan paket kardus sudah terungkap di jalan aspal tapi belum diambil
+            if (!isAirportLevel2 && (recipientType == RecipientType.Dimas || recipientType == RecipientType.PetugasParkir) &&
                 DeliveryGameManager.Instance != null &&
                 DeliveryGameManager.Instance.CurrentState == DeliveryMissionState.Package4_DroppedPackage &&
                 DeliveryGameManager.Instance.IsDroppedPackageRevealed &&
@@ -160,7 +187,8 @@ public class DeliveryRecipient : MonoBehaviour
     {
         var state = DeliveryGameManager.Instance != null ? DeliveryGameManager.Instance.CurrentState : DeliveryMissionState.Prolog;
 
-        if (recipientType == RecipientType.PetugasParkir)
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        if (!isAirportLevel2 && recipientType == RecipientType.PetugasParkir)
         {
             if (state == DeliveryMissionState.Package4_DroppedPackage)
             {
@@ -207,4 +235,3 @@ public class DeliveryRecipient : MonoBehaviour
         }
     }
 }
-

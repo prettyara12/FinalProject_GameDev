@@ -7927,8 +7927,8 @@ MonoBehaviour:
   jumpHeight: 0.25
   playerCamera: {fileID: 9871760}
   bodyRadius: 0.035
-  bodyHeight: 0.18
-  maxStepHeight: 0.06
+  bodyHeight: 0.17999999
+  maxStepHeight: 0.02
   skinWidth: 0.003
   obstacleMask:
     serializedVersion: 2

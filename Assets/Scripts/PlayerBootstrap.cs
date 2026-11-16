@@ -21,9 +21,9 @@ public static class PlayerBootstrap
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     public static void AutoSetupOnPlay()
     {
-        // PlayerBootstrap dikhususkan untuk scene kota (Module 2 dan Module 2_Stage2)
+        // PlayerBootstrap dikhususkan untuk scene kota (Module 2 dan Module 2_Stage2) serta Level 2 Bandara
         var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-        if (activeScene.name != "Module 2" && activeScene.name != "Module 2_Stage2")
+        if (activeScene.name != "Module 2" && activeScene.name != "Module 2_Stage2" && !activeScene.name.Contains("Level 2"))
         {
             return;
         }
@@ -36,6 +36,25 @@ public static class PlayerBootstrap
     public static void SyncBuildSettingsOnLoad()
     {
         EnsureAllScenesInBuild();
+
+        EditorApplication.delayCall += () =>
+        {
+            var activeScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+            if (activeScene.name.Contains("Level 2") || activeScene.name == "Level 2 saya")
+            {
+                SetupAirportLevel2Saya();
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+            }
+        };
+
+        UnityEditor.SceneManagement.EditorSceneManager.sceneOpened += (scene, mode) =>
+        {
+            if (scene.name.Contains("Level 2") || scene.name == "Level 2 saya")
+            {
+                SetupAirportLevel2Saya();
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+            }
+        };
     }
 
     public static void EnsureAllScenesInBuild()
@@ -43,6 +62,8 @@ public static class PlayerBootstrap
         var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
         string[] subScenePaths = new string[]
         {
+            "Assets/Scenes/Level 2 saya/Level 2 saya.unity",
+            "Assets/Develop 3D Mobile Games in Unity/Assets/QuizAdventure/Scenes/Level 2 saya/Level 2 saya.unity",
             "Assets/Scenes/SubScenes/SubScene_0_0.unity",
             "Assets/Scenes/SubScenes/SubScene_0_1.unity",
             "Assets/Scenes/SubScenes/SubScene_0_2.unity",
@@ -90,6 +111,24 @@ public static class PlayerBootstrap
                 UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
             }
         }
+    }
+
+    [MenuItem("Tools/✈️ Setup Level 2 (Airport Delivery Mission)", false, -1)]
+    public static void MenuSetupAirportLevel2()
+    {
+        SetupAirportLevel2Saya();
+        MarkSceneDirtySafe();
+        EditorUtility.DisplayDialog("Setup Level 2 Bandara Siap!",
+            "Karakter Rian dan alur pengantaran 5 NPC Bandara berhasil dikonfigurasi:\n\n" +
+            "1. Rian (kurir) -> Pak Beni 2 (Pemberi Tugas)\n" +
+            "2. Naya 2 (Paket 1 - Dokumen Penerbangan)\n" +
+            "3. Dimas 2 (Paket 2 - Suku Cadang Bagasi)\n" +
+            "4. Tukang Parkir 2 (Paket 3 - Rompi & Bendera Apron)\n" +
+            "5. Pak Joko 2 (Paket 4 - Logistik Kargo)\n" +
+            "6. Clara 2 (Paket 5 - Cinderamata)\n" +
+            "7. Balik ke Pak Beni 2 -> Misi Selesai & Game Berakhir (Tamat)!\n\n" +
+            "Semua karakter menggunakan penempatan manual Anda tanpa duplikasi.",
+            "OK");
     }
 
     [MenuItem("Tools/⭐ Setup Game Kurir Terakhir (Final Project)", false, 0)]
@@ -425,6 +464,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// </summary>
     public static void SetupGameProject()
     {
+        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (activeScene.name.Contains("Level 2") || activeScene.name == "Level 2 saya")
+        {
+            SetupAirportLevel2Saya();
+            return;
+        }
+
         // 1. Sesuaikan skala karakter jika ada yang berskala raksasa (skala > 0.2f -> 0.1f)
         RemoveGiantNPCs();
 
@@ -473,7 +519,6 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         NPCDialogueOverlay.EnsureInstance();
 
         // 7. Setup Game Inti Kurir Terakhir (Final Project: Level 1 & Level 2)
-        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
         if (activeScene.name == "Module 2_Stage2")
         {
             SetupCityLevel2(playerGo);
@@ -548,6 +593,498 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         EnsureRianDeliveryCutsceneSystem(playerGo);
 
         Debug.Log("[PlayerBootstrap] ⭐ Game 'Kurir Terakhir' Berhasil Dikonfigurasi Lengkap!");
+    }
+
+    /// <summary>
+    /// Mencari GameObject karakter yang sudah ada di scene (termasuk inactive) berdasarkan nama persis atau kata kunci.
+    /// Tidak pernah membuat atau menduplikasi GameObject karakter baru.
+    /// </summary>
+    public static GameObject FindExistingCharacter(string exactName, string fallbackKeyword = null)
+    {
+        // 1. Pencarian langsung berdasarkan nama persis
+        GameObject exact = GameObject.Find(exactName);
+        if (exact != null) return exact;
+
+        // 2. Pencarian di seluruh objek scene (termasuk inactive)
+        GameObject[] all = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var go in all)
+        {
+            if (go == null) continue;
+            if (string.Equals(go.name.Trim(), exactName.Trim(), System.StringComparison.OrdinalIgnoreCase))
+            {
+                return go;
+            }
+        }
+
+        // 3. Fallback pencarian parsial jika nama sedikit berbeda
+        if (!string.IsNullOrEmpty(fallbackKeyword))
+        {
+            string kw = fallbackKeyword.ToLowerInvariant();
+            foreach (var go in all)
+            {
+                if (go == null) continue;
+                string lower = go.name.ToLowerInvariant();
+                if (lower.Contains(kw) &&
+                    !lower.Contains("camera") &&
+                    !lower.Contains("light") &&
+                    !lower.Contains("canvas") &&
+                    !lower.Contains("subscene"))
+                {
+                    return go;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static void SafeSetAnimatorIdle(Animator anim)
+    {
+        if (anim == null) return;
+        anim.applyRootMotion = false;
+        if (anim.runtimeAnimatorController == null) return;
+
+        foreach (var p in anim.parameters)
+        {
+            if (p.name == "Speed_f") anim.SetFloat(p.nameHash, 0f);
+            else if (p.name == "Animation_int") anim.SetInteger(p.nameHash, 0);
+            else if (p.name == "Static_b") anim.SetBool(p.nameHash, false);
+            else if (p.name == "Grounded" || p.name == "Grounded_b") anim.SetBool(p.nameHash, true);
+            else if (p.name == "Jump_b" || p.name == "Crouch_b" || p.name == "Death_b") anim.SetBool(p.nameHash, false);
+        }
+    }
+
+    /// <summary>
+    /// Setup Khusus Level 2 Bandara ("Level 2 saya"):
+    /// - Mengonfigurasi Rian (kurir) dan 6 NPC penerima paket di area bandara internasional.
+    /// - Alur Misi: Rian -> Pak Beni 2 -> Naya 2 -> Dimas 2 -> Tukang Parkir 2 -> Pak Joko 2 -> Clara 2 -> Pak Beni 2 -> Tamat!
+    /// - Menjamin seluruh 6 NPC dan Rian hadir di scene (menemukan atau menginstansiasi dari prefab jika belum ada).
+    /// - Menghilangkan T-pose dengan mengaitkan Animator Controller dan mengevaluasi pose Idle.
+    /// - Terhubung sebagai kelanjutan misi resmi dari Scene 1 (Module 2).
+    /// </summary>
+    public static void SetupAirportLevel2Saya()
+    {
+        // 1. Setup Rian (Player)
+        GameObject playerGo = FindExistingCharacter("Rian (kurir)", "Rian");
+        if (playerGo == null) playerGo = FindExistingCharacter("Rian (Kurir)", "Trucker");
+        if (playerGo == null) playerGo = GameObject.FindWithTag("Player");
+
+#if UNITY_EDITOR
+        if (playerGo == null)
+        {
+            GameObject truckerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Trucker_Black.prefab");
+            if (truckerPrefab != null)
+            {
+                playerGo = (GameObject)PrefabUtility.InstantiatePrefab(truckerPrefab);
+                playerGo.name = "Rian (kurir)";
+                playerGo.transform.position = new Vector3(35f, 0.05f, 138.27f);
+                playerGo.transform.rotation = Quaternion.Euler(0f, 40f, 0f);
+                playerGo.transform.localScale = Vector3.one;
+            }
+        }
+#endif
+        if (playerGo == null)
+        {
+            playerGo = new GameObject("Rian (kurir)");
+            playerGo.transform.position = new Vector3(35f, 0.05f, 138.27f);
+            playerGo.transform.rotation = Quaternion.Euler(0f, 40f, 0f);
+        }
+
+        playerGo.tag = "Player";
+        playerGo.name = "Rian (kurir)";
+        playerGo.SetActive(true);
+
+        // Bersihkan komponen lama yang bentrok
+        CharacterController cc = playerGo.GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = false;
+        NPCWalker walker = playerGo.GetComponent<NPCWalker>();
+        if (walker != null) DestroyComponentSafe(walker);
+
+        // Capsule Collider
+        CapsuleCollider col = playerGo.GetComponent<CapsuleCollider>();
+        if (col == null) col = playerGo.AddComponent<CapsuleCollider>();
+        col.height = 1.8f;
+        col.center = new Vector3(0f, 0.9f, 0f);
+        col.radius = 0.35f;
+
+        // Rigidbody
+        Rigidbody rb = playerGo.GetComponent<Rigidbody>();
+        if (rb == null) rb = playerGo.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        // Animator
+        Animator anim = playerGo.GetComponent<Animator>();
+        if (anim == null) anim = playerGo.AddComponent<Animator>();
+        anim.applyRootMotion = false;
+        anim.enabled = true;
+
+#if UNITY_EDITOR
+        if (anim.runtimeAnimatorController == null)
+        {
+            RuntimeAnimatorController ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Models/SimpleCitizens.controller");
+            if (ctrl == null)
+            {
+                ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
+            }
+            if (ctrl != null) anim.runtimeAnimatorController = ctrl;
+        }
+#endif
+        SafeSetAnimatorIdle(anim);
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying && anim != null && anim.runtimeAnimatorController != null)
+        {
+            anim.Update(0f);
+        }
+#endif
+
+        // PlayerController
+        PlayerController pc = playerGo.GetComponent<PlayerController>();
+        if (pc == null) pc = playerGo.AddComponent<PlayerController>();
+        pc.walkSpeed = 4.5f;
+        pc.sprintSpeed = 8.5f;
+        pc.rotationSpeed = 12f;
+        pc.jumpHeight = 1.2f;
+        pc.bodyRadius = 0.35f;
+        pc.bodyHeight = 1.8f;
+        pc.maxStepHeight = 0.35f;
+        pc.skinWidth = 0.02f;
+
+        EnsureCorrectCharacterMesh(playerGo);
+        AutoEnsureCharacterMaterial(playerGo);
+
+        // Setup ThirdPersonCamera
+        Camera cam = Camera.main;
+        if (cam != null)
+        {
+            ThirdPersonCamera tpc = cam.GetComponent<ThirdPersonCamera>();
+            if (tpc == null) tpc = cam.gameObject.AddComponent<ThirdPersonCamera>();
+            tpc.target = playerGo.transform;
+            tpc.targetHeight = 1.5f;
+            tpc.distance = 6.0f;
+            tpc.height = 2.0f;
+            tpc.followRearAngle = true;
+            tpc.collisionRadius = 0.25f;
+            tpc.viewMode = ThirdPersonCamera.CameraViewMode.ThirdPersonFollow;
+            pc.playerCamera = cam;
+            if (cam.GetComponent<AudioListener>() == null) cam.gameObject.AddComponent<AudioListener>();
+        }
+
+        // 2. Setup 6 NPC Penerima Paket Bandara (Prolog -> 5 Paket -> Ending)
+        SetupAirportRecipientNPC(
+            "Pak Beni 2", "Beni",
+            "Pak Beni 2",
+            DeliveryRecipient.RecipientType.PakBeni,
+            DeliveryMissionState.Prolog,
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Sheriff_Black.prefab",
+            new Vector3(41.197f, 0.05f, 146.568f),
+            Quaternion.Euler(0f, 200f, 0f),
+            new string[]
+            {
+                "Rian: Halo Pak Beni! Saya sudah tiba di Bandara Internasional. Apa tugas pengantaran paket berikutnya untuk saya?",
+                "Pak Beni 2: Halo Rian! Kerja luar biasa telah menyelesaikan seluruh pengantaran di kawasan kota pada Scene 1 tadi!",
+                "Pak Beni 2: Tapi tugas Kurir Terpercaya kita belum usai. Hari ini Bandara Internasional membutuhkan bantuan logistik darurat.",
+                "Rian: Siap Pak Beni! Barang apa saja yang harus saya antarkan dan siapa saja penerimanya di bandara ini?",
+                "Pak Beni 2: Ada 5 paket penting yang harus kau antarkan secara berurutan sesuai manifes penerbangan:",
+                "Pak Beni 2: 1. Naya 2 (Dokumen Gate), 2. Dimas 2 (Suku Cadang), 3. Tukang Parkir 2 (Rompi Apron), 4. Pak Joko 2 (Kargo VIP), 5. Clara 2 (Lounge VIP).",
+                "Rian: Baik Pak, bagaimana cara saya menemukan lokasi mereka di area bandara yang luas ini?",
+                "Pak Beni 2: Gunakan indikator radar emas di layarmu. Titik radar akan memandu arahmu ke tiap kru bandara satu per satu.",
+                "Pak Beni 2: Setelah kelima paket selesai kau antarkan, segera kembali lapor ke saya di sini untuk menyelesaikan giliran kerjamu!",
+                "Rian: Siap Pak Beni! Saya mengerti dan segera berangkat mengantarkan paket pertama ke Naya 2!"
+            },
+            new string[]
+            {
+                "Rian: Lapor Pak Beni! Seluruh 5 paket bandara telah berhasil saya antarkan ke semua penerima!",
+                "Pak Beni 2: Luar biasa, Rian! Semua 5 paket bandara sampai dengan selamat dan tepat waktu!",
+                "Pak Beni 2: Dari jalanan kota hingga landasan bandara internasional, dedikasimu membuktikan bahwa kau adalah Kurir Terpercaya sejati!",
+                "Rian: Terima kasih banyak atas bimbingan dan kepercayaannya, Pak Beni! Senang bisa membantu kelancaran operasional bandara.",
+                "Pak Beni 2: Selamat Rian! Tugas Level 2 Bandara telah selesai dengan gemilang! Kamu resmi menamatkan seluruh petualangan kurir!"
+            },
+            new string[]
+            {
+                "Rian: Pak Beni, apakah saya sudah boleh menyelesaikan tugas sekarang?",
+                "Pak Beni 2: Belum Rian, kamu harus menyelesaikan pengantaran ke 5 petugas bandara terlebih dahulu sebelum melapor kembali kemari!"
+            }
+        );
+
+        SetupAirportRecipientNPC(
+            "Naya 2", "Naya",
+            "Naya 2",
+            DeliveryRecipient.RecipientType.Naya,
+            DeliveryMissionState.Package1_CoffeeShop,
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_BeachBabe_Black.prefab",
+            new Vector3(34.0f, 0.05f, 168.0f),
+            Quaternion.Euler(0f, 180f, 0f),
+            new string[]
+            {
+                "Rian: Halo Naya 2! Apakah benar Anda yang sedang menunggu paket dari Pak Beni?",
+                "Naya 2: Halo Rian! Benar sekali, saya sedang menunggu dokumen manifes penerbangan untuk kru kokpit!"
+            },
+            new string[]
+            {
+                "Rian: Ini dokumen manifes penerbangan resmi dari Pak Beni, silakan dicek Naya!",
+                "Naya 2: Terima kasih banyak Rian! Dokumen ini tepat seperti yang dibutuhkan kokpit. Sekarang tolong lekas antarkan suku cadang ke Dimas 2 di dekat troli bagasi sebelah timur!",
+                "Rian: Baik Naya, saya segera meluncur ke Dimas 2!"
+            },
+            new string[]
+            {
+                "Rian: Naya 2, apakah paket ini pesanan Anda?",
+                "Naya 2: Maaf Mas Rian, paket ini bukan untuk bagian gate penerbangan. Coba periksa petunjuk pengantaranmu!"
+            }
+        );
+
+        SetupAirportRecipientNPC(
+            "Dimas 2", "Dimas",
+            "Dimas 2",
+            DeliveryRecipient.RecipientType.Dimas,
+            DeliveryMissionState.Package2_DrugStore,
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_StreetMan_Brown.prefab",
+            new Vector3(58.0f, 0.05f, 154.0f),
+            Quaternion.Euler(0f, -90f, 0f),
+            new string[]
+            {
+                "Rian: Halo Dimas 2! Apakah Anda teknisi yang membutuhkan suku cadang konveyor?",
+                "Dimas 2: Halo Rian! Iya betul, mesin pemilah bagasi sedang macet dan butuh suku cadang darurat!"
+            },
+            new string[]
+            {
+                "Rian: Ini paket suku cadang konveyor dari bagian logistik untukmu, Dimas!",
+                "Dimas 2: Wah mantap sekali, terima kasih Rian! Mesin bagasi bisa segera normal kembali. Berikutnya, tolong antarkan rompi & perlengkapan ke Tukang Parkir 2 di apron barat!",
+                "Rian: Siap Dimas, saya langsung berangkat ke Tukang Parkir 2!"
+            },
+            new string[]
+            {
+                "Rian: Dimas, apa paket ini yang kau cari?",
+                "Dimas 2: Maaf Rian, paket ini bukan suku cadang teknisi bagasi. Coba periksa penerima lain!"
+            }
+        );
+
+        SetupAirportRecipientNPC(
+            "Tukang Parkir 2", "Parkir",
+            "Tukang Parkir 2",
+            DeliveryRecipient.RecipientType.PetugasParkir,
+            DeliveryMissionState.Package3_HardwareStore,
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_RoadWorker_White.prefab",
+            new Vector3(18.0f, 0.05f, 154.0f),
+            Quaternion.Euler(0f, 90f, 0f),
+            new string[]
+            {
+                "Rian: Permisi, apa Anda Tukang Parkir 2 yang bertugas memandu pesawat di apron?",
+                "Tukang Parkir 2: Iya betul Mas Rian! Pesawat sebentar lagi merapat, saya butuh rompi sinyal dan bendera pemandu!"
+            },
+            new string[]
+            {
+                "Rian: Ini paket perlengkapan rompi reflektor dan bendera marshaller untukmu!",
+                "Tukang Parkir 2: Terima kasih banyak Mas Rian! Dengan perlengkapan ini, pesawat bisa dipandu parkir dengan aman. Lekas antarkan paket keempat ke Pak Joko 2 di terminal kargo selatan!",
+                "Rian: Siap Mas! Saya segera ke terminal kargo menemui Pak Joko 2!"
+            },
+            new string[]
+            {
+                "Rian: Apakah ini paket perlengkapan marshaller Anda?",
+                "Tukang Parkir 2: Bukan ini paket pesanan saya Mas Rian. Saya butuh perlengkapan rompi dan bendera apron marshaller!"
+            }
+        );
+
+        SetupAirportRecipientNPC(
+            "Pak Joko 2", "Joko",
+            "Pak Joko 2",
+            DeliveryRecipient.RecipientType.PakJoko,
+            DeliveryMissionState.Package4_DroppedPackage,
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_BusinessMan_Black.prefab",
+            new Vector3(18.0f, 0.05f, 126.0f),
+            Quaternion.Euler(0f, 45f, 0f),
+            new string[]
+            {
+                "Rian: Selamat siang Pak Joko 2! Apa ini terminal logistik kargo internasional?",
+                "Pak Joko 2: Selamat siang kurir Rian! Benar, saya sedang menunggu dokumen ekspor kargo VIP!"
+            },
+            new string[]
+            {
+                "Rian: Ini dokumen kargo ekspor VIP yang dipersiapkan Pak Beni untuk Anda, Pak Joko!",
+                "Pak Joko 2: Terima kasih kurir Rian! Manifes kargo udara ini sudah lengkap dan siap diberangkatkan. Tinggal satu paket terakhir, lekas antarkan ke Clara 2 di area lounge eksekutif timur!",
+                "Rian: Baik Pak Joko, saya menuju ke Clara 2 sekarang!"
+            },
+            new string[]
+            {
+                "Rian: Pak Joko, apa dokumen ini yang Anda tunggu?",
+                "Pak Joko 2: Maaf Rian, ini bukan dokumen logistik kargo ekspor VIP."
+            }
+        );
+
+        SetupAirportRecipientNPC(
+            "Clara 2", "Clara",
+            "Clara 2",
+            DeliveryRecipient.RecipientType.Clara,
+            DeliveryMissionState.Package5_Apartment,
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Waitress_White.prefab",
+            new Vector3(52.0f, 0.05f, 133.0f),
+            Quaternion.Euler(0f, -45f, 0f),
+            new string[]
+            {
+                "Rian: Halo Clara 2! Apakah tamu lounge eksekutif sedang menanti paket cinderamata?",
+                "Clara 2: Halo Rian! Benar sekali, para tamu VIP di lounge sudah menantikan bingkisan selamat datang!"
+            },
+            new string[]
+            {
+                "Rian: Ini paket bingkisan cinderamata penerbangan khusus untuk lounge eksekutif, Clara!",
+                "Clara 2: Wah tepat waktu sekali Rian, terima kasih banyak! Semua 5 paket sekarang sudah tuntas kau antarkan. Cepat temui Pak Beni 2 di area truk pengiriman untuk lapor tugas akhir!",
+                "Rian: Terima kasih Clara! Saya segera kembali menemui Pak Beni 2!"
+            },
+            new string[]
+            {
+                "Rian: Clara, apa ini bingkisan untuk lounge VIP?",
+                "Clara 2: Maaf Rian, saya Clara 2, tapi ini bukan paket cinderamata untuk lounge VIP."
+            }
+        );
+
+        // 3. Setup Dialog Overlay & Game Managers
+        NPCDialogueOverlay.EnsureInstance();
+
+        // DeliveryGameManager
+        GameObject gmGo = GameObject.Find("DeliveryGameManager");
+        if (gmGo == null) gmGo = new GameObject("DeliveryGameManager");
+        DeliveryGameManager gm = gmGo.GetComponent<DeliveryGameManager>();
+        if (gm == null) gm = gmGo.AddComponent<DeliveryGameManager>();
+        if (gm != null)
+        {
+            gm.totalTimeLimit = 600f; // 10 menit
+        }
+
+        // Bersihkan objek radar usang di root scene jika ada
+        GameObject staleRootRadar = GameObject.Find("DeliveryRadarHUD");
+        if (staleRootRadar != null && staleRootRadar.transform.parent == null)
+        {
+            if (Application.isPlaying) Object.Destroy(staleRootRadar);
+            else Object.DestroyImmediate(staleRootRadar);
+        }
+
+        // Setup DeliveryHUD (Radar otomatis dibuat & dikonfigurasi di dalam Canvas HUD)
+        DeliveryHUD.EnsureInstance();
+
+        DeliveryRadarHUD radar = Object.FindAnyObjectByType<DeliveryRadarHUD>();
+        if (radar != null)
+        {
+            radar.radarWorldRange = 60f;
+            if (radar.gameObject != null)
+            {
+                radar.gameObject.SetActive(true);
+            }
+        }
+
+        GameAudioManager.EnsureInstance();
+
+        Debug.Log("[PlayerBootstrap] Level 2 Bandara berhasil dikonfigurasi! Rian dan 6 NPC siap tanpa duplikasi!");
+    }
+
+    private static void SetupAirportRecipientNPC(
+        string exactName, string fallbackKeyword,
+        string characterName,
+        DeliveryRecipient.RecipientType recipientType,
+        DeliveryMissionState targetMission,
+        string prefabPath,
+        Vector3 defaultPos,
+        Quaternion defaultRot,
+        string[] introLines,
+        string[] successLines,
+        string[] wrongLines)
+    {
+        GameObject npcGo = FindExistingCharacter(exactName, fallbackKeyword);
+
+#if UNITY_EDITOR
+        if (npcGo == null && !string.IsNullOrEmpty(prefabPath))
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab != null)
+            {
+                npcGo = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                npcGo.name = exactName;
+                npcGo.transform.position = defaultPos;
+                npcGo.transform.rotation = defaultRot;
+                npcGo.transform.localScale = Vector3.one;
+            }
+        }
+#endif
+        if (npcGo == null)
+        {
+            npcGo = new GameObject(exactName);
+            npcGo.transform.position = defaultPos;
+            npcGo.transform.rotation = defaultRot;
+            npcGo.transform.localScale = Vector3.one;
+        }
+
+        // Pastikan nama dan status aktif
+        npcGo.name = exactName;
+        npcGo.SetActive(true);
+
+        // Pastikan bukan Player
+        if (npcGo.CompareTag("Player")) npcGo.tag = "Untagged";
+        PlayerController pc = npcGo.GetComponent<PlayerController>();
+        if (pc != null) DestroyComponentSafe(pc);
+        CharacterController cc = npcGo.GetComponent<CharacterController>();
+        if (cc != null) DestroyComponentSafe(cc);
+        NPCWalker walker = npcGo.GetComponent<NPCWalker>();
+        if (walker != null) DestroyComponentSafe(walker);
+
+        // CapsuleCollider
+        CapsuleCollider col = npcGo.GetComponent<CapsuleCollider>();
+        if (col == null) col = npcGo.AddComponent<CapsuleCollider>();
+        col.height = 1.8f;
+        col.center = new Vector3(0f, 0.9f, 0f);
+        col.radius = 0.35f;
+
+        // Rigidbody
+        Rigidbody rb = npcGo.GetComponent<Rigidbody>();
+        if (rb == null) rb = npcGo.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        // Animator
+        Animator anim = npcGo.GetComponent<Animator>();
+        if (anim == null) anim = npcGo.AddComponent<Animator>();
+        anim.applyRootMotion = false;
+        anim.enabled = true;
+
+#if UNITY_EDITOR
+        if (anim.runtimeAnimatorController == null)
+        {
+            RuntimeAnimatorController ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Models/SimpleCitizens.controller");
+            if (ctrl == null)
+            {
+                ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
+            }
+            if (ctrl != null) anim.runtimeAnimatorController = ctrl;
+        }
+#endif
+        SafeSetAnimatorIdle(anim);
+        if (anim.runtimeAnimatorController != null)
+        {
+            anim.Play("Idle", 0, 0f);
+        }
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying && anim != null && anim.runtimeAnimatorController != null)
+        {
+            anim.Update(0f);
+        }
+#endif
+
+        EnsureCorrectCharacterMesh(npcGo);
+        AutoEnsureCharacterMaterial(npcGo);
+
+        // DeliveryRecipient
+        DeliveryRecipient recipient = npcGo.GetComponent<DeliveryRecipient>();
+        if (recipient == null) recipient = npcGo.AddComponent<DeliveryRecipient>();
+        recipient.characterName = characterName;
+        recipient.recipientType = recipientType;
+        recipient.targetForMission = targetMission;
+        recipient.interactionRadius = 4.0f;
+        recipient.introDialogueLines = introLines;
+        recipient.successDialogueLines = successLines;
+        recipient.wrongDeliveryLines = wrongLines;
     }
 
     /// <summary>
@@ -832,12 +1369,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             if (ctrl != null) anim.runtimeAnimatorController = ctrl;
         }
 #endif
-        anim.SetInteger("Animation_int", 0);
-        anim.SetFloat("Speed_f", 0f);
-        anim.SetBool("Static_b", false);
-        anim.SetBool("Grounded", true);
-        anim.SetBool("Jump_b", false);
-        anim.SetBool("Crouch_b", false);
+        SafeSetAnimatorIdle(anim);
         if (anim.runtimeAnimatorController != null)
         {
             anim.Play("Idle", 0, 0f);
@@ -1414,12 +1946,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             if (ctrl != null) anim.runtimeAnimatorController = ctrl;
         }
 #endif
-        anim.SetInteger("Animation_int", 0);
-        anim.SetFloat("Speed_f", 0f);
-        anim.SetBool("Static_b", false);
-        anim.SetBool("Grounded", true);
-        anim.SetBool("Jump_b", false);
-        anim.SetBool("Crouch_b", false);
+        SafeSetAnimatorIdle(anim);
         if (anim.runtimeAnimatorController != null)
         {
             anim.Play("Idle", 0, 0f);
@@ -2064,11 +2591,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         }
 #endif
         // Set idle parameter
-        anim.SetInteger("Animation_int", 0);
-        anim.SetFloat("Speed_f", 0f);
-        anim.SetBool("Static_b", false);
-        anim.SetBool("Grounded", true);
-        anim.SetBool("Jump_b", false);
+        SafeSetAnimatorIdle(anim);
         anim.Update(0f);
 
         // Rigidbody Kinematic
@@ -2155,11 +2678,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         }
 #endif
         // Reset parameter agar berdiri tegak & siap melompat
-        anim.SetInteger("Animation_int", 0);
-        anim.SetFloat("Speed_f", 0f);
-        anim.SetBool("Static_b", false);
-        anim.SetBool("Grounded", true);
-        anim.SetBool("Jump_b", false);
+        SafeSetAnimatorIdle(anim);
         if (anim.layerCount > 3)
         {
             anim.Play("Standing_Jump", 3, 0f);
@@ -2250,10 +2769,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             if (ctrl != null) anim.runtimeAnimatorController = ctrl;
         }
 #endif
-        anim.SetInteger("Animation_int", 0);
-        anim.SetFloat("Speed_f", 2.5f);
-        anim.SetBool("Static_b", false);
-        anim.SetBool("Grounded", true);
+        SafeSetAnimatorIdle(anim);
 
         // Rigidbody Kinematic
         Rigidbody rb = npcGo.GetComponent<Rigidbody>();

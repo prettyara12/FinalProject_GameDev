@@ -61,6 +61,11 @@ public class NPCDialogueOverlay : MonoBehaviour
     private string activeSpeakerName;
     private string activeMessage;
 
+    // Base Target Speaker (NPC being talked to)
+    private Transform baseNpcTransform;
+    private string baseNpcName;
+    private float baseHeightOffset = 0.20f;
+
     // Sequential Dialogue Tracking
     private string[] currentSequentialLines;
     private int currentSequentialIndex = 0;
@@ -429,6 +434,10 @@ public class NPCDialogueOverlay : MonoBehaviour
             return;
         }
 
+        instance.baseNpcTransform = speakerTransform;
+        instance.baseNpcName = speakerName;
+        instance.baseHeightOffset = heightOffset;
+
         instance.currentSequentialLines = lines;
         instance.currentSequentialIndex = 0;
         instance.isSequentialActive = true;
@@ -439,10 +448,10 @@ public class NPCDialogueOverlay : MonoBehaviour
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         if (player != null) player.SetMovementFrozen(true);
 
-        instance.DisplayCurrentSequentialLine(speakerTransform, speakerName, heightOffset);
+        instance.DisplayCurrentSequentialLine();
     }
 
-    private void DisplayCurrentSequentialLine(Transform speakerTransform, string speakerName, float heightOffset)
+    private void DisplayCurrentSequentialLine()
     {
         if (currentSequentialLines == null || currentSequentialIndex >= currentSequentialLines.Length)
         {
@@ -450,9 +459,69 @@ public class NPCDialogueOverlay : MonoBehaviour
             return;
         }
 
-        string line = currentSequentialLines[currentSequentialIndex];
+        string rawLine = currentSequentialLines[currentSequentialIndex];
+        Transform targetSpeakerTransform = baseNpcTransform;
+        string targetSpeakerName = baseNpcName;
+        float targetHeightOffset = baseHeightOffset;
+        string cleanLine = rawLine;
+
+        // Dukungan percakapan 2 arah: "Rian: ..." atau "<NPC>: ..."
+        int colonIdx = rawLine.IndexOf(": ");
+        if (colonIdx > 0 && colonIdx <= 25)
+        {
+            string speakerTag = rawLine.Substring(0, colonIdx).Trim();
+            cleanLine = rawLine.Substring(colonIdx + 2).Trim();
+
+            if (speakerTag.Equals("Rian", System.StringComparison.OrdinalIgnoreCase) ||
+                speakerTag.StartsWith("Rian", System.StringComparison.OrdinalIgnoreCase))
+            {
+                targetSpeakerName = "Rian (Kurir)";
+                PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+                if (pc != null)
+                {
+                    targetSpeakerTransform = pc.transform;
+                    // Rian menoleh ke arah NPC yang sedang diajak bicara
+                    if (baseNpcTransform != null)
+                    {
+                        Vector3 dir = (baseNpcTransform.position - pc.transform.position);
+                        dir.y = 0;
+                        if (dir.sqrMagnitude > 0.01f) pc.transform.rotation = Quaternion.LookRotation(dir);
+                    }
+                }
+                targetHeightOffset = 0.22f;
+            }
+            else
+            {
+                targetSpeakerName = speakerTag;
+                targetSpeakerTransform = baseNpcTransform;
+                // NPC menoleh ke arah Rian saat menjawab pertanyaan
+                PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+                if (pc != null && baseNpcTransform != null)
+                {
+                    Vector3 dir = (pc.transform.position - baseNpcTransform.position);
+                    dir.y = 0;
+                    if (dir.sqrMagnitude > 0.01f) baseNpcTransform.rotation = Quaternion.LookRotation(dir);
+                }
+            }
+        }
+
         GameAudioManager.Instance?.PlayDialogueAdvance();
-        ShowDialogue(speakerTransform, speakerName, line, true, heightOffset);
+        ShowDialogue(targetSpeakerTransform, targetSpeakerName, cleanLine, true, targetHeightOffset);
+
+        // Bedakan warna teks pembicara: Cyan untuk Rian, Amber untuk NPC
+        if (subtitleSpeakerText != null)
+        {
+            if (targetSpeakerName.StartsWith("Rian", System.StringComparison.OrdinalIgnoreCase))
+            {
+                subtitleSpeakerText.color = new Color(0.35f, 0.85f, 1f, 1f);
+                subtitleSpeakerText.text = "◆  " + targetSpeakerName + " [Pemain]";
+            }
+            else
+            {
+                subtitleSpeakerText.color = new Color(0.96f, 0.72f, 0.22f, 1f);
+                subtitleSpeakerText.text = "◆  " + targetSpeakerName;
+            }
+        }
 
         if (subtitleContinuePromptText != null)
         {
@@ -468,7 +537,7 @@ public class NPCDialogueOverlay : MonoBehaviour
         currentSequentialIndex++;
         if (currentSequentialIndex < currentSequentialLines.Length)
         {
-            DisplayCurrentSequentialLine(activeSpeakerTransform, activeSpeakerName, activeSpeakerHeightOffset);
+            DisplayCurrentSequentialLine();
         }
         else
         {

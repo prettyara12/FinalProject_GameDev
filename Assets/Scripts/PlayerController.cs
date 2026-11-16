@@ -202,7 +202,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnDisable()
     {
-        if (animator != null && hasParamSpeedF)
+        if (animator != null && animator.runtimeAnimatorController != null && hasParamSpeedF)
         {
             animator.SetFloat(ParamSpeedF, 0f);
         }

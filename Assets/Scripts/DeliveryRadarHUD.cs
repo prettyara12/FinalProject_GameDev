@@ -47,17 +47,34 @@ public class DeliveryRadarHUD : MonoBehaviour
 
     public static DeliveryRadarHUD Ensure(Transform parentCanvas, Font font)
     {
-        GameObject existing = GameObject.Find("DeliveryRadarHUD");
-        if (existing != null)
+        if (parentCanvas == null)
         {
-            DeliveryRadarHUD hud = existing.GetComponent<DeliveryRadarHUD>();
-            if (hud != null) return hud;
+            DeliveryHUD hud = DeliveryHUD.Instance;
+            if (hud != null) parentCanvas = hud.transform;
         }
 
+        if (parentCanvas != null)
+        {
+            foreach (Transform t in parentCanvas)
+            {
+                DeliveryRadarHUD child = t.GetComponent<DeliveryRadarHUD>();
+                if (child != null && child.playerPointerRect != null && child.discGo != null)
+                {
+                    child.gameObject.SetActive(true);
+                    return child;
+                }
+            }
+        }
+
+        // Buat baru jika belum ada
         GameObject radarGo = new GameObject("DeliveryRadarHUD", typeof(RectTransform));
-        radarGo.transform.SetParent(parentCanvas, false);
+        if (parentCanvas != null)
+        {
+            radarGo.transform.SetParent(parentCanvas, false);
+        }
         DeliveryRadarHUD comp = radarGo.AddComponent<DeliveryRadarHUD>();
         comp.BuildUI(font);
+        radarGo.SetActive(true);
         return comp;
     }
 
@@ -81,7 +98,7 @@ public class DeliveryRadarHUD : MonoBehaviour
         }
         else
         {
-            GameObject pGo = GameObject.Find("Player") ?? GameObject.Find("Rian");
+            GameObject pGo = GameObject.Find("Player") ?? GameObject.Find("Rian") ?? GameObject.Find("Rian (kurir)");
             if (pGo != null) playerTransform = pGo.transform;
         }
     }
@@ -189,7 +206,8 @@ public class DeliveryRadarHUD : MonoBehaviour
         headerText.fontStyle = FontStyle.Bold;
         headerText.color = new Color(0.4f, 0.82f, 1f, 0.95f);
         headerText.alignment = TextAnchor.MiddleLeft;
-        headerText.text = " RADAR KOTA";
+        bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        headerText.text = isAirport ? " RADAR BANDARA" : " RADAR KOTA";
 
         // Minimize / Maximize Button [-]
         GameObject minBtnGo = new GameObject("Btn_Minimize", typeof(RectTransform));
@@ -522,10 +540,12 @@ public class DeliveryRadarHUD : MonoBehaviour
         DeliveryMissionState currentState = gm != null ? gm.CurrentState : DeliveryMissionState.Prolog;
 
         // Ambil seluruh DeliveryRecipient di scene
-        DeliveryRecipient[] recipients = Object.FindObjectsByType<DeliveryRecipient>(FindObjectsSortMode.None);
+        DeliveryRecipient[] recipients = Object.FindObjectsByType<DeliveryRecipient>();
         Transform closestActiveTarget = null;
         float closestDistance = float.MaxValue;
         string activeTargetName = "Penerima";
+
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
 
         foreach (var r in recipients)
         {
@@ -542,7 +562,7 @@ public class DeliveryRadarHUD : MonoBehaviour
             {
                 isCurrentTarget = (r.recipientType == DeliveryRecipient.RecipientType.PakBeni);
             }
-            else if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+            else if (!isAirportLevel2 && currentState == DeliveryMissionState.Package4_DroppedPackage)
             {
                 isCurrentTarget = (r.recipientType == DeliveryRecipient.RecipientType.PetugasParkir);
             }
@@ -592,8 +612,8 @@ public class DeliveryRadarHUD : MonoBehaviour
             blipIndex++;
         }
 
-        // Cek paket jatuh (Mission 4)
-        if (currentState == DeliveryMissionState.Package4_DroppedPackage)
+        // Cek paket jatuh (Mission 4 kota)
+        if (!isAirportLevel2 && currentState == DeliveryMissionState.Package4_DroppedPackage)
         {
             GameObject dropped = GameObject.Find("DroppedPackagePickup") ?? GameObject.Find("DroppedPackage");
             if (dropped != null && dropped.activeInHierarchy && blipIndex < blipPool.Count)

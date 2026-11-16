@@ -119,13 +119,22 @@ public class DeliveryGameManager : MonoBehaviour
         finalEnding = GameEnding.None;
         isTimerRunning = true;
 
-        // Posisikan kembali Rian (Player) ke depan Mall & aktifkan kontrol
+        // Posisikan kembali Rian (Player) ke depan Mall & aktifkan kontrol (hanya pada scene kota)
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
         if (player != null)
         {
-            player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
-            player.transform.rotation = Quaternion.identity;
+            if (!isAirportLevel2)
+            {
+                player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+                player.transform.rotation = Quaternion.identity;
+            }
             player.SetMovementFrozen(false);
+        }
+
+        if (isAirportLevel2)
+        {
+            StartCoroutine(AutoTriggerRianAskPakBeni2Coroutine());
         }
 
         // Sembunyikan Main Menu jika terbuka
@@ -137,6 +146,28 @@ public class DeliveryGameManager : MonoBehaviour
         OnTimerTick?.Invoke(timeRemaining);
         OnMissionChanged?.Invoke(currentState);
         OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+    }
+
+    private System.Collections.IEnumerator AutoTriggerRianAskPakBeni2Coroutine()
+    {
+        yield return new WaitForSeconds(0.4f);
+        if (currentState == DeliveryMissionState.Prolog)
+        {
+            DeliveryRecipient[] allRecipients = Object.FindObjectsByType<DeliveryRecipient>();
+            DeliveryRecipient pakBeni = null;
+            foreach (var r in allRecipients)
+            {
+                if (r != null && r.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+                {
+                    pakBeni = r;
+                    break;
+                }
+            }
+            if (pakBeni != null)
+            {
+                InteractWithRecipientLevel2(pakBeni);
+            }
+        }
     }
 
     private void Update()
@@ -196,6 +227,13 @@ public class DeliveryGameManager : MonoBehaviour
     public void InteractWithRecipient(DeliveryRecipient recipient)
     {
         if (recipient == null || finalEnding != GameEnding.None) return;
+
+        bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        if (isAirportLevel2)
+        {
+            InteractWithRecipientLevel2(recipient);
+            return;
+        }
 
         // 1. Prolog: Bicara ke Pak Beni
         if (currentState == DeliveryMissionState.Prolog)
@@ -361,6 +399,100 @@ public class DeliveryGameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Alur Pengantaran Paket Level 2 Bandara:
+    /// Pak Beni 2 -> Naya 2 -> Dimas 2 -> Tukang Parkir 2 -> Pak Joko 2 -> Clara 2 -> Pak Beni 2 -> Game Berakhir (Tamat)
+    /// </summary>
+    private void InteractWithRecipientLevel2(DeliveryRecipient recipient)
+    {
+        // 1. Prolog: Bicara ke Pak Beni 2
+        if (currentState == DeliveryMissionState.Prolog)
+        {
+            if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+            {
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, recipient.introDialogueLines, () =>
+                {
+                    AdvanceMission(DeliveryMissionState.Package1_CoffeeShop);
+                });
+            }
+            else
+            {
+                string[] lines = new string[]
+                {
+                    "Rian: Permisi, apa Anda tahu tugas paket saya di bandara ini?",
+                    recipient.characterName + ": Temui Pak Beni 2 terlebih dahulu di dekat mobil pengiriman untuk menerima instruksi paket!"
+                };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, lines);
+            }
+            return;
+        }
+
+        // 2. Final: Lapor kembali ke Pak Beni 2 setelah Paket 5 selesai
+        if (currentState == DeliveryMissionState.Final_ReturnToHub)
+        {
+            if (recipient.recipientType == DeliveryRecipient.RecipientType.PakBeni)
+            {
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, recipient.successDialogueLines, () =>
+                {
+                    TriggerEnding(GameEnding.Ending1_KurirTerpercaya);
+                });
+            }
+            else
+            {
+                string[] lines = new string[]
+                {
+                    "Rian: Saya sudah mengantarkan seluruh 5 paket bandara.",
+                    recipient.characterName + ": Hebat sekali Mas Rian! Segera kembali ke Pak Beni 2 untuk menyelesaikan tugasmu!"
+                };
+                NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, lines);
+            }
+            return;
+        }
+
+        // 3. Pengantaran 5 Paket Langsung ke Penerima (Misi 1 s/d 5)
+        bool isCorrectRecipient = (recipient.targetForMission == currentState);
+
+        if (isCorrectRecipient)
+        {
+            GameAudioManager.Instance?.PlayDeliverySuccess();
+            NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, recipient.successDialogueLines, () =>
+            {
+                packagesDelivered++;
+                OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+
+                switch (currentState)
+                {
+                    case DeliveryMissionState.Package1_CoffeeShop:
+                        AdvanceMission(DeliveryMissionState.Package2_DrugStore);
+                        break;
+                    case DeliveryMissionState.Package2_DrugStore:
+                        AdvanceMission(DeliveryMissionState.Package3_HardwareStore);
+                        break;
+                    case DeliveryMissionState.Package3_HardwareStore:
+                        AdvanceMission(DeliveryMissionState.Package4_DroppedPackage);
+                        break;
+                    case DeliveryMissionState.Package4_DroppedPackage:
+                        AdvanceMission(DeliveryMissionState.Package5_Apartment);
+                        break;
+                    case DeliveryMissionState.Package5_Apartment:
+                        AdvanceMission(DeliveryMissionState.Final_ReturnToHub);
+                        break;
+                }
+            });
+        }
+        else
+        {
+            string[] wrongLines = recipient.wrongDeliveryLines != null && recipient.wrongDeliveryLines.Length > 0
+                ? recipient.wrongDeliveryLines
+                : new string[] { "Maaf mas, ini bukan paket pesanan saya. Coba periksa petunjuk alamat di layarmu!" };
+
+            NPCDialogueOverlay.ShowSequentialDialogue(recipient.transform, recipient.characterName, wrongLines, () =>
+            {
+                ApplyWrongDeliveryPenalty();
+            });
+        }
+    }
+
+    /// <summary>
     /// Mengambil paket yang terjatuh (Misi 4).
     /// </summary>
     public void PickUpDroppedPackage()
@@ -461,7 +593,8 @@ public class DeliveryGameManager : MonoBehaviour
     /// </summary>
     public void GoToMainMenu()
     {
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2")
+        bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2" || isAirport)
         {
             Time.timeScale = 1f;
             UnityEngine.SceneManagement.SceneManager.LoadScene("Module 2");
@@ -538,12 +671,21 @@ public class DeliveryGameManager : MonoBehaviour
             DeliveryHUD.Instance.HideMainMenu();
         }
 
-        // 3. Posisikan kembali Rian (Player) ke titik awal di depan Mall & unfreeze kontrol
+        // 3. Posisikan kembali Rian (Player) ke titik awal & unfreeze kontrol
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         if (player != null)
         {
-            player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
-            player.transform.rotation = Quaternion.identity;
+            bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+            if (isAirport)
+            {
+                player.transform.position = new Vector3(35f, 0.05f, 138.27f);
+                player.transform.rotation = Quaternion.Euler(0f, 40f, 0f);
+            }
+            else
+            {
+                player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
+                player.transform.rotation = Quaternion.identity;
+            }
             player.SetMovementFrozen(false);
         }
 
