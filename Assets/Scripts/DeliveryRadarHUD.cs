@@ -26,7 +26,10 @@ public class DeliveryRadarHUD : MonoBehaviour
     private RectTransform playerPointerRect;
     private Text targetDistanceText;
     private Text headerText;
-    private Text minBtnText;
+    private Image minIconImg;
+    private GameObject discGlowGo;
+    private static readonly Vector2 ExpandedSize = new Vector2(200f, 206f);
+    private static readonly Vector2 CollapsedSize = new Vector2(200f, 24f);
     private Text clickHintText;
     private Image outerRingImg;
 
@@ -134,7 +137,7 @@ public class DeliveryRadarHUD : MonoBehaviour
         ringTex.wrapMode = TextureWrapMode.Clamp;
         ringTex.filterMode = FilterMode.Bilinear;
         Color32[] ringCols = new Color32[size * size];
-        float innerRadius = radius - 4.5f;
+        float innerRadius = radius - 2.6f;
 
         for (int y = 0; y < size; y++)
         {
@@ -187,52 +190,37 @@ public class DeliveryRadarHUD : MonoBehaviour
         rootRect.anchorMin = new Vector2(1f, 1f);
         rootRect.anchorMax = new Vector2(1f, 1f);
         rootRect.pivot = new Vector2(1f, 1f);
-        rootRect.anchoredPosition = new Vector2(-20f, -20f);
-        rootRect.sizeDelta = new Vector2(150f, 185f);
+        rootRect.anchoredPosition = new Vector2(-28f, -28f);
+        rootRect.sizeDelta = ExpandedSize;
 
-        // Header Title Container
+        Font uiFont = font ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+
+        // Header: titik status + judul + tombol minimize
         GameObject headGo = new GameObject("RadarHeader", typeof(RectTransform));
         headGo.transform.SetParent(transform, false);
         RectTransform headRT = headGo.GetComponent<RectTransform>();
-        headRT.anchorMin = new Vector2(0.5f, 1f);
-        headRT.anchorMax = new Vector2(0.5f, 1f);
-        headRT.pivot = new Vector2(0.5f, 1f);
-        headRT.anchoredPosition = new Vector2(0f, 0f);
-        headRT.sizeDelta = new Vector2(150f, 20f);
+        HudStyle.Place(headRT, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(200f, 24f));
 
-        headerText = headGo.AddComponent<Text>();
-        headerText.font = font ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        headerText.fontSize = 11;
-        headerText.fontStyle = FontStyle.Bold;
-        headerText.color = new Color(0.4f, 0.82f, 1f, 0.95f);
-        headerText.alignment = TextAnchor.MiddleLeft;
-        bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
-        headerText.text = isAirport ? " RADAR BANDARA" : " RADAR KOTA";
+        Image headDot = HudStyle.AddImage(headGo.transform, "StatusDot", HudStyle.Circle(), HudStyle.Teal, false);
+        HudStyle.Place(headDot.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(7f, 7f));
 
-        // Minimize / Maximize Button [-]
-        GameObject minBtnGo = new GameObject("Btn_Minimize", typeof(RectTransform));
-        minBtnGo.transform.SetParent(headGo.transform, false);
-        RectTransform minRT = minBtnGo.GetComponent<RectTransform>();
-        minRT.anchorMin = new Vector2(1f, 0.5f);
-        minRT.anchorMax = new Vector2(1f, 0.5f);
-        minRT.pivot = new Vector2(1f, 0.5f);
-        minRT.anchoredPosition = new Vector2(0f, 0f);
-        minRT.sizeDelta = new Vector2(24f, 20f);
+        headerText = HudStyle.AddLabel(headGo.transform, "RadarTitle", isAirport ? "RADAR BANDARA" : "RADAR KOTA", 11,
+            HudStyle.TextPrimary, TextAnchor.MiddleLeft, uiFont);
+        HudStyle.Stretch(headerText.rectTransform, 18f, 0f, 40f, 0f);
 
-        Button minBtn = minBtnGo.AddComponent<Button>();
-        minBtnText = minBtnGo.AddComponent<Text>();
-        minBtnText.font = font ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        minBtnText.fontSize = 12;
-        minBtnText.fontStyle = FontStyle.Bold;
-        minBtnText.color = new Color(0.7f, 0.85f, 1f, 0.9f);
-        minBtnText.alignment = TextAnchor.MiddleCenter;
-        minBtnText.text = "[-]";
+        Image minBg = HudStyle.AddImage(headGo.transform, "Btn_Minimize", HudStyle.Rounded(7f), Color.white, true, true);
+        HudStyle.Place(minBg.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(28f, 20f));
+        minIconImg = HudStyle.AddImage(minBg.transform, "Icon", HudStyle.Icon("minus"), HudStyle.TextSecondary, false);
+        HudStyle.Place(minIconImg.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14f, 14f));
 
-        minBtn.targetGraphic = minBtnText;
+        Button minBtn = minBg.gameObject.AddComponent<Button>();
+        minBtn.targetGraphic = minBg;
         ColorBlock minCb = minBtn.colors;
-        minCb.normalColor = Color.white;
-        minCb.highlightedColor = Color.yellow;
-        minCb.pressedColor = new Color(0.5f, 0.8f, 1f, 1f);
+        minCb.normalColor = new Color(1f, 1f, 1f, 0.08f);
+        minCb.highlightedColor = new Color(1f, 1f, 1f, 0.2f);
+        minCb.pressedColor = new Color(1f, 1f, 1f, 0.04f);
+        minCb.selectedColor = new Color(1f, 1f, 1f, 0.08f);
         minBtn.colors = minCb;
         minBtn.onClick.AddListener(ToggleMinimize);
 
@@ -243,13 +231,14 @@ public class DeliveryRadarHUD : MonoBehaviour
         discRT.anchorMin = new Vector2(0.5f, 1f);
         discRT.anchorMax = new Vector2(0.5f, 1f);
         discRT.pivot = new Vector2(0.5f, 1f);
-        discRT.anchoredPosition = new Vector2(0f, -22f);
+        discRT.anchoredPosition = new Vector2(0f, -30f);
         discRT.sizeDelta = new Vector2(130f, 130f);
+        discGlowGo = HudStyle.AddShadowBehind(discRT, 65f, 16f, new Color(0f, 0f, 0f, 0.5f), 4f).gameObject;
 
         // Background Disc (Dark Navy Glass)
         Image bgImg = discGo.AddComponent<Image>();
         bgImg.sprite = circleSprite;
-        bgImg.color = new Color(0.03f, 0.07f, 0.14f, 0.90f);
+        bgImg.color = new Color(0.04f, 0.055f, 0.085f, 0.90f);
 
         // Jadikan Radar Disc sebagai Button Klik
         Button discBtn = discGo.AddComponent<Button>();
@@ -272,7 +261,7 @@ public class DeliveryRadarHUD : MonoBehaviour
 
         outerRingImg = ringGo.AddComponent<Image>();
         outerRingImg.sprite = ringSprite;
-        outerRingImg.color = new Color(0.24f, 0.65f, 1f, 0.85f);
+        outerRingImg.color = new Color(HudStyle.Teal.r, HudStyle.Teal.g, HudStyle.Teal.b, 0.75f);
         outerRingImg.raycastTarget = false;
 
         // Inner Range Ring (Skala Jarak)
@@ -286,18 +275,18 @@ public class DeliveryRadarHUD : MonoBehaviour
 
         Image innerRingImg = innerRingGo.AddComponent<Image>();
         innerRingImg.sprite = ringSprite;
-        innerRingImg.color = new Color(0.16f, 0.35f, 0.60f, 0.50f);
+        innerRingImg.color = new Color(1f, 1f, 1f, 0.10f);
         innerRingImg.raycastTarget = false;
 
         // Crosshairs Axis
-        CreateAxisLine(discGo.transform, new Vector2(0f, 0f), new Vector2(110f, 1f), new Color(0.18f, 0.35f, 0.55f, 0.4f));
-        CreateAxisLine(discGo.transform, new Vector2(0f, 0f), new Vector2(1f, 110f), new Color(0.18f, 0.35f, 0.55f, 0.4f));
+        CreateAxisLine(discGo.transform, new Vector2(0f, 0f), new Vector2(110f, 1f), new Color(1f, 1f, 1f, 0.07f));
+        CreateAxisLine(discGo.transform, new Vector2(0f, 0f), new Vector2(1f, 110f), new Color(1f, 1f, 1f, 0.07f));
 
         // Cardinal Direction Labels
-        CreateCardinalText(discGo.transform, font, "U", new Vector2(0f, 50f), new Color(1f, 0.82f, 0.25f, 1f), 11);
-        CreateCardinalText(discGo.transform, font, "S", new Vector2(0f, -50f), new Color(0.6f, 0.75f, 0.9f, 0.8f), 10);
-        CreateCardinalText(discGo.transform, font, "T", new Vector2(50f, 0f), new Color(0.6f, 0.75f, 0.9f, 0.8f), 10);
-        CreateCardinalText(discGo.transform, font, "B", new Vector2(-50f, 0f), new Color(0.6f, 0.75f, 0.9f, 0.8f), 10);
+        CreateCardinalText(discGo.transform, font, "U", new Vector2(0f, 50f), HudStyle.Accent, 11);
+        CreateCardinalText(discGo.transform, font, "S", new Vector2(0f, -50f), HudStyle.TextSecondary, 10);
+        CreateCardinalText(discGo.transform, font, "T", new Vector2(50f, 0f), HudStyle.TextSecondary, 10);
+        CreateCardinalText(discGo.transform, font, "B", new Vector2(-50f, 0f), HudStyle.TextSecondary, 10);
 
         // Petunjuk Klik Peta di piringan radar
         GameObject hintGo = new GameObject("ClickMapHint", typeof(RectTransform));
@@ -312,9 +301,9 @@ public class DeliveryRadarHUD : MonoBehaviour
         clickHintText = hintGo.AddComponent<Text>();
         clickHintText.font = font ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         clickHintText.fontSize = 8;
-        clickHintText.color = new Color(0.35f, 0.75f, 1f, 0.65f);
+        clickHintText.color = new Color(HudStyle.Teal.r, HudStyle.Teal.g, HudStyle.Teal.b, 0.7f);
         clickHintText.alignment = TextAnchor.MiddleCenter;
-        clickHintText.text = "[KLIK: PETA]";
+        clickHintText.text = "KLIK UNTUK PETA";
         clickHintText.raycastTarget = false;
 
         // Blip Container
@@ -338,7 +327,7 @@ public class DeliveryRadarHUD : MonoBehaviour
 
         Image ptrImg = ptrGo.AddComponent<Image>();
         ptrImg.sprite = arrowSprite;
-        ptrImg.color = new Color(1f, 0.95f, 0.3f, 1f);
+        ptrImg.color = HudStyle.Accent;
         ptrImg.raycastTarget = false;
 
         Outline ptrOutline = ptrGo.AddComponent<Outline>();
@@ -349,44 +338,35 @@ public class DeliveryRadarHUD : MonoBehaviour
         distGo = new GameObject("TargetDistanceBadge", typeof(RectTransform));
         distGo.transform.SetParent(transform, false);
         RectTransform distRT = distGo.GetComponent<RectTransform>();
-        distRT.anchorMin = new Vector2(0.5f, 0f);
-        distRT.anchorMax = new Vector2(0.5f, 0f);
-        distRT.pivot = new Vector2(0.5f, 0f);
-        distRT.anchoredPosition = new Vector2(0f, 4f);
-        distRT.sizeDelta = new Vector2(146f, 24f);
+        HudStyle.Place(distRT, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(200f, 38f));
 
         Image distBg = distGo.AddComponent<Image>();
-        distBg.color = new Color(0.04f, 0.08f, 0.16f, 0.94f);
-
-        Outline distOutline = distGo.AddComponent<Outline>();
-        distOutline.effectColor = new Color(0.2f, 0.5f, 0.85f, 0.6f);
-        distOutline.effectDistance = new Vector2(1f, -1f);
+        distBg.sprite = HudStyle.Rounded(13f);
+        distBg.type = Image.Type.Sliced;
+        distBg.color = HudStyle.Panel;
+        Image distStroke = HudStyle.AddImage(distRT, "Stroke", HudStyle.RoundedStroke(13f, 1f), HudStyle.Stroke);
+        HudStyle.Stretch(distStroke.rectTransform);
 
         Button distBtn = distGo.AddComponent<Button>();
         distBtn.targetGraphic = distBg;
         ColorBlock distCb = distBtn.colors;
         distCb.normalColor = Color.white;
-        distCb.highlightedColor = new Color(1.2f, 1.3f, 1.5f, 1f);
-        distCb.pressedColor = new Color(0.7f, 0.85f, 1f, 1f);
+        distCb.highlightedColor = new Color(1.25f, 1.25f, 1.25f, 1f);
+        distCb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        distCb.selectedColor = Color.white;
         distBtn.colors = distCb;
         distBtn.onClick.AddListener(CycleRadarZoom);
 
-        GameObject textSubGo = new GameObject("DistanceText", typeof(RectTransform));
-        textSubGo.transform.SetParent(distGo.transform, false);
-        RectTransform tsRT = textSubGo.GetComponent<RectTransform>();
-        tsRT.anchorMin = Vector2.zero;
-        tsRT.anchorMax = Vector2.one;
-        tsRT.offsetMin = new Vector2(4f, 0f);
-        tsRT.offsetMax = new Vector2(-4f, 0f);
+        Image targetIcon = HudStyle.AddImage(distGo.transform, "TargetIcon", HudStyle.Icon("target"), HudStyle.Teal, false);
+        HudStyle.Place(targetIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(16f, 16f));
 
-        targetDistanceText = textSubGo.AddComponent<Text>();
-        targetDistanceText.font = font ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        targetDistanceText.fontSize = 10;
-        targetDistanceText.fontStyle = FontStyle.Bold;
-        targetDistanceText.color = new Color(0.95f, 0.97f, 1f, 1f);
-        targetDistanceText.alignment = TextAnchor.MiddleCenter;
-        targetDistanceText.text = "🎯 Target: --m (60m)";
-        targetDistanceText.raycastTarget = false;
+        targetDistanceText = HudStyle.AddLabel(distGo.transform, "DistanceText", "Target: --m (60m)", 11, HudStyle.TextPrimary, TextAnchor.MiddleLeft, uiFont);
+        HudStyle.Stretch(targetDistanceText.rectTransform, 36f, 2f, 10f, 2f);
+        targetDistanceText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        targetDistanceText.verticalOverflow = VerticalWrapMode.Truncate;
+        targetDistanceText.resizeTextForBestFit = true;
+        targetDistanceText.resizeTextMinSize = 8;
+        targetDistanceText.resizeTextMaxSize = 11;
 
         // Pre-instantiate Blips
         for (int i = 0; i < 12; i++)
@@ -465,10 +445,11 @@ public class DeliveryRadarHUD : MonoBehaviour
 
         if (discGo != null) discGo.SetActive(!isMinimized);
         if (distGo != null) distGo.SetActive(!isMinimized);
-        if (minBtnText != null) minBtnText.text = isMinimized ? "[+]" : "[-]";
+        if (discGlowGo != null) discGlowGo.SetActive(!isMinimized);
+        if (minIconImg != null) minIconImg.sprite = HudStyle.Icon(isMinimized ? "plus" : "minus");
         if (rootRect != null)
         {
-            rootRect.sizeDelta = isMinimized ? new Vector2(150f, 22f) : new Vector2(150f, 185f);
+            rootRect.sizeDelta = isMinimized ? CollapsedSize : ExpandedSize;
         }
     }
 
@@ -605,7 +586,7 @@ public class DeliveryRadarHUD : MonoBehaviour
             {
                 // NPC Lainnya: Cyan Halus
                 blip.rectTransform.sizeDelta = new Vector2(7f, 7f);
-                blip.image.color = new Color(0.25f, 0.85f, 1f, 0.85f);
+                blip.image.color = new Color(HudStyle.Teal.r, HudStyle.Teal.g, HudStyle.Teal.b, 0.85f);
                 blip.outline.effectColor = new Color(0.05f, 0.15f, 0.3f, 0.8f);
             }
 
@@ -660,15 +641,15 @@ public class DeliveryRadarHUD : MonoBehaviour
             int zoomMeters = Mathf.RoundToInt(radarWorldRange);
             if (closestActiveTarget != null)
             {
-                targetDistanceText.text = $"🎯 {activeTargetName}: {Mathf.RoundToInt(closestDistance)}m [{zoomMeters}m]";
+                targetDistanceText.text = $"{activeTargetName}: {Mathf.RoundToInt(closestDistance)}m [{zoomMeters}m]";
                 targetDistanceText.color = (closestDistance <= 4f)
-                    ? new Color(0.3f, 1f, 0.5f, 1f)
-                    : new Color(1f, 0.88f, 0.35f, 1f);
+                    ? HudStyle.Success
+                    : HudStyle.Warning;
             }
             else
             {
-                targetDistanceText.text = $"🎯 Menunggu Misi [{zoomMeters}m]";
-                targetDistanceText.color = new Color(0.7f, 0.75f, 0.85f, 1f);
+                targetDistanceText.text = $"Menunggu Misi [{zoomMeters}m]";
+                targetDistanceText.color = HudStyle.TextSecondary;
             }
         }
     }

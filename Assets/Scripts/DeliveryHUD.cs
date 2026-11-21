@@ -26,6 +26,9 @@ public class DeliveryHUD : MonoBehaviour
     private Text missionTitleText;
     private Text missionClueText;
     private Text penaltyFlashText;
+    private GameObject penaltyFlashRoot;
+    private RectTransform packageSegmentsRoot;
+    private readonly List<Image> packageSegments = new List<Image>();
     private float penaltyFlashTimer = 0f;
 
     // Prompt Interaksi (Tengah Bawah)
@@ -239,202 +242,179 @@ public class DeliveryHUD : MonoBehaviour
 
     private void BuildDashboardPanel()
     {
+        const float W = 400f, H = 206f;
+
         dashboardObj = new GameObject("DeliveryDashboard", typeof(RectTransform));
         dashboardObj.transform.SetParent(transform, false);
-
         RectTransform dbRT = dashboardObj.GetComponent<RectTransform>();
-        dbRT.anchorMin = new Vector2(0f, 1f);
-        dbRT.anchorMax = new Vector2(0f, 1f);
-        dbRT.pivot = new Vector2(0f, 1f);
-        dbRT.anchoredPosition = new Vector2(80f, -60f);
-        dbRT.sizeDelta = new Vector2(380f, 160f);
+        HudStyle.Place(dbRT, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(W, H));
 
-        Image bg = dashboardObj.AddComponent<Image>();
-        bg.color = new Color(0.05f, 0.08f, 0.16f, 0.94f);
+        // Bayangan lembut + panel kaca gelap
+        Image shadow = HudStyle.AddImage(dbRT, "Shadow", HudStyle.Glow(16f, 18f), new Color(0f, 0f, 0f, 0.45f));
+        HudStyle.Stretch(shadow.rectTransform, -18f, -24f, -18f, -12f);
+        Image panel = HudStyle.AddPanel(dbRT, "Panel", 16f, HudStyle.Panel, HudStyle.Stroke);
+        HudStyle.Stretch(panel.rectTransform);
 
-        Outline outline = dashboardObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0.2f, 0.5f, 0.9f, 0.7f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        // --- Baris 1: chip timer (kiri) & chip paket (kanan) ---
+        Image timerChip = HudStyle.AddPanel(panel.transform, "TimerChip", 11f, HudStyle.Chip, Color.clear);
+        HudStyle.Place(timerChip.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -16f), new Vector2(132f, 40f));
+        Image clockIcon = HudStyle.AddImage(timerChip.transform, "ClockIcon", HudStyle.Icon("clock"), HudStyle.TextSecondary, false);
+        HudStyle.Place(clockIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(18f, 18f));
 
-        // Header Strip (Cyan)
-        GameObject strip = new GameObject("HeaderStrip", typeof(RectTransform));
-        strip.transform.SetParent(dashboardObj.transform, false);
-        RectTransform stripRT = strip.GetComponent<RectTransform>();
-        stripRT.anchorMin = new Vector2(0f, 1f);
-        stripRT.anchorMax = new Vector2(1f, 1f);
-        stripRT.pivot = new Vector2(0.5f, 1f);
-        stripRT.anchoredPosition = Vector2.zero;
-        stripRT.sizeDelta = new Vector2(0f, 3f);
-        Image stripImg = strip.AddComponent<Image>();
-        stripImg.color = new Color(0.25f, 0.8f, 1f, 1f);
+        timerText = HudStyle.AddLabel(timerChip.transform, "TimerText", "06:00", 24, Color.white, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Place(timerText.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(38f, 0f), new Vector2(90f, 34f));
 
-        // Timer Text (Besar & Tegas)
-        GameObject timerGo = new GameObject("TimerText", typeof(RectTransform));
-        timerGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform timerRT = timerGo.GetComponent<RectTransform>();
-        timerRT.anchorMin = new Vector2(0f, 1f);
-        timerRT.anchorMax = new Vector2(0f, 1f);
-        timerRT.pivot = new Vector2(0f, 1f);
-        timerRT.anchoredPosition = new Vector2(16f, -10f);
-        timerRT.sizeDelta = new Vector2(170f, 26f);
+        Image pkgChip = HudStyle.AddPanel(panel.transform, "PackageChip", 11f, HudStyle.Chip, Color.clear);
+        HudStyle.Place(pkgChip.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-16f, -16f), new Vector2(112f, 40f));
+        Image pkgIcon = HudStyle.AddImage(pkgChip.transform, "PackageIcon", HudStyle.Icon("package"), HudStyle.Accent, false);
+        HudStyle.Place(pkgIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(18f, 18f));
 
-        timerText = timerGo.AddComponent<Text>();
-        timerText.font = mainFont;
-        timerText.fontSize = 19;
-        timerText.fontStyle = FontStyle.Bold;
-        timerText.color = Color.white;
-        timerText.alignment = TextAnchor.MiddleLeft;
-        timerText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        timerText.verticalOverflow = VerticalWrapMode.Overflow;
-        timerText.text = "⏱ 06:00";
+        packageProgressText = HudStyle.AddLabel(pkgChip.transform, "PackageCounterText", "0 / 5", 18, HudStyle.Accent, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Place(packageProgressText.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(38f, 0f), new Vector2(68f, 34f));
 
-        // Package Counter Text
-        GameObject pkgGo = new GameObject("PackageCounterText", typeof(RectTransform));
-        pkgGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform pkgRT = pkgGo.GetComponent<RectTransform>();
-        pkgRT.anchorMin = new Vector2(1f, 1f);
-        pkgRT.anchorMax = new Vector2(1f, 1f);
-        pkgRT.pivot = new Vector2(1f, 1f);
-        pkgRT.anchoredPosition = new Vector2(-16f, -10f);
-        pkgRT.sizeDelta = new Vector2(150f, 26f);
+        // --- Baris 2: progres paket (segmen) ---
+        packageSegmentsRoot = HudStyle.NewRect("PackageSegments", panel.transform);
+        HudStyle.Place(packageSegmentsRoot, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -66f), new Vector2(W - 32f, 6f));
+        HorizontalLayoutGroup segLayout = packageSegmentsRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
+        segLayout.spacing = 5f;
+        segLayout.childControlWidth = true;
+        segLayout.childControlHeight = true;
+        segLayout.childForceExpandWidth = true;
+        segLayout.childForceExpandHeight = true;
+        RebuildPackageSegments(5, 0);
 
-        packageProgressText = pkgGo.AddComponent<Text>();
-        packageProgressText.font = mainFont;
-        packageProgressText.fontSize = 14;
-        packageProgressText.fontStyle = FontStyle.Bold;
-        packageProgressText.color = new Color(1f, 0.85f, 0.2f, 1f);
-        packageProgressText.alignment = TextAnchor.MiddleRight;
-        packageProgressText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        packageProgressText.verticalOverflow = VerticalWrapMode.Overflow;
-        packageProgressText.text = "📦 Paket: 0 / 5";
+        // --- Blok misi aktif ---
+        Image questBar = HudStyle.AddImage(panel.transform, "MissionBar", HudStyle.Rounded(1.5f), HudStyle.Accent);
+        HudStyle.Place(questBar.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -88f), new Vector2(3f, 82f));
 
-        // Mission Title Text
-        GameObject titleGo = new GameObject("MissionTitleText", typeof(RectTransform));
-        titleGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform titleRT = titleGo.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0f, 1f);
-        titleRT.anchorMax = new Vector2(0f, 1f);
-        titleRT.pivot = new Vector2(0f, 1f);
-        titleRT.anchoredPosition = new Vector2(16f, -40f);
-        titleRT.sizeDelta = new Vector2(348f, 24f);
+        Text goalLabel = HudStyle.AddLabel(panel.transform, "MissionLabel", "TUJUAN SAAT INI", 10, HudStyle.Accent, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Place(goalLabel.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -86f), new Vector2(300f, 14f));
 
-        missionTitleText = titleGo.AddComponent<Text>();
-        missionTitleText.font = mainFont;
-        missionTitleText.fontSize = 13;
-        missionTitleText.fontStyle = FontStyle.Bold;
-        missionTitleText.color = new Color(0.35f, 0.85f, 1f, 1f);
-        missionTitleText.alignment = TextAnchor.MiddleLeft;
-        missionTitleText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        missionTitleText.verticalOverflow = VerticalWrapMode.Overflow;
-        missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman";
+        missionTitleText = HudStyle.AddLabel(panel.transform, "MissionTitleText", "Temui Pak Beni di Pos Pengiriman", 16, HudStyle.TextPrimary, TextAnchor.UpperLeft, mainFont, FontStyle.Bold, true);
+        HudStyle.Place(missionTitleText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -102f), new Vector2(356f, 22f));
 
-        // Mission Clue Text
-        GameObject clueGo = new GameObject("MissionClueText", typeof(RectTransform));
-        clueGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform clueRT = clueGo.GetComponent<RectTransform>();
-        clueRT.anchorMin = new Vector2(0f, 1f);
-        clueRT.anchorMax = new Vector2(0f, 1f);
-        clueRT.pivot = new Vector2(0f, 1f);
-        clueRT.anchoredPosition = new Vector2(16f, -66f);
-        clueRT.sizeDelta = new Vector2(348f, 56f);
+        missionClueText = HudStyle.AddLabel(panel.transform, "MissionClueText",
+            "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.",
+            12, HudStyle.TextSecondary, TextAnchor.UpperLeft, mainFont, FontStyle.Normal, true);
+        missionClueText.lineSpacing = 1.12f;
+        HudStyle.Place(missionClueText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -126f), new Vector2(356f, 48f));
 
-        missionClueText = clueGo.AddComponent<Text>();
-        missionClueText.font = mainFont;
-        missionClueText.fontSize = 12;
-        missionClueText.fontStyle = FontStyle.Normal;
-        missionClueText.color = new Color(0.9f, 0.92f, 0.95f, 0.95f);
-        missionClueText.alignment = TextAnchor.UpperLeft;
-        missionClueText.lineSpacing = 1.1f;
-        missionClueText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        missionClueText.verticalOverflow = VerticalWrapMode.Overflow;
-        missionClueText.text = "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.";
+        // --- Footer: petunjuk peta ---
+        RectTransform mapKey = HudStyle.AddKeycap(panel.transform, "MapKeycap", "M", new Vector2(24f, 24f), mainFont, 12);
+        HudStyle.Place(mapKey, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 12f), new Vector2(24f, 24f));
+        Text mapHintText = HudStyle.AddLabel(panel.transform, "MapHintText", "Denah Kota", 11, HudStyle.TextSecondary, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Place(mapHintText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(48f, 12f), new Vector2(200f, 24f));
 
-        // Map Hint Footer
-        GameObject mapHintGo = new GameObject("MapHintText", typeof(RectTransform));
-        mapHintGo.transform.SetParent(dashboardObj.transform, false);
-        RectTransform mhRT = mapHintGo.GetComponent<RectTransform>();
-        mhRT.anchorMin = new Vector2(0f, 1f);
-        mhRT.anchorMax = new Vector2(0f, 1f);
-        mhRT.pivot = new Vector2(0f, 1f);
-        mhRT.anchoredPosition = new Vector2(16f, -130f);
-        mhRT.sizeDelta = new Vector2(348f, 20f);
+        // --- Notifikasi penalti (pill merah di tengah atas) ---
+        penaltyFlashRoot = new GameObject("PenaltyFlash", typeof(RectTransform));
+        penaltyFlashRoot.transform.SetParent(transform, false);
+        RectTransform penRT = (RectTransform)penaltyFlashRoot.transform;
+        HudStyle.Place(penRT, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(200f, 44f));
+        Image penBg = penaltyFlashRoot.AddComponent<Image>();
+        penBg.sprite = HudStyle.Rounded(14f);
+        penBg.type = Image.Type.Sliced;
+        penBg.color = new Color(0.22f, 0.05f, 0.07f, 0.95f);
+        penBg.raycastTarget = false;
+        Image penStroke = HudStyle.AddImage(penRT, "Stroke", HudStyle.RoundedStroke(14f, 1.2f), new Color(HudStyle.Danger.r, HudStyle.Danger.g, HudStyle.Danger.b, 0.7f));
+        HudStyle.Stretch(penStroke.rectTransform);
+        penStroke.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+        HorizontalLayoutGroup penLayout = penaltyFlashRoot.AddComponent<HorizontalLayoutGroup>();
+        penLayout.padding = new RectOffset(22, 22, 10, 10);
+        penLayout.childAlignment = TextAnchor.MiddleCenter;
+        penLayout.childControlWidth = true;
+        penLayout.childControlHeight = true;
+        penLayout.childForceExpandWidth = false;
+        penLayout.childForceExpandHeight = false;
+        ContentSizeFitter penFit = penaltyFlashRoot.AddComponent<ContentSizeFitter>();
+        penFit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        penFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        Text mapHintText = mapHintGo.AddComponent<Text>();
-        mapHintText.font = mainFont;
-        mapHintText.fontSize = 11;
-        mapHintText.fontStyle = FontStyle.Bold;
-        mapHintText.color = new Color(0.6f, 0.75f, 0.95f, 0.85f);
-        mapHintText.alignment = TextAnchor.MiddleLeft;
-        mapHintText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        mapHintText.verticalOverflow = VerticalWrapMode.Overflow;
-        mapHintText.text = "Tekan [M] untuk melihat Denah Kota";
+        penaltyFlashText = HudStyle.AddLabel(penRT, "PenaltyFlashText", "", 18, new Color(1f, 0.55f, 0.55f, 1f), TextAnchor.MiddleCenter, mainFont);
+        penaltyFlashRoot.SetActive(false);
+    }
 
-        // Penalty Flash Text (Overlay Notifikasi di Kanan Layar)
-        GameObject penGo = new GameObject("PenaltyFlashText", typeof(RectTransform));
-        penGo.transform.SetParent(transform, false);
-        RectTransform penRT = penGo.GetComponent<RectTransform>();
-        penRT.anchorMin = new Vector2(1f, 1f);
-        penRT.anchorMax = new Vector2(1f, 1f);
-        penRT.pivot = new Vector2(1f, 1f);
-        penRT.anchoredPosition = new Vector2(-60f, -60f);
-        penRT.sizeDelta = new Vector2(400f, 40f);
+    private void RebuildPackageSegments(int total, int delivered)
+    {
+        if (packageSegmentsRoot == null) return;
+        total = Mathf.Max(1, total);
 
-        penaltyFlashText = penGo.AddComponent<Text>();
-        penaltyFlashText.font = mainFont;
-        penaltyFlashText.fontSize = 18;
-        penaltyFlashText.fontStyle = FontStyle.Bold;
-        penaltyFlashText.color = new Color(1f, 0.25f, 0.25f, 1f);
-        penaltyFlashText.alignment = TextAnchor.MiddleRight;
-        penaltyFlashText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        penaltyFlashText.verticalOverflow = VerticalWrapMode.Overflow;
-        penaltyFlashText.text = "";
-        penaltyFlashText.gameObject.SetActive(false);
+        if (packageSegments.Count != total)
+        {
+            foreach (Image s in packageSegments)
+            {
+                if (s != null)
+                {
+                    if (Application.isPlaying) Destroy(s.gameObject); else DestroyImmediate(s.gameObject);
+                }
+            }
+            packageSegments.Clear();
+            for (int i = 0; i < total; i++)
+            {
+                Image seg = HudStyle.AddImage(packageSegmentsRoot, "Segment_" + i, HudStyle.Rounded(3f), HudStyle.Chip);
+                packageSegments.Add(seg);
+            }
+        }
 
-        Shadow penShadow = penGo.AddComponent<Shadow>();
-        penShadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
-        penShadow.effectDistance = new Vector2(1.5f, -1.5f);
+        for (int i = 0; i < packageSegments.Count; i++)
+        {
+            packageSegments[i].color = i < delivered ? HudStyle.Accent : new Color(1f, 1f, 1f, 0.13f);
+        }
     }
 
     private void BuildInteractPrompt()
     {
-        interactPromptObj = new GameObject("InteractPromptBox");
+        interactPromptObj = new GameObject("InteractPromptBox", typeof(RectTransform));
         interactPromptObj.transform.SetParent(transform, false);
 
-        RectTransform ipRT = interactPromptObj.AddComponent<RectTransform>();
-        ipRT.anchorMin = new Vector2(0.5f, 0.16f);
-        ipRT.anchorMax = new Vector2(0.5f, 0.16f);
-        ipRT.pivot = new Vector2(0.5f, 0.5f);
-        ipRT.sizeDelta = new Vector2(380f, 44f);
+        RectTransform ipRT = (RectTransform)interactPromptObj.transform;
+        HudStyle.Place(ipRT, new Vector2(0.5f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240f, 56f));
 
         Image ipBg = interactPromptObj.AddComponent<Image>();
-        ipBg.color = new Color(0.04f, 0.08f, 0.18f, 0.95f);
+        ipBg.sprite = HudStyle.Rounded(18f);
+        ipBg.type = Image.Type.Sliced;
+        ipBg.color = new Color(0.05f, 0.066f, 0.098f, 0.93f);
 
-        Outline ipOutline = interactPromptObj.AddComponent<Outline>();
-        ipOutline.effectColor = new Color(0.2f, 0.8f, 1f, 0.8f);
-        ipOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        Image ipStroke = HudStyle.AddImage(ipRT, "Stroke", HudStyle.RoundedStroke(18f, 1.2f), new Color(HudStyle.Accent.r, HudStyle.Accent.g, HudStyle.Accent.b, 0.5f));
+        HudStyle.Stretch(ipStroke.rectTransform);
+        ipStroke.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+
+        Shadow ipShadow = interactPromptObj.AddComponent<Shadow>();
+        ipShadow.effectColor = new Color(0f, 0f, 0f, 0.45f);
+        ipShadow.effectDistance = new Vector2(0f, -4f);
 
         Button ipBtn = interactPromptObj.AddComponent<Button>();
+        ipBtn.targetGraphic = ipBg;
+        ColorBlock ipCb = ipBtn.colors;
+        ipCb.normalColor = Color.white;
+        ipCb.highlightedColor = new Color(1.25f, 1.25f, 1.25f, 1f);
+        ipCb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        ipCb.selectedColor = Color.white;
+        ipBtn.colors = ipCb;
         ipBtn.onClick.AddListener(() =>
         {
             GameAudioManager.Instance?.PlayUIClick();
             currentInteractCallback?.Invoke();
         });
 
-        GameObject ipTextGo = new GameObject("PromptText");
-        ipTextGo.transform.SetParent(interactPromptObj.transform, false);
-        RectTransform txtRT = ipTextGo.AddComponent<RectTransform>();
-        txtRT.anchorMin = Vector2.zero;
-        txtRT.anchorMax = Vector2.one;
-        txtRT.offsetMin = Vector2.zero;
-        txtRT.offsetMax = Vector2.zero;
+        HorizontalLayoutGroup ipLayout = interactPromptObj.AddComponent<HorizontalLayoutGroup>();
+        ipLayout.padding = new RectOffset(10, 22, 8, 8);
+        ipLayout.spacing = 14f;
+        ipLayout.childAlignment = TextAnchor.MiddleLeft;
+        ipLayout.childControlWidth = true;
+        ipLayout.childControlHeight = true;
+        ipLayout.childForceExpandWidth = false;
+        ipLayout.childForceExpandHeight = false;
 
-        interactPromptText = ipTextGo.AddComponent<Text>();
-        interactPromptText.font = mainFont;
-        interactPromptText.fontSize = 16;
-        interactPromptText.fontStyle = FontStyle.Bold;
-        interactPromptText.color = Color.white;
-        interactPromptText.alignment = TextAnchor.MiddleCenter;
-        interactPromptText.text = "[E] Bicara";
+        ContentSizeFitter ipFit = interactPromptObj.AddComponent<ContentSizeFitter>();
+        ipFit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        ipFit.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        RectTransform keycap = HudStyle.AddKeycap(ipRT, "KeyCap", "E", new Vector2(36f, 38f), mainFont, 19);
+        LayoutElement keyLE = keycap.gameObject.AddComponent<LayoutElement>();
+        keyLE.preferredWidth = 36f;
+        keyLE.preferredHeight = 38f;
+
+        interactPromptText = HudStyle.AddLabel(ipRT, "PromptText", "Bicara", 17, Color.white, TextAnchor.MiddleLeft, mainFont);
 
         interactPromptObj.SetActive(false);
     }
@@ -452,7 +432,7 @@ public class DeliveryHUD : MonoBehaviour
 
         // Backdrop gelap
         Image bg = mapModalObj.AddComponent<Image>();
-        bg.color = new Color(0.02f, 0.04f, 0.08f, 0.88f);
+        bg.color = new Color(HudStyle.Ink.r, HudStyle.Ink.g, HudStyle.Ink.b, 0.90f);
 
         // Container Peta di Tengah
         GameObject cardGo = new GameObject("MapCard");
@@ -464,11 +444,14 @@ public class DeliveryHUD : MonoBehaviour
         cardRT.sizeDelta = new Vector2(680f, 520f);
 
         Image cardImg = cardGo.AddComponent<Image>();
-        cardImg.color = new Color(0.06f, 0.1f, 0.18f, 0.98f);
-
-        Outline cardOutline = cardGo.AddComponent<Outline>();
-        cardOutline.effectColor = new Color(0.3f, 0.7f, 1f, 0.9f);
-        cardOutline.effectDistance = new Vector2(2f, -2f);
+        cardImg.sprite = HudStyle.Rounded(20f);
+        cardImg.type = Image.Type.Sliced;
+        cardImg.color = HudStyle.PanelSolid;
+        Image cardStroke = HudStyle.AddImage(cardRT, "Stroke", HudStyle.RoundedStroke(20f, 1f), new Color(1f, 1f, 1f, 0.09f));
+        HudStyle.Stretch(cardStroke.rectTransform);
+        Shadow cardShadow = cardGo.AddComponent<Shadow>();
+        cardShadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+        cardShadow.effectDistance = new Vector2(0f, -8f);
 
         // Header Title
         GameObject titleGo = new GameObject("MapTitle");
@@ -486,11 +469,11 @@ public class DeliveryHUD : MonoBehaviour
         titleTxt.font = mainFont;
         titleTxt.fontSize = 22;
         titleTxt.fontStyle = FontStyle.Bold;
-        titleTxt.color = new Color(0.35f, 0.85f, 1f, 1f);
+        titleTxt.color = HudStyle.TextPrimary;
         titleTxt.alignment = TextAnchor.MiddleCenter;
         titleTxt.text = isAirportLevel2
-            ? "🗺️ DENAH AREA BANDARA — LEVEL 2"
-            : (isLevel2 ? "🗺️ DENAH KOTA — LEVEL 2 (RUTE & TATA LETAK BARU)" : "🗺️ DENAH KAWASAN KOTA — KURIR TERAKHIR");
+            ? "DENAH AREA BANDARA — LEVEL 2"
+            : (isLevel2 ? "DENAH KOTA — LEVEL 2 (RUTE & TATA LETAK BARU)" : "DENAH KAWASAN KOTA — KURIR TERAKHIR");
 
         // Layout Lokasi Kota (Grid Panduan Bersih)
         GameObject layoutGo = new GameObject("MapLayoutText");
@@ -505,11 +488,12 @@ public class DeliveryHUD : MonoBehaviour
         layoutTxt.font = mainFont;
         layoutTxt.fontSize = 15;
         layoutTxt.fontStyle = FontStyle.Normal;
-        layoutTxt.color = Color.white;
+        layoutTxt.color = HudStyle.TextPrimary;
+        layoutTxt.supportRichText = false;
         layoutTxt.lineSpacing = 1.35f;
         layoutTxt.alignment = TextAnchor.UpperLeft;
         layoutTxt.text = isAirportLevel2
-            ? "📍 ALUR PENGANTARAN PAKET AREA BANDARA:\n\n" +
+            ? "ALUR PENGANTARAN PAKET AREA BANDARA:\n\n" +
               "1. PAK BENI 2 (Pusat Pengiriman):\n" +
               "   • Temui Pak Beni 2 untuk mengambil daftar instruksi 5 paket bandara.\n\n" +
               "2. NAYA 2 (Paket 1 - Dokumen Penerbangan):\n" +
@@ -525,7 +509,7 @@ public class DeliveryHUD : MonoBehaviour
               "7. KEMBALI KE PAK BENI 2:\n" +
               "   • Lapor seluruh tugas selesai untuk menyelesaikan misi & mengakhiri permainan!"
             : (isLevel2
-                ? "📍 AREA UTAMA KOTA LEVEL 2 (TATA LETAK BARU):\n\n" +
+                ? "AREA UTAMA KOTA LEVEL 2 (TATA LETAK BARU):\n\n" +
                   "1. POS PUSAT PENGIRIMAN (Center Plaza - Depan Mega Mall):\n" +
                   "   • Titik Awal Rian & Pos Pak Beni (Misi Awal & Akhir)\n\n" +
                   "2. COFFEE SHOP (Koridor Utara Barat):\n" +
@@ -538,8 +522,8 @@ public class DeliveryHUD : MonoBehaviour
                   "   • Petugas Parkir (Info) & Paket Jatuh di Gang Tengah dekat Donut Shop (Misi 4)\n\n" +
                   "6. GEDUNG APARTEMEN MERAH (Koridor Selatan Timur):\n" +
                   "   • Gedung apartemen tempat Naya menunggu dokumen (Paket 5)\n\n" +
-                  "⚠️ AWAS: Mobil melaju kencang di Koridor Utara & Selatan! Gunakan gang pejalan kaki."
-                : "📍 AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
+                  "AWAS: Mobil melaju kencang di Koridor Utara & Selatan! Gunakan gang pejalan kaki."
+                : "AREA UTAMA KOTA UNTUK PENGIRIMAN:\n\n" +
                   "1. POS PUSAT PENGIRIMAN & AREA PARKIR:\n" +
                   "   • Titik Awal Rian & Pos Pak Beni (di Depan Mega Mall)\n" +
                   "   • Pos Petugas Parkir (Info Jalur/Lalu Lintas) & Paket Jatuh (Misi 4)\n\n" +
@@ -565,7 +549,7 @@ public class DeliveryHUD : MonoBehaviour
         footTxt.font = mainFont;
         footTxt.fontSize = 14;
         footTxt.fontStyle = FontStyle.Bold;
-        footTxt.color = new Color(1f, 0.85f, 0.2f, 0.9f);
+        footTxt.color = HudStyle.Accent;
         footTxt.alignment = TextAnchor.MiddleCenter;
         footTxt.text = "Tekan [M] atau [Escape] untuk Menutup Peta";
 
@@ -980,330 +964,247 @@ public class DeliveryHUD : MonoBehaviour
 
     private void BuildMainMenu()
     {
-        mainMenuObj = new GameObject("MainMenuOverlay", typeof(RectTransform));
+        mainMenuObj = new GameObject("MainMenuOverlay", typeof(RectTransform), typeof(CanvasGroup));
         mainMenuObj.transform.SetParent(transform, false);
+        RectTransform mmRT = (RectTransform)mainMenuObj.transform;
+        HudStyle.Stretch(mmRT);
 
-        RectTransform mmRT = mainMenuObj.GetComponent<RectTransform>();
-        mmRT.anchorMin = Vector2.zero;
-        mmRT.anchorMax = Vector2.one;
-        mmRT.offsetMin = Vector2.zero;
-        mmRT.offsetMax = Vector2.zero;
+        // Latar: redam adegan 3D, gradasi gelap dari kiri, dan bayangan bawah
+        Color ink = HudStyle.Ink;
+        Image dim = HudStyle.AddImage(mmRT, "Dim", null, new Color(ink.r, ink.g, ink.b, 0.45f), false, true);
+        HudStyle.Stretch(dim.rectTransform);
+        Image fadeLeft = HudStyle.AddImage(mmRT, "FadeLeft", HudStyle.FadeLeftToRight(), new Color(ink.r, ink.g, ink.b, 0.97f), false);
+        HudStyle.Stretch(fadeLeft.rectTransform);
+        Image fadeBottom = HudStyle.AddImage(mmRT, "FadeBottom", HudStyle.FadeBottomToTop(), new Color(ink.r, ink.g, ink.b, 0.85f), false);
+        fadeBottom.rectTransform.anchorMin = new Vector2(0f, 0f);
+        fadeBottom.rectTransform.anchorMax = new Vector2(1f, 0.38f);
+        fadeBottom.rectTransform.offsetMin = Vector2.zero;
+        fadeBottom.rectTransform.offsetMax = Vector2.zero;
 
-        Image bg = mainMenuObj.AddComponent<Image>();
-        bg.color = new Color(0.04f, 0.06f, 0.10f, 0.92f);
+        RectTransform content = HudStyle.NewRect("MenuContainer", mmRT);
+        HudStyle.Stretch(content);
 
-        // Kartu Kontainer Menu
-        GameObject card = new GameObject("MenuContainer", typeof(RectTransform));
-        card.transform.SetParent(mainMenuObj.transform, false);
-        RectTransform cRT = card.GetComponent<RectTransform>();
-        cRT.anchorMin = new Vector2(0.5f, 0.5f);
-        cRT.anchorMax = new Vector2(0.5f, 0.5f);
-        cRT.pivot = new Vector2(0.5f, 0.5f);
-        cRT.anchoredPosition = Vector2.zero;
-        cRT.sizeDelta = new Vector2(540f, 470f);
+        Vector2 TL = new Vector2(0f, 1f);
 
-        Image cImg = card.AddComponent<Image>();
-        cImg.color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
+        // Chip eyebrow
+        Color acc = HudStyle.Accent;
+        Image chip = HudStyle.AddPanel(content, "EyebrowChip", 14f, new Color(acc.r, acc.g, acc.b, 0.12f), new Color(acc.r, acc.g, acc.b, 0.38f));
+        HudStyle.Place(chip.rectTransform, TL, TL, new Vector2(96f, -76f), new Vector2(344f, 28f));
+        Image dot = HudStyle.AddImage(chip.transform, "Dot", HudStyle.Circle(), acc, false);
+        HudStyle.Place(dot.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(13f, 0f), new Vector2(8f, 8f));
+        Text eye = HudStyle.AddLabel(chip.transform, "EyebrowText", "KOTA METROPOLIS  •  SIMULASI PENGANTARAN", 11, acc, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Stretch(eye.rectTransform, 30f, 0f, 8f, 0f);
 
-        Outline cOutline = card.AddComponent<Outline>();
-        cOutline.effectColor = new Color(0.18f, 0.24f, 0.33f, 0.9f);
-        cOutline.effectDistance = new Vector2(1f, -1f);
+        // Judul besar
+        Text title = HudStyle.AddLabel(content, "TitleText", "KURIR\n<color=#FFB020>TERAKHIR</color>", 92, HudStyle.TextPrimary, TextAnchor.UpperLeft, mainFont);
+        title.lineSpacing = 0.86f;
+        HudStyle.Place(title.rectTransform, TL, TL, new Vector2(92f, -118f), new Vector2(640f, 200f));
+        Shadow titleShadow = title.gameObject.AddComponent<Shadow>();
+        titleShadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+        titleShadow.effectDistance = new Vector2(0f, -4f);
 
-        // Header Strip Amber Accent
-        GameObject strip = new GameObject("MenuStrip", typeof(RectTransform));
-        strip.transform.SetParent(card.transform, false);
-        RectTransform sRT = strip.GetComponent<RectTransform>();
-        sRT.anchorMin = new Vector2(0f, 1f);
-        sRT.anchorMax = new Vector2(1f, 1f);
-        sRT.pivot = new Vector2(0.5f, 1f);
-        sRT.anchoredPosition = Vector2.zero;
-        sRT.sizeDelta = new Vector2(0f, 3f);
-        Image sImg = strip.AddComponent<Image>();
-        sImg.color = new Color(0.96f, 0.58f, 0.12f, 1f);
+        Text sub = HudStyle.AddLabel(content, "SubtitleText", "Antarkan Seluruh Paket Sebelum Batas Waktu Habis", 18, HudStyle.TextSecondary, TextAnchor.UpperLeft, mainFont, FontStyle.Normal, true);
+        HudStyle.Place(sub.rectTransform, TL, TL, new Vector2(96f, -346f), new Vector2(480f, 28f));
 
-        // Eyebrow Tagline
-        GameObject eyeGo = new GameObject("EyebrowText", typeof(RectTransform));
-        eyeGo.transform.SetParent(card.transform, false);
-        RectTransform eyeRT = eyeGo.GetComponent<RectTransform>();
-        eyeRT.anchorMin = new Vector2(0f, 1f);
-        eyeRT.anchorMax = new Vector2(1f, 1f);
-        eyeRT.pivot = new Vector2(0.5f, 1f);
-        eyeRT.anchoredPosition = new Vector2(0f, -28f);
-        eyeRT.sizeDelta = new Vector2(0f, 20f);
-
-        Text eyeTxt = eyeGo.AddComponent<Text>();
-        eyeTxt.font = mainFont;
-        eyeTxt.fontSize = 11;
-        eyeTxt.fontStyle = FontStyle.Bold;
-        eyeTxt.alignment = TextAnchor.MiddleCenter;
-        eyeTxt.color = new Color(0.55f, 0.62f, 0.72f, 1f);
-        eyeTxt.text = "KOTA METROPOLIS  •  SIMULASI PENGANTARAN";
-
-        // Judul Game: KURIR TERAKHIR
-        GameObject titleGo = new GameObject("TitleText", typeof(RectTransform));
-        titleGo.transform.SetParent(card.transform, false);
-        RectTransform tRT = titleGo.GetComponent<RectTransform>();
-        tRT.anchorMin = new Vector2(0f, 1f);
-        tRT.anchorMax = new Vector2(1f, 1f);
-        tRT.pivot = new Vector2(0.5f, 1f);
-        tRT.anchoredPosition = new Vector2(0f, -54f);
-        tRT.sizeDelta = new Vector2(0f, 46f);
-
-        Text titleTxt = titleGo.AddComponent<Text>();
-        titleTxt.font = mainFont;
-        titleTxt.fontSize = 34;
-        titleTxt.fontStyle = FontStyle.Bold;
-        titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.color = new Color(0.98f, 0.98f, 1f, 1f);
-        titleTxt.text = "KURIR TERAKHIR";
-
-        Outline tOutline = titleGo.AddComponent<Outline>();
-        tOutline.effectColor = new Color(0f, 0f, 0f, 0.6f);
-        tOutline.effectDistance = new Vector2(1.5f, -1.5f);
-
-        // Subtitle
-        GameObject subGo = new GameObject("SubtitleText", typeof(RectTransform));
-        subGo.transform.SetParent(card.transform, false);
-        RectTransform subRT = subGo.GetComponent<RectTransform>();
-        subRT.anchorMin = new Vector2(0f, 1f);
-        subRT.anchorMax = new Vector2(1f, 1f);
-        subRT.pivot = new Vector2(0.5f, 1f);
-        subRT.anchoredPosition = new Vector2(0f, -98f);
-        subRT.sizeDelta = new Vector2(0f, 22f);
-
-        Text subTxt = subGo.AddComponent<Text>();
-        subTxt.font = mainFont;
-        subTxt.fontSize = 13;
-        subTxt.alignment = TextAnchor.MiddleCenter;
-        subTxt.color = new Color(0.62f, 0.70f, 0.80f, 1f);
-        subTxt.text = "Antarkan Seluruh Paket Sebelum Batas Waktu Habis";
-
-        // Tombol 1: Mulai Permainan (Primary Amber)
-        CreateMenuButton(card.transform, "Btn_Play", "Mulai Permainan", new Vector2(0f, -156f), new Vector2(290f, 50f),
-            new Color(0.85f, 0.45f, 0.08f, 1f), new Color(0.96f, 0.58f, 0.12f, 1f), new Color(0.68f, 0.32f, 0.04f, 1f),
-            new Color(1f, 0.75f, 0.35f, 0.35f), 16, () =>
-            {
-                bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
-                if (!isAirport && !KurirIntroCutscene.HasPlayedThisSession)
-                {
-                    // Putar cutscene pembuka 15 detik dulu, gameplay dimulai setelah selesai / dilewati
-                    isMainMenuOpen = false;
-                    if (mainMenuObj != null) mainMenuObj.SetActive(false);
-                    if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
-                    SetDashboardVisible(false);
-                    SetRadarVisible(false);
-                    KurirIntroCutscene.Play(() =>
-                    {
-                        HideMainMenu();
-                        if (DeliveryGameManager.Instance != null)
-                        {
-                            DeliveryGameManager.Instance.StartGame();
-                        }
-                    });
-                    return;
-                }
-
-                HideMainMenu();
-                if (DeliveryGameManager.Instance != null)
-                {
-                    DeliveryGameManager.Instance.StartGame();
-                }
-            });
-
-        // Tombol 2: Cara Bermain (Secondary Dark Slate)
-        CreateMenuButton(card.transform, "Btn_HowToPlay", "Cara Bermain", new Vector2(0f, -218f), new Vector2(290f, 46f),
-            new Color(0.14f, 0.18f, 0.25f, 1f), new Color(0.22f, 0.28f, 0.38f, 1f), new Color(0.10f, 0.13f, 0.18f, 1f),
-            new Color(0.28f, 0.36f, 0.48f, 0.6f), 15, () =>
-            {
-                ShowHowToPlay(true);
-            });
-
-        // Tombol 3: Keluar (Tertiary Dark)
-        CreateMenuButton(card.transform, "Btn_Quit", "Keluar", new Vector2(0f, -276f), new Vector2(290f, 44f),
-            new Color(0.09f, 0.12f, 0.16f, 0.95f), new Color(0.35f, 0.12f, 0.15f, 1f), new Color(0.22f, 0.08f, 0.10f, 1f),
-            new Color(0.22f, 0.26f, 0.34f, 0.5f), 14, () =>
-            {
-                QuitGame();
-            });
-
-        // Footer Credit
-        GameObject footerGo = new GameObject("FooterText", typeof(RectTransform));
-        footerGo.transform.SetParent(card.transform, false);
-        RectTransform fRT = footerGo.GetComponent<RectTransform>();
-        fRT.anchorMin = new Vector2(0f, 0f);
-        fRT.anchorMax = new Vector2(1f, 0f);
-        fRT.pivot = new Vector2(0.5f, 0f);
-        fRT.anchoredPosition = new Vector2(0f, 16f);
-        fRT.sizeDelta = new Vector2(0f, 20f);
-
-        Text fTxt = footerGo.AddComponent<Text>();
-        fTxt.font = mainFont;
-        fTxt.fontSize = 11;
-        fTxt.alignment = TextAnchor.MiddleCenter;
-        fTxt.color = new Color(0.40f, 0.46f, 0.55f, 0.85f);
-        fTxt.text = "Final Project  •  Introduction to Game Development";
-    }
-
-    private Button CreateMenuButton(Transform parent, string goName, string text, Vector2 anchoredPos, Vector2 size,
-        Color normalColor, Color hoverColor, Color pressedColor, Color outlineColor, int fontSize, System.Action onClick)
-    {
-        GameObject btnGo = new GameObject(goName, typeof(RectTransform));
-        btnGo.transform.SetParent(parent, false);
-
-        RectTransform rt = btnGo.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 1f);
-        rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = anchoredPos;
-        rt.sizeDelta = size;
-
-        Image img = btnGo.AddComponent<Image>();
-        img.color = Color.white;
-
-        if (outlineColor.a > 0.01f)
-        {
-            Outline outline = btnGo.AddComponent<Outline>();
-            outline.effectColor = outlineColor;
-            outline.effectDistance = new Vector2(1f, -1f);
-        }
-
-        Button btn = btnGo.AddComponent<Button>();
-        btn.targetGraphic = img;
-
-        ColorBlock cb = btn.colors;
-        cb.colorMultiplier = 1f;
-        cb.fadeDuration = 0.08f;
-        cb.normalColor = normalColor;
-        cb.highlightedColor = hoverColor;
-        cb.pressedColor = pressedColor;
-        cb.selectedColor = normalColor;
-        cb.disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-        btn.colors = cb;
-
-        btn.onClick.AddListener(() =>
+        // Tombol
+        Button play = HudStyle.AddButton(content, "Btn_Play", "Mulai Permainan", HudStyle.ButtonKind.Primary, new Vector2(330f, 58f), mainFont, 19, () =>
         {
             GameAudioManager.Instance?.PlayUIClick();
-            onClick?.Invoke();
+            bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+            if (!isAirport && !KurirIntroCutscene.HasPlayedThisSession)
+            {
+                // Putar cutscene pembuka 15 detik dulu, gameplay dimulai setelah selesai / dilewati
+                isMainMenuOpen = false;
+                if (mainMenuObj != null) mainMenuObj.SetActive(false);
+                if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
+                SetDashboardVisible(false);
+                SetRadarVisible(false);
+                KurirIntroCutscene.Play(() =>
+                {
+                    HideMainMenu();
+                    if (DeliveryGameManager.Instance != null)
+                    {
+                        DeliveryGameManager.Instance.StartGame();
+                    }
+                });
+                return;
+            }
+
+            HideMainMenu();
+            if (DeliveryGameManager.Instance != null)
+            {
+                DeliveryGameManager.Instance.StartGame();
+            }
+        }, true);
+        HudStyle.Place((RectTransform)play.transform, TL, TL, new Vector2(96f, -414f), new Vector2(330f, 58f));
+
+        Button how = HudStyle.AddButton(content, "Btn_HowToPlay", "Cara Bermain", HudStyle.ButtonKind.Secondary, new Vector2(330f, 52f), mainFont, 16, () =>
+        {
+            GameAudioManager.Instance?.PlayUIClick();
+            ShowHowToPlay(true);
         });
+        HudStyle.Place((RectTransform)how.transform, TL, TL, new Vector2(96f, -486f), new Vector2(330f, 52f));
 
-        GameObject txtGo = new GameObject("Text", typeof(RectTransform));
-        txtGo.transform.SetParent(btnGo.transform, false);
-        RectTransform txtRT = txtGo.GetComponent<RectTransform>();
-        txtRT.anchorMin = Vector2.zero;
-        txtRT.anchorMax = Vector2.one;
-        txtRT.offsetMin = Vector2.zero;
-        txtRT.offsetMax = Vector2.zero;
+        Button quit = HudStyle.AddButton(content, "Btn_Quit", "Keluar", HudStyle.ButtonKind.Ghost, new Vector2(330f, 46f), mainFont, 15, () =>
+        {
+            GameAudioManager.Instance?.PlayUIClick();
+            QuitGame();
+        });
+        HudStyle.Place((RectTransform)quit.transform, TL, TL, new Vector2(96f, -552f), new Vector2(330f, 46f));
 
-        Text t = txtGo.AddComponent<Text>();
-        t.font = mainFont;
-        t.fontSize = fontSize;
-        t.fontStyle = FontStyle.Bold;
-        t.color = Color.white;
-        t.alignment = TextAnchor.MiddleCenter;
-        t.text = text;
+        // Footer kiri
+        Text footer = HudStyle.AddLabel(content, "FooterText", "Final Project  •  Introduction to Game Development", 12, HudStyle.TextMuted, TextAnchor.MiddleLeft, mainFont, FontStyle.Normal);
+        HudStyle.Place(footer.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(96f, 30f), new Vector2(520f, 22f));
 
-        return btn;
+        // Panel petunjuk kontrol (kanan bawah)
+        Image hint = HudStyle.AddPanel(content, "ControlsHint", 16f, HudStyle.Panel, HudStyle.Stroke);
+        hint.rectTransform.GetChild(0).gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+        HudStyle.Place(hint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-56f, 44f), new Vector2(400f, 58f));
+        HorizontalLayoutGroup hintLayout = hint.gameObject.AddComponent<HorizontalLayoutGroup>();
+        hintLayout.padding = new RectOffset(20, 20, 12, 12);
+        hintLayout.spacing = 6f;
+        hintLayout.childAlignment = TextAnchor.MiddleCenter;
+        hintLayout.childControlWidth = true;
+        hintLayout.childControlHeight = true;
+        hintLayout.childForceExpandWidth = false;
+        hintLayout.childForceExpandHeight = false;
+        ContentSizeFitter hintFit = hint.gameObject.AddComponent<ContentSizeFitter>();
+        hintFit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        hintFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        foreach (string k in new[] { "W", "A", "S", "D" })
+        {
+            RectTransform kc = HudStyle.AddKeycap(hint.transform, "Key_" + k, k, new Vector2(28f, 30f), mainFont, 14);
+            LayoutElement le = kc.gameObject.AddComponent<LayoutElement>(); le.preferredWidth = 28f; le.preferredHeight = 30f;
+        }
+        AddHintLabel(hint.transform, "Gerak", 12f);
+        RectTransform keyE = HudStyle.AddKeycap(hint.transform, "Key_E", "E", new Vector2(28f, 30f), mainFont, 14);
+        LayoutElement leE = keyE.gameObject.AddComponent<LayoutElement>(); leE.preferredWidth = 28f; leE.preferredHeight = 30f;
+        AddHintLabel(hint.transform, "Bicara", 12f);
+        RectTransform keyM = HudStyle.AddKeycap(hint.transform, "Key_M", "M", new Vector2(28f, 30f), mainFont, 14);
+        LayoutElement leM = keyM.gameObject.AddComponent<LayoutElement>(); leM.preferredWidth = 28f; leM.preferredHeight = 30f;
+        AddHintLabel(hint.transform, "Peta", 0f);
+
+        // Animasi masuk
+        HudFadeIn fade = mainMenuObj.AddComponent<HudFadeIn>();
+        fade.slideTarget = content;
+        fade.slide = new Vector2(-28f, 0f);
+        fade.duration = 0.5f;
+        fade.enabled = false;
+        fade.enabled = true;
+    }
+
+    private void AddHintLabel(Transform parent, string text, float spaceAfter)
+    {
+        Text t = HudStyle.AddLabel(parent, "Hint_" + text, text, 13, HudStyle.TextSecondary, TextAnchor.MiddleLeft, mainFont);
+        t.gameObject.AddComponent<LayoutElement>().minWidth = 0f;
+        if (spaceAfter > 0f)
+        {
+            RectTransform gap = HudStyle.NewRect("Gap", parent);
+            LayoutElement ge = gap.gameObject.AddComponent<LayoutElement>();
+            ge.preferredWidth = spaceAfter; ge.preferredHeight = 1f;
+        }
     }
 
     private void BuildHowToPlayModal()
     {
-        howToPlayModalObj = new GameObject("HowToPlayModal", typeof(RectTransform));
+        howToPlayModalObj = new GameObject("HowToPlayModal", typeof(RectTransform), typeof(CanvasGroup));
         howToPlayModalObj.transform.SetParent(transform, false);
+        RectTransform rt = (RectTransform)howToPlayModalObj.transform;
+        HudStyle.Stretch(rt);
 
-        RectTransform rt = howToPlayModalObj.GetComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        Color ink = HudStyle.Ink;
+        Image dim = HudStyle.AddImage(rt, "Dim", null, new Color(ink.r, ink.g, ink.b, 0.90f), false, true);
+        HudStyle.Stretch(dim.rectTransform);
 
-        Image bg = howToPlayModalObj.AddComponent<Image>();
-        bg.color = new Color(0.04f, 0.06f, 0.10f, 0.90f);
+        const float CW = 800f, CH = 556f;
+        Vector2 C = new Vector2(0.5f, 0.5f);
+        Vector2 TL = new Vector2(0f, 1f);
 
-        GameObject card = new GameObject("Card", typeof(RectTransform));
-        card.transform.SetParent(howToPlayModalObj.transform, false);
-        RectTransform cRT = card.GetComponent<RectTransform>();
-        cRT.anchorMin = new Vector2(0.5f, 0.5f);
-        cRT.anchorMax = new Vector2(0.5f, 0.5f);
-        cRT.pivot = new Vector2(0.5f, 0.5f);
-        cRT.sizeDelta = new Vector2(660f, 480f);
+        RectTransform card = HudStyle.NewRect("Card", rt);
+        HudStyle.Place(card, C, C, Vector2.zero, new Vector2(CW, CH));
+        Image cardShadow = HudStyle.AddImage(card, "Shadow", HudStyle.Glow(20f, 26f), new Color(0f, 0f, 0f, 0.55f));
+        HudStyle.Stretch(cardShadow.rectTransform, -26f, -34f, -26f, -18f);
+        Image cardBg = HudStyle.AddPanel(card, "Panel", 20f, HudStyle.PanelSolid, HudStyle.Stroke);
+        HudStyle.Stretch(cardBg.rectTransform);
+        Transform cp = cardBg.transform;
 
-        Image cImg = card.AddComponent<Image>();
-        cImg.color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
+        // Header
+        Text title = HudStyle.AddLabel(cp, "Title", "Cara Bermain", 28, HudStyle.TextPrimary, TextAnchor.UpperLeft, mainFont);
+        HudStyle.Place(title.rectTransform, TL, TL, new Vector2(36f, -28f), new Vector2(500f, 36f));
+        Text subtitle = HudStyle.AddLabel(cp, "Subtitle", "Panduan singkat sebelum mulai mengantar paket", 13, HudStyle.TextSecondary, TextAnchor.UpperLeft, mainFont, FontStyle.Normal);
+        HudStyle.Place(subtitle.rectTransform, TL, TL, new Vector2(36f, -66f), new Vector2(500f, 20f));
+        Image divider = HudStyle.AddImage(cp, "Divider", null, new Color(1f, 1f, 1f, 0.09f), false);
+        HudStyle.Place(divider.rectTransform, TL, TL, new Vector2(36f, -102f), new Vector2(CW - 72f, 1f));
 
-        Outline cOutline = card.AddComponent<Outline>();
-        cOutline.effectColor = new Color(0.18f, 0.24f, 0.33f, 0.9f);
-        cOutline.effectDistance = new Vector2(1f, -1f);
+        // Kolom kiri: kontrol
+        Text ctrlLabel = HudStyle.AddLabel(cp, "ControlsLabel", "KONTROL KARAKTER", 11, HudStyle.Accent, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Place(ctrlLabel.rectTransform, TL, TL, new Vector2(36f, -122f), new Vector2(300f, 16f));
 
-        // Header Strip Amber Accent
-        GameObject strip = new GameObject("HowToPlayStrip", typeof(RectTransform));
-        strip.transform.SetParent(card.transform, false);
-        RectTransform sRT = strip.GetComponent<RectTransform>();
-        sRT.anchorMin = new Vector2(0f, 1f);
-        sRT.anchorMax = new Vector2(1f, 1f);
-        sRT.pivot = new Vector2(0.5f, 1f);
-        sRT.anchoredPosition = Vector2.zero;
-        sRT.sizeDelta = new Vector2(0f, 3f);
-        Image sImg = strip.AddComponent<Image>();
-        sImg.color = new Color(0.96f, 0.58f, 0.12f, 1f);
-
-        // Judul Modal
-        GameObject titleGo = new GameObject("Title");
-        titleGo.transform.SetParent(card.transform, false);
-        RectTransform tRT = titleGo.AddComponent<RectTransform>();
-        tRT.anchorMin = new Vector2(0f, 1f);
-        tRT.anchorMax = new Vector2(1f, 1f);
-        tRT.pivot = new Vector2(0.5f, 1f);
-        tRT.anchoredPosition = new Vector2(0f, -24f);
-        tRT.sizeDelta = new Vector2(0f, 32f);
-
-        Text titleTxt = titleGo.AddComponent<Text>();
-        titleTxt.font = mainFont;
-        titleTxt.fontSize = 20;
-        titleTxt.fontStyle = FontStyle.Bold;
-        titleTxt.alignment = TextAnchor.MiddleCenter;
-        titleTxt.color = new Color(0.98f, 0.98f, 1f, 1f);
-        titleTxt.text = "PANDUAN CARA BERMAIN";
-
-        // Teks Kontrol & Aturan (diletakkan rapi di dalam card, margin kiri-kanan jelas)
-        GameObject bodyGo = new GameObject("BodyText");
-        bodyGo.transform.SetParent(card.transform, false);
-        RectTransform bRT = bodyGo.AddComponent<RectTransform>();
-        bRT.anchorMin = new Vector2(0f, 1f);
-        bRT.anchorMax = new Vector2(0f, 1f);
-        bRT.pivot = new Vector2(0f, 1f);
-        bRT.anchoredPosition = new Vector2(45f, -65f);
-        bRT.sizeDelta = new Vector2(570f, 340f);
-
-        Text bodyTxt = bodyGo.AddComponent<Text>();
-        bodyTxt.font = mainFont;
-        bodyTxt.fontSize = 12;
-        bodyTxt.lineSpacing = 1.35f;
-        bodyTxt.color = new Color(0.90f, 0.92f, 0.95f, 1f);
-        bodyTxt.alignment = TextAnchor.UpperLeft;
-        bodyTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
-        bodyTxt.verticalOverflow = VerticalWrapMode.Overflow;
-        bodyTxt.supportRichText = true;
-        bodyTxt.text =
-            "<b><color=#F59E0B>KONTROL KARAKTER:</color></b>\n" +
-            "  • <b>[W] [A] [S] [D]</b>  : Bergerak & berjalan melintasi jalan dan trotoar kota\n" +
-            "  • <b>[Left Shift]</b>      : Berlari lebih cepat (Sprint)\n" +
-            "  • <b>[Mouse]</b>           : Mengarahkan kamera pandangan Rian\n" +
-            "  • <b>[E]</b>               : Berbicara dengan warga, bertanya arah, dan mengambil paket\n" +
-            "  • <b>[M]</b>               : Membuka denah peta kota & lokasi pertokoan\n\n" +
-            "<b><color=#F59E0B>ATURAN PERMAINAN & MISI:</color></b>\n" +
-            "  1. Ambil 5 paket dari Pak Beni di depan Mall untuk memulai pengantaran.\n" +
-            "  2. Antarkan seluruh 5 paket ke toko yang sesuai sebelum batas waktu 6 menit habis.\n" +
-            "  3. Hati-hati menyeberang jalan raya! Terserempet mobil mengurangi sisa waktu (-5 dtk).\n" +
-            "  4. Salah memberikan paket ke orang yang salah akan terkena penalti waktu (-20 dtk).\n" +
-            "  5. Jika ada paket terjatuh di jalan, tanyakan lokasinya ke Petugas Parkir!";
-
-        // Tombol Tutup
-        CreateMenuButton(card.transform, "Btn_Close", "Tutup", new Vector2(0f, -422f), new Vector2(170f, 40f),
-            new Color(0.14f, 0.18f, 0.25f, 1f), new Color(0.22f, 0.28f, 0.38f, 1f), new Color(0.10f, 0.13f, 0.18f, 1f),
-            new Color(0.28f, 0.36f, 0.48f, 0.6f), 14, () =>
+        string[][] controls =
+        {
+            new[] { "W|A|S|D", "Bergerak melintasi jalan dan trotoar kota" },
+            new[] { "Shift",   "Berlari lebih cepat (Sprint)" },
+            new[] { "Mouse",   "Mengarahkan kamera pandangan Rian" },
+            new[] { "E",       "Berbicara dengan warga, bertanya arah, dan mengambil paket" },
+            new[] { "M",       "Membuka denah peta kota & lokasi pertokoan" },
+        };
+        for (int i = 0; i < controls.Length; i++)
+        {
+            float y = -152f - i * 54f;
+            RectTransform row = HudStyle.NewRect("ControlRow_" + i, cp);
+            HudStyle.Place(row, TL, TL, new Vector2(36f, y), new Vector2(350f, 46f));
+            string[] keys = controls[i][0].Split('|');
+            float x = 0f;
+            foreach (string k in keys)
             {
-                ShowHowToPlay(false);
-            });
+                float w = k.Length > 1 ? 14f + k.Length * 9f : 24f;
+                RectTransform kc = HudStyle.AddKeycap(row, "Key_" + k, k, new Vector2(w, 30f), mainFont, 13);
+                HudStyle.Place(kc, TL, TL, new Vector2(x, -8f), new Vector2(w, 30f));
+                x += w + 3f;
+            }
+            Text d = HudStyle.AddLabel(row, "Desc", controls[i][1], 12, HudStyle.TextPrimary, TextAnchor.MiddleLeft, mainFont, FontStyle.Normal, true);
+            HudStyle.Place(d.rectTransform, TL, TL, new Vector2(122f, 0f), new Vector2(226f, 46f));
+        }
+
+        // Kolom kanan: aturan
+        Text ruleLabel = HudStyle.AddLabel(cp, "RulesLabel", "ATURAN & MISI", 11, HudStyle.Accent, TextAnchor.MiddleLeft, mainFont);
+        HudStyle.Place(ruleLabel.rectTransform, TL, TL, new Vector2(432f, -122f), new Vector2(300f, 16f));
+
+        string[] rules =
+        {
+            "Ambil 5 paket dari Pak Beni di depan Mall untuk memulai pengantaran.",
+            "Antarkan seluruh 5 paket ke toko yang sesuai sebelum batas waktu 6 menit habis.",
+            "Hati-hati menyeberang jalan raya! Terserempet mobil mengurangi sisa waktu (-5 dtk).",
+            "Salah memberikan paket ke orang yang salah akan terkena penalti waktu (-20 dtk).",
+            "Jika ada paket terjatuh di jalan, tanyakan lokasinya ke Petugas Parkir!",
+        };
+        for (int i = 0; i < rules.Length; i++)
+        {
+            float y = -152f - i * 62f;
+            RectTransform row = HudStyle.NewRect("RuleRow_" + i, cp);
+            HudStyle.Place(row, TL, TL, new Vector2(432f, y), new Vector2(332f, 54f));
+            Image badge = HudStyle.AddImage(row, "Badge", HudStyle.Circle(), HudStyle.Accent, false);
+            HudStyle.Place(badge.rectTransform, TL, TL, new Vector2(0f, -2f), new Vector2(26f, 26f));
+            Text n = HudStyle.AddLabel(badge.transform, "Number", (i + 1).ToString(), 14, HudStyle.OnAccent, TextAnchor.MiddleCenter, mainFont);
+            HudStyle.Stretch(n.rectTransform);
+            Text r = HudStyle.AddLabel(row, "Text", rules[i], 12, HudStyle.TextPrimary, TextAnchor.UpperLeft, mainFont, FontStyle.Normal, true);
+            r.lineSpacing = 1.1f;
+            HudStyle.Place(r.rectTransform, TL, TL, new Vector2(40f, 0f), new Vector2(292f, 54f));
+        }
+
+        // Tombol tutup
+        Button close = HudStyle.AddButton(cp, "Btn_Close", "Tutup", HudStyle.ButtonKind.Secondary, new Vector2(180f, 44f), mainFont, 15, () =>
+        {
+            GameAudioManager.Instance?.PlayUIClick();
+            ShowHowToPlay(false);
+        });
+        HudStyle.Place((RectTransform)close.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(180f, 44f));
+
+        HudFadeIn fade = howToPlayModalObj.AddComponent<HudFadeIn>();
+        fade.duration = 0.2f;
+        fade.enabled = false;
+        fade.enabled = true;
 
         howToPlayModalObj.SetActive(false);
     }
@@ -1440,7 +1341,7 @@ public class DeliveryHUD : MonoBehaviour
             penaltyFlashTimer -= Time.unscaledDeltaTime;
             if (penaltyFlashTimer <= 0f && penaltyFlashText != null)
             {
-                penaltyFlashText.gameObject.SetActive(false);
+                penaltyFlashRoot.SetActive(false);
             }
         }
     }
@@ -1463,7 +1364,7 @@ public class DeliveryHUD : MonoBehaviour
                 interactPromptObj.SetActive(true);
                 if (interactPromptText != null)
                 {
-                    interactPromptText.text = "[E] " + currentInteractableText;
+                    interactPromptText.text = currentInteractableText;
                 }
 
                 // Eksekusi interaksi tombol [E] secara terpusat untuk aksi yang sedang aktif tampil di layar
@@ -1508,7 +1409,7 @@ public class DeliveryHUD : MonoBehaviour
 
         int minutes = Mathf.FloorToInt(secondsRemaining / 60f);
         int seconds = Mathf.FloorToInt(secondsRemaining % 60f);
-        timerText.text = string.Format("⏱ {0:00}:{1:00}", minutes, seconds);
+        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
 
         if (secondsRemaining <= 60f)
         {
@@ -1528,7 +1429,8 @@ public class DeliveryHUD : MonoBehaviour
     {
         if (packageProgressText != null)
         {
-            packageProgressText.text = $"📦 Paket: {delivered} / {total}";
+            packageProgressText.text = $"{delivered} / {total}";
+            RebuildPackageSegments(total, delivered);
         }
     }
 
@@ -1543,31 +1445,31 @@ public class DeliveryHUD : MonoBehaviour
             switch (state)
             {
                 case DeliveryMissionState.Prolog:
-                    missionTitleText.text = "Tujuan: Temui Pak Beni 2 di Area Bandara";
+                    missionTitleText.text = "Temui Pak Beni 2 di Area Bandara";
                     missionClueText.text = "Bicara dengan Pak Beni 2 untuk mengambil daftar pengantaran 5 paket bandara.";
                     break;
                 case DeliveryMissionState.Package1_CoffeeShop:
-                    missionTitleText.text = "Tujuan: Antar Paket 1 ke Naya 2";
+                    missionTitleText.text = "Antar Paket 1 ke Naya 2";
                     missionClueText.text = "Antarkan paket dokumen penerbangan pertama kepada Naya 2 di area terminal bandara.";
                     break;
                 case DeliveryMissionState.Package2_DrugStore:
-                    missionTitleText.text = "Tujuan: Antar Paket 2 ke Dimas 2";
+                    missionTitleText.text = "Antar Paket 2 ke Dimas 2";
                     missionClueText.text = "Antarkan paket suku cadang bagasi kedua kepada Dimas 2.";
                     break;
                 case DeliveryMissionState.Package3_HardwareStore:
-                    missionTitleText.text = "Tujuan: Antar Paket 3 ke Tukang Parkir 2";
+                    missionTitleText.text = "Antar Paket 3 ke Tukang Parkir 2";
                     missionClueText.text = "Antarkan paket perlengkapan rompi dan bendera pemandu pesawat ke Tukang Parkir 2.";
                     break;
                 case DeliveryMissionState.Package4_DroppedPackage:
-                    missionTitleText.text = "Tujuan: Antar Paket 4 ke Pak Joko 2";
+                    missionTitleText.text = "Antar Paket 4 ke Pak Joko 2";
                     missionClueText.text = "Antarkan paket logistik kargo keempat kepada Pak Joko 2.";
                     break;
                 case DeliveryMissionState.Package5_Apartment:
-                    missionTitleText.text = "Tujuan: Antar Paket 5 ke Clara 2";
+                    missionTitleText.text = "Antar Paket 5 ke Clara 2";
                     missionClueText.text = "Antarkan paket cinderamata terakhir kepada Clara 2.";
                     break;
                 case DeliveryMissionState.Final_ReturnToHub:
-                    missionTitleText.text = "Tujuan: Lapor Kembali ke Pak Beni 2";
+                    missionTitleText.text = "Lapor Kembali ke Pak Beni 2";
                     missionClueText.text = "Seluruh 5 paket berhasil diantar! Kembali temui Pak Beni 2 untuk menyelesaikan misi!";
                     break;
                 case DeliveryMissionState.Completed:
@@ -1589,39 +1491,39 @@ public class DeliveryHUD : MonoBehaviour
             switch (state)
             {
                 case DeliveryMissionState.Prolog:
-                    missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman (Level 2)";
+                    missionTitleText.text = "Temui Pak Beni di Pos Pengiriman (Level 2)";
                     missionClueText.text = "Ambil 5 paket baru dari Pak Beni di Center Plaza depan Mall. Perhatikan denah koridor baru [M] dan selesaikan sebelum batas waktu 6 menit habis!";
                     break;
                 case DeliveryMissionState.Package1_CoffeeShop:
-                    missionTitleText.text = "Tujuan: Clara di Coffee Shop (Koridor Utara Barat)";
+                    missionTitleText.text = "Clara di Coffee Shop (Koridor Utara Barat)";
                     missionClueText.text = "Label basah: 'C...ra' - Kedai kopi di trotoar Koridor Utara sebelah barat.";
                     break;
                 case DeliveryMissionState.Package2_DrugStore:
-                    missionTitleText.text = "Tujuan: Pak Joko di Drug Store (Koridor Selatan Barat)";
+                    missionTitleText.text = "Pak Joko di Drug Store (Koridor Selatan Barat)";
                     missionClueText.text = "Label basah: 'Pak J...o' - Apotek cabang selatan di trotoar Koridor Selatan sebelah barat.";
                     break;
                 case DeliveryMissionState.Package3_HardwareStore:
-                    missionTitleText.text = "Tujuan: Dimas di Fire Station (Koridor Utara Timur)";
+                    missionTitleText.text = "Dimas di Fire Station (Koridor Utara Timur)";
                     missionClueText.text = "Label basah: 'Di...s' - Pos pemadam kebakaran di trotoar Koridor Utara sebelah timur.";
                     break;
                 case DeliveryMissionState.Package4_DroppedPackage:
                     if (DeliveryGameManager.Instance != null && !DeliveryGameManager.Instance.IsDroppedPackageRevealed)
                     {
-                        missionTitleText.text = "Tujuan: Tanya Petugas Parkir (Persimpangan Tengah)";
+                        missionTitleText.text = "Tanya Petugas Parkir (Persimpangan Tengah)";
                         missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Tanyakan lokasinya ke Petugas Parkir di persimpangan tengah!";
                     }
                     else
                     {
-                        missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
+                        missionTitleText.text = "Ambil Paket yang Terjatuh!";
                         missionClueText.text = "Kotak paket kardus terlihat di jalan aspal gang tengah dekat toko donat. Dekati dan tekan [E] untuk memungutnya!";
                     }
                     break;
                 case DeliveryMissionState.Package5_Apartment:
-                    missionTitleText.text = "Tujuan: Naya di Apartemen (Koridor Selatan Timur)";
+                    missionTitleText.text = "Naya di Apartemen (Koridor Selatan Timur)";
                     missionClueText.text = "Label basah: 'N...a' - Pengiriman dokumen darurat ke gedung apartemen merah di Koridor Selatan sebelah timur.";
                     break;
                 case DeliveryMissionState.Final_ReturnToHub:
-                    missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Center Plaza!";
+                    missionTitleText.text = "Kembali ke Pak Beni di Center Plaza!";
                     missionClueText.text = "Seluruh 5 paket Level 2 selesai dikirim! Segera kembali ke Pak Beni di Center Plaza depan Mall sebelum batas waktu berakhir!";
                     break;
                 case DeliveryMissionState.Completed:
@@ -1639,39 +1541,39 @@ public class DeliveryHUD : MonoBehaviour
         switch (state)
         {
             case DeliveryMissionState.Prolog:
-                missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman";
+                missionTitleText.text = "Temui Pak Beni di Pos Pengiriman";
                 missionClueText.text = "Ambil 5 paket terakhir dari Pak Beni di dekat mobil pengiriman dan dengarkan instruksi batas waktu.";
                 break;
             case DeliveryMissionState.Package1_CoffeeShop:
-                missionTitleText.text = "Tujuan: Clara di Coffee Shop (Area Timur)";
+                missionTitleText.text = "Clara di Coffee Shop (Area Timur)";
                 missionClueText.text = "Label basah: 'C...ra' - Pegawai kedai kopi beraroma harum di trotoar timur sebelum toko tutup.";
                 break;
             case DeliveryMissionState.Package2_DrugStore:
-                missionTitleText.text = "Tujuan: Pak Joko di Drug Store (Sudut Toko)";
+                missionTitleText.text = "Pak Joko di Drug Store (Sudut Toko)";
                 missionClueText.text = "Label basah: 'Pak J...o' - Pemilik toko obat dan farmasi di sudut deretan pertokoan barat.";
                 break;
             case DeliveryMissionState.Package3_HardwareStore:
-                missionTitleText.text = "Tujuan: Dimas di Fire Station (Pos Pemadam)";
+                missionTitleText.text = "Dimas di Fire Station (Pos Pemadam)";
                 missionClueText.text = "Label basah: 'Di...s' - Pegawai pos pemadam kebakaran (Fire Station) di sebelah barat deretan toko.";
                 break;
             case DeliveryMissionState.Package4_DroppedPackage:
                 if (DeliveryGameManager.Instance != null && !DeliveryGameManager.Instance.IsDroppedPackageRevealed)
                 {
-                    missionTitleText.text = "Tujuan: Tanya Petugas Parkir (Area Parkir)";
+                    missionTitleText.text = "Tanya Petugas Parkir (Area Parkir)";
                     missionClueText.text = "Gawat! Satu paket terjatuh di jalan. Dimas menyuruhmu bertanya ke Petugas Parkir untuk mengetahui lokasi persis paketmu!";
                 }
                 else
                 {
-                    missionTitleText.text = "Tujuan: Ambil Paket yang Terjatuh!";
+                    missionTitleText.text = "Ambil Paket yang Terjatuh!";
                     missionClueText.text = "Kotak paket kardus terlihat di jalan aspal dekat pembatas beton sebelah Fire Station. Dekati dan tekan [E] untuk memungutnya!";
                 }
                 break;
             case DeliveryMissionState.Package5_Apartment:
-                missionTitleText.text = "Tujuan: Naya di Gedung Apartemen";
+                missionTitleText.text = "Naya di Gedung Apartemen";
                 missionClueText.text = "Label basah: 'N...a' - Penghuni gedung apartemen bertingkat tinggi di ujung kawasan kota.";
                 break;
             case DeliveryMissionState.Final_ReturnToHub:
-                missionTitleText.text = "Tujuan: Kembali ke Pak Beni di Pos Pengiriman!";
+                missionTitleText.text = "Kembali ke Pak Beni di Pos Pengiriman!";
                 missionClueText.text = "Seluruh 5 paket berhasil dikirim! Segera kembali ke Pak Beni sebelum batas waktu berakhir!";
                 break;
             case DeliveryMissionState.Completed:
@@ -1690,7 +1592,7 @@ public class DeliveryHUD : MonoBehaviour
         if (penaltyFlashText != null)
         {
             penaltyFlashText.text = message;
-            penaltyFlashText.gameObject.SetActive(true);
+            penaltyFlashRoot.SetActive(true);
             penaltyFlashTimer = 1.6f;
         }
     }

@@ -24,6 +24,15 @@ public class KurirIntroCutscene : MonoBehaviour
 
     private const float TotalDuration = 15f;
 
+    // Project memakai "Enter Play Mode Options" tanpa domain reload, sehingga nilai static
+    // terbawa antar sesi Play. Reset di setiap awal Play agar cutscene selalu muncul lagi.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticsOnPlay()
+    {
+        Instance = null;
+        HasPlayedThisSession = false;
+    }
+
     private struct Shot
     {
         public float start, end;
