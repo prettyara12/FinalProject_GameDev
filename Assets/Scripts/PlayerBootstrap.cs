@@ -639,6 +639,10 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 3b. Pria berbaju merah (No. 05) di tepi jalan ikut berjalan menyusuri trotoar
         EnsureWanderingStreetMan(playerGo);
 
+        // 3c. Ruangan dalam Mal yang bisa dimasuki Rian (kantor Pak Beni untuk laporan akhir) + perbaiki material rusak
+        AirportColorizer.FixBrokenMaterials();
+        BuildingInterior.CreateForCity();
+
         // 4. Setup Objek Paket Jatuh di Area Parkir (Misi 4)
         SetupDroppedPackageItem();
 
@@ -1075,6 +1079,9 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         // 7. Setup 3 NPC Pejalan Kaki Bandara (Wandering & Menyapa Rian saat berpapasan)
         EnsureAirportWanderingNPCs(playerGo);
+
+        // 8. Ruangan dalam Gedung Terminal 3 (Airport Building 03) untuk laporan akhir ke Pak Beni 2
+        BuildingInterior.CreateForAirport();
 
         GameAudioManager.EnsureInstance();
 

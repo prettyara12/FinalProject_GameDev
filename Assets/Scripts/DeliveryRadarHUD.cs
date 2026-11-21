@@ -534,6 +534,7 @@ public class DeliveryRadarHUD : MonoBehaviour
             if (blipIndex >= blipPool.Count) break;
 
             Vector3 npcPos = r.transform.position;
+            if (BuildingInterior.TryGetRadarPosition(r, playerPos, out Vector3 doorPos)) npcPos = doorPos; // Pak Beni di dalam gedung: tunjuk pintu masuk
             Vector3 diff = npcPos - playerPos;
             float dist = new Vector2(diff.x, diff.z).magnitude;
 

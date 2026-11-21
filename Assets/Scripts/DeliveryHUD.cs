@@ -1303,8 +1303,8 @@ public class DeliveryHUD : MonoBehaviour
                     missionClueText.text = "Antarkan paket cinderamata terakhir kepada Clara 2.";
                     break;
                 case DeliveryMissionState.Final_ReturnToHub:
-                    missionTitleText.text = "Lapor Kembali ke Pak Beni 2";
-                    missionClueText.text = "Seluruh 5 paket berhasil diantar! Kembali temui Pak Beni 2 untuk menyelesaikan misi!";
+                    missionTitleText.text = "Temui Pak Beni 2 di Gedung Terminal 3";
+                    missionClueText.text = "Semua paket beres! Pak Beni 2 menunggu di dalam gedung segi delapan. Masuk lewat gerbang bercahaya.";
                     break;
                 case DeliveryMissionState.Completed:
                     missionTitleText.text = "Misi Selesai: Kurir Terpercaya!";
@@ -1407,8 +1407,8 @@ public class DeliveryHUD : MonoBehaviour
                 missionClueText.text = "Label basah: 'N...a' - Penghuni gedung apartemen bertingkat tinggi di ujung kawasan kota.";
                 break;
             case DeliveryMissionState.Final_ReturnToHub:
-                missionTitleText.text = "Kembali ke Pak Beni di Pos Pengiriman!";
-                missionClueText.text = "Seluruh 5 paket berhasil dikirim! Segera kembali ke Pak Beni sebelum batas waktu berakhir!";
+                missionTitleText.text = "Temui Pak Beni di dalam Mal";
+                missionClueText.text = "Paket beres! Pak Beni menunggu di dalam Mal. Masuk lewat gerbang bercahaya, lalu tekan [E].";
                 break;
             case DeliveryMissionState.Completed:
                 missionTitleText.text = "Misi Selesai!";

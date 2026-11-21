@@ -97,12 +97,14 @@ public static class AirportColorizer
                 changed++;
             }
 
-            // 2. Livery pesawat
+            // 2. Livery pesawat & warna gedung
             Transform root = FindAircraftRoot(r.transform, out string kind);
-            if (root == null) continue;
-            if (kind == "flying1" || kind == "flying2")
+            Color buildingColor = Color.white;
+            if (root == null)
             {
-                // warna tetap: biru untuk pesawat 1, merah untuk pesawat 2
+                root = FindBuildingRoot(r.transform, out buildingColor);
+                if (root == null) continue;
+                kind = "building";
             }
 
             Color tint;
@@ -115,6 +117,7 @@ public static class AirportColorizer
                     case "airliner": tint = airlinerColors[airlinerIdx++ % airlinerColors.Length]; break;
                     case "jet": tint = jetColors[jetIdx++ % jetColors.Length]; break;
                     case "small": tint = smallPlaneColors[smallIdx++ % smallPlaneColors.Length]; break;
+                    case "building": tint = buildingColor; break;
                     default: tint = fighterColors[fighterIdx++ % fighterColors.Length]; break;
                 }
                 // Model yang UV-nya jatuh pada sel palet gelap (mis. Plane02) dikalikan lebih terang
@@ -217,6 +220,147 @@ public static class AirportColorizer
             Mathf.Min(5f, wanted.b / Mathf.Max(0.10f, avg.z)), 1f);
     }
 
+    /// <summary>Warna gedung bandara (pastel hangat/sejuk) menurut nama objek. Null jika bukan gedung.</summary>
+    private static Transform FindBuildingRoot(Transform t, out Color color)
+    {
+        color = Color.white;
+        Transform cur = t;
+        for (int depth = 0; cur != null && depth < 3; depth++, cur = cur.parent)
+        {
+            string n = cur.name.ToLowerInvariant();
+            if (n.StartsWith("airport_building_small01")) { color = new Color(1.00f, 0.88f, 0.45f); return cur; }
+            if (n.StartsWith("airport_building_small02")) { color = new Color(0.78f, 0.66f, 1.00f); return cur; }
+            if (n.StartsWith("airport_building01")) { color = new Color(0.96f, 0.80f, 0.55f); return cur; }
+            if (n.StartsWith("airport_building02")) { color = new Color(0.55f, 0.76f, 1.00f); return cur; }
+            if (n.StartsWith("airport_building03")) { color = new Color(1.00f, 0.62f, 0.46f); return cur; }
+            if (n.StartsWith("airport_building04")) { color = new Color(0.56f, 0.90f, 0.76f); return cur; }
+            if (n.StartsWith("hanger_large")) { color = new Color(0.50f, 0.66f, 0.90f); return cur; }
+            if (n.StartsWith("hanger_small")) { color = new Color(0.66f, 0.84f, 0.58f); return cur; }
+            if (n.StartsWith("airport_tower")) { color = new Color(1.00f, 0.84f, 0.52f); return cur; }
+            if (n.StartsWith("radar_tower")) { color = new Color(1.00f, 0.52f, 0.42f); return cur; }
+            if (n.StartsWith("airport_gangway")) { color = new Color(0.62f, 0.86f, 0.96f); return cur; }
+            if (n.StartsWith("ticket_booth")) { color = new Color(1.00f, 0.86f, 0.42f); return cur; }
+            if (n.StartsWith("ticket_cover")) { color = new Color(1.00f, 0.60f, 0.50f); return cur; }
+            if (n.StartsWith("prop_airport_shed")) { color = new Color(0.62f, 0.85f, 0.62f); return cur; }
+            if (n.StartsWith("prop_airport_cabnet")) { color = new Color(0.62f, 0.78f, 0.95f); return cur; }
+            if (n.StartsWith("luggage_ramp")) { color = new Color(0.45f, 0.86f, 0.82f); return cur; }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Memperbaiki material rusak (Default-Diffuse / Standard / shader lama yang tampil ungu di URP) pada objek aktif:
+    /// MeshRenderer memakai material dari paket aset yang sama (mis. SimpleTown), partikel memakai material URP.
+    /// </summary>
+    public static int FixBrokenMaterials()
+    {
+        int fixedCount = 0;
+        Material particleMat = null;
+
+        foreach (Renderer r in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude))
+        {
+            if (r == null) continue;
+            Material[] mats = r.sharedMaterials;
+            bool changed = false;
+
+            for (int i = 0; i < mats.Length; i++)
+            {
+                if (!IsBrokenMaterial(mats[i])) continue;
+
+                if (r is ParticleSystemRenderer)
+                {
+                    if (particleMat == null) particleMat = GetOrCreateParticleMaterial();
+                    if (particleMat != null) { mats[i] = particleMat; changed = true; }
+                    continue;
+                }
+
+                Material replacement = FindSiblingMaterial(r, mats, i);
+                if (replacement != null) { mats[i] = replacement; changed = true; }
+            }
+
+            if (changed)
+            {
+                r.sharedMaterials = mats;
+#if UNITY_EDITOR
+                if (!Application.isPlaying) EditorUtility.SetDirty(r);
+#endif
+                fixedCount++;
+            }
+        }
+        return fixedCount;
+    }
+
+    private static bool IsBrokenMaterial(Material m)
+    {
+        if (m == null) return true;
+        if (m.shader == null) return true;
+        string sn = m.shader.name;
+        if (sn.Contains("InternalError")) return true;
+        if (m.name == "Default-Diffuse" || m.name == "Default-Particle") return true;
+        if (sn.StartsWith("Legacy Shaders/")) return true;
+        return false;
+    }
+
+    private static Material FindSiblingMaterial(Renderer r, Material[] mats, int brokenIndex)
+    {
+        // 1. Slot lain pada renderer yang sama (mis. graves: slot 0 = SimpleTown)
+        for (int i = 0; i < mats.Length; i++)
+        {
+            if (i != brokenIndex && !IsBrokenMaterial(mats[i])) return mats[i];
+        }
+#if UNITY_EDITOR
+        // 2. Material paket asal mesh (folder Models -> Materials / _Materials)
+        MeshFilter mf = r.GetComponent<MeshFilter>();
+        if (mf != null && mf.sharedMesh != null)
+        {
+            string path = AssetDatabase.GetAssetPath(mf.sharedMesh);
+            int idx = path.IndexOf("/SimpleWorldVol1/", System.StringComparison.Ordinal);
+            if (idx >= 0)
+            {
+                string rest = path.Substring(idx + "/SimpleWorldVol1/".Length);
+                string pack = rest.Substring(0, rest.IndexOf('/') > 0 ? rest.IndexOf('/') : rest.Length);
+                string packRoot = path.Substring(0, idx) + "/SimpleWorldVol1/" + pack;
+                foreach (string guid in AssetDatabase.FindAssets(pack + " t:Material", new[] { packRoot }))
+                {
+                    Material cand = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(guid));
+                    if (cand != null && cand.name == pack && !IsBrokenMaterial(cand)) return cand;
+                }
+            }
+        }
+#endif
+        return null;
+    }
+
+    private static Material GetOrCreateParticleMaterial()
+    {
+#if UNITY_EDITOR
+        const string path = "Assets/Materials/POI_Particle.mat";
+        Material existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (existing != null) return existing;
+
+        Shader sh = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        if (sh == null) sh = Shader.Find("Sprites/Default");
+        if (sh == null) return null;
+        Material mat = new Material(sh);
+        mat.name = "POI_Particle";
+        Texture2D tex = AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd");
+        if (tex != null)
+        {
+            if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", tex);
+            if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", tex);
+        }
+        if (mat.HasProperty("_Surface")) mat.SetFloat("_Surface", 1f);
+        if (mat.HasProperty("_Blend")) mat.SetFloat("_Blend", 0f);
+        mat.renderQueue = 3000;
+        mat.SetOverrideTag("RenderType", "Transparent");
+        if (!AssetDatabase.IsValidFolder("Assets/Materials")) AssetDatabase.CreateFolder("Assets", "Materials");
+        AssetDatabase.CreateAsset(mat, path);
+        return mat;
+#else
+        return null;
+#endif
+    }
+
     private static Material GetOrCreateLivery(Material baseMat, Color tint)
     {
         string hex = Mathf.RoundToInt(tint.r * 100f) + "_" + Mathf.RoundToInt(tint.g * 100f) + "_" + Mathf.RoundToInt(tint.b * 100f);
@@ -247,5 +391,6 @@ public static class AirportColorizer
     }
 #else
     public static int Apply() { return 0; }
+    public static int FixBrokenMaterials() { return 0; }
 #endif
 }
