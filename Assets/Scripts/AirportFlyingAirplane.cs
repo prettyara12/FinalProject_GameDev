@@ -37,13 +37,20 @@ public class AirportFlyingAirplane : MonoBehaviour
     [Tooltip("Apakah roda pendaratan (landing gear) disembunyikan saat terbang.")]
     public bool retractLandingGear = false;
 
+    [Tooltip("Terbang berlawanan arah jarum jam (counter-clockwise).")]
+    public bool counterClockwise = false;
+
+    [Tooltip("Posisi awal pada lintasan (derajat, 0-360) agar beberapa pesawat tidak berimpit.")]
+    public float startAngleDegrees = 0f;
+
     private float currentAngle = 0f;
     private float bankVelocity = 0f;
     private float currentBank = 0f;
 
     private void Awake()
     {
-        instance = this;
+        if (instance == null) instance = this;
+        currentAngle = startAngleDegrees * Mathf.Deg2Rad;
         enabled = true;
         CleanFlightColliders();
         if (retractLandingGear) RetractLandingGear();
@@ -64,13 +71,24 @@ public class AirportFlyingAirplane : MonoBehaviour
         float approxRadius = Mathf.Max(10f, (radiusX + radiusZ) * 0.5f);
         float angularSpeed = flightSpeed / approxRadius;
 
-        currentAngle += angularSpeed * Time.deltaTime;
+        float dir = counterClockwise ? -1f : 1f;
+        currentAngle += dir * angularSpeed * Time.deltaTime;
         if (currentAngle > Mathf.PI * 2f)
         {
             currentAngle -= Mathf.PI * 2f;
         }
+        else if (currentAngle < 0f)
+        {
+            currentAngle += Mathf.PI * 2f;
+        }
 
         UpdateFlightTransform(Time.deltaTime);
+    }
+
+    /// <summary>Mengembalikan pesawat ke sudut awal lintasannya (dipakai saat setup di editor).</summary>
+    public void ResetToStartAngle()
+    {
+        currentAngle = Mathf.Repeat(startAngleDegrees, 360f) * Mathf.Deg2Rad;
     }
 
     public void UpdateFlightTransform(float deltaTime)
@@ -92,7 +110,8 @@ public class AirportFlyingAirplane : MonoBehaviour
         float tangentX = Mathf.Cos(currentAngle) * radiusX;
         float tangentZ = -Mathf.Sin(currentAngle) * radiusZ;
         float tangentY = Mathf.Cos(currentAngle * 2f) * (altitudeWobble * 2f) * (flightSpeed / approxRadius);
-        Vector3 tangentDir = new Vector3(tangentX, tangentY, tangentZ).normalized;
+        Vector3 tangentDir = new Vector3(tangentX, tangentY, tangentZ) * (counterClockwise ? -1f : 1f);
+        tangentDir = tangentDir.normalized;
 
         if (tangentDir.sqrMagnitude < 0.0001f)
         {
@@ -106,7 +125,7 @@ public class AirportFlyingAirplane : MonoBehaviour
         // 4. Sudut Bank (Roll Miring ke Kanan Saat Berbelok Searah Jarum Jam):
         // Pada lintasan oval clockwise, kemiringan sayap kanan selalu masuk ke dalam kurva (negatif roll)
         float curveWeight = 0.65f + 0.35f * Mathf.Abs(Mathf.Sin(currentAngle * 2f));
-        float targetBank = -Mathf.Clamp(maxBankAngle * curveWeight, 8f, maxBankAngle);
+        float targetBank = -Mathf.Clamp(maxBankAngle * curveWeight, 8f, maxBankAngle) * (counterClockwise ? -1f : 1f);
 
         if (deltaTime > 0f)
         {

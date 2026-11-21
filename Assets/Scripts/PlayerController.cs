@@ -89,6 +89,31 @@ public class PlayerController : MonoBehaviour
     private Collider[] ownColliders;
     private string lastBlockedObstacle = null;
     private float lastBlockedTime = -999f;
+    private bool isTryingToMove = false;
+    private string lastBumpLabel = null;
+    private float lastBumpNoticeTime = -999f;
+
+    /// <summary>
+    /// Mencatat benturan NYATA (kapsul Rian benar-benar menyentuh collider) dan menampilkan
+    /// pemberitahuan "Anda menabrak ..." sesuai benda yang tersentuh. Hanya saat pemain sedang berjalan.
+    /// </summary>
+    private void RegisterBump(Collider hitCollider)
+    {
+        if (hitCollider == null || !isTryingToMove) return;
+
+        lastBlockedObstacle = hitCollider.gameObject.name;
+        lastBlockedTime = Time.time;
+
+        string label = ObstacleNaming.GetFriendlyName(hitCollider);
+        if (label == lastBumpLabel && Time.time - lastBumpNoticeTime < 1.6f) return;
+
+        lastBumpLabel = label;
+        lastBumpNoticeTime = Time.time;
+        if (DeliveryHUD.Instance != null)
+        {
+            DeliveryHUD.Instance.ShowBumpNotice("Anda menabrak " + label);
+        }
+    }
     private float footstepTimer = 0f;
 
     private void Awake()
@@ -227,6 +252,7 @@ public class PlayerController : MonoBehaviour
     {
         // Pastikan input selalu aktif
         InputManager.bCanPlayerMove = true;
+        isTryingToMove = false;
 
         // Kunci input hanya jika sedang mode jeda / dialog aktif
         if (isMovementFrozen)
@@ -295,6 +321,7 @@ public class PlayerController : MonoBehaviour
 
         float inputMagnitude = new Vector2(horizontal, vertical).magnitude;
         inputMagnitude = Mathf.Clamp01(inputMagnitude);
+        isTryingToMove = inputMagnitude > 0.05f;
 
         // If sitting and player presses movement or jump, automatically stand up
         if (isSitting && (inputMagnitude > 0.05f || Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.Space)))
@@ -492,8 +519,7 @@ public class PlayerController : MonoBehaviour
 
             if (hasHit && hit.collider != null)
             {
-                lastBlockedObstacle = hit.collider.gameObject.name;
-                lastBlockedTime = Time.time;
+                RegisterBump(hit.collider);
 
                 // Maju sampai batas aman tepat sebelum rintangan
                 float safeDist = Mathf.Max(0f, hit.distance - skinWidth);
@@ -550,8 +576,7 @@ public class PlayerController : MonoBehaviour
                     if (col != null && !col.isTrigger && col != ownCapsule && !col.transform.IsChildOf(transform) && IsObstacle(col))
                     {
                         blocked = true;
-                        lastBlockedObstacle = col.gameObject.name;
-                        lastBlockedTime = Time.time;
+                        RegisterBump(col);
                         break;
                     }
                 }
@@ -599,8 +624,7 @@ public class PlayerController : MonoBehaviour
                             {
                                 push.Normalize();
                                 transform.position += push * (distance + 0.003f);
-                                lastBlockedObstacle = other.gameObject.name;
-                                lastBlockedTime = Time.time;
+                                RegisterBump(other);
                             }
                         }
                     }
@@ -655,8 +679,7 @@ public class PlayerController : MonoBehaviour
                             {
                                 push.Normalize();
                                 transform.position += push * (distance + 0.003f);
-                                lastBlockedObstacle = other.gameObject.name;
-                                lastBlockedTime = Time.time;
+                                RegisterBump(other);
                             }
                         }
                     }
@@ -850,19 +873,6 @@ public class PlayerController : MonoBehaviour
             {
                 isGrounded = false;
             }
-        }
-    }
-
-    private void OnGUI()
-    {
-        if (Time.time - lastBlockedTime < 1.5f && !string.IsNullOrEmpty(lastBlockedObstacle))
-        {
-            GUIStyle blockStyle = new GUIStyle(GUI.skin.box);
-            blockStyle.fontSize = 14;
-            blockStyle.fontStyle = FontStyle.Bold;
-            blockStyle.normal.textColor = new Color(1f, 0.45f, 0.45f);
-            blockStyle.alignment = TextAnchor.MiddleCenter;
-            GUI.Box(new Rect(Screen.width - 390, 60, 370, 34), $"⛔ Menabrak Rintangan: {lastBlockedObstacle}", blockStyle);
         }
     }
 }

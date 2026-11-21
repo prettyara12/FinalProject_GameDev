@@ -1060,6 +1060,9 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 4. Setup Animasi 1 Pesawat Terbang Melintas di Langit Bandara (Plane01 Looping Clockwise Flyover)
         EnsureAirportFlyingAirplane();
 
+        // 4b. Beri warna (livery) pada pesawat & perbaiki objek tanpa tekstur (Editor saja)
+        AirportColorizer.Apply();
+
         // 5. Setup Rintangan Fisik Solid Bandara (BoxCollider pada seluruh kendaraan, gedung, props, pagar)
         int colliderCount = EnsureAirportEnvironmentColliders();
         EnsureAllCharacterColliders();
@@ -3587,6 +3590,24 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             if (isAirportObstacle)
             {
                 Collider col = go.GetComponent<Collider>();
+
+                // Pesawat, helikopter, gangway, hanggar & gedung besar memakai MeshCollider sesuai bentuk aslinya,
+                // sehingga Rian bisa lewat di bawah sayap / celah dan hanya "menabrak" saat benar-benar menyentuh badan benda.
+                if (NeedsAccurateCollider(n))
+                {
+                    MeshFilter amf = go.GetComponent<MeshFilter>();
+                    if (amf != null && amf.sharedMesh != null && !(col is MeshCollider))
+                    {
+                        if (col != null) DestroyComponentSafe(col);
+                        MeshCollider mc = go.AddComponent<MeshCollider>();
+                        mc.sharedMesh = amf.sharedMesh;
+                        mc.convex = false;
+                        mc.isTrigger = false;
+                        col = mc;
+                        count++;
+                    }
+                }
+
                 if (col == null)
                 {
                     MeshFilter mf = go.GetComponent<MeshFilter>();
@@ -3608,27 +3629,115 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         return count;
     }
 
+    private static bool NeedsAccurateCollider(string lowerName)
+    {
+        if (lowerName.Contains("wheel") || lowerName.Contains("propell") || lowerName.Contains("rotor") || lowerName.Contains("missile")) return false;
+        return (lowerName.Contains("plane") && !lowerName.Contains("cart")) ||
+               lowerName.StartsWith("jet") || lowerName.Contains("fighter") ||
+               (lowerName.Contains("heli") && !lowerName.Contains("pad")) ||
+               lowerName.Contains("gangway") || lowerName.Contains("hanger") || lowerName.Contains("hangar") ||
+               lowerName.Contains("terminal") || lowerName.StartsWith("airport_building") || lowerName.Contains("tower");
+    }
+
     /// <summary>
     /// Memastikan 1 pesawat komersial (Plane01) yang ditempatkan di scene sedang terbang melintas
     /// di langit bandara Level 2 secara looping searah jarum jam (clockwise).
     /// </summary>
     public static GameObject EnsureAirportFlyingAirplane()
     {
-        AirportFlyingAirplane existingComp = Object.FindAnyObjectByType<AirportFlyingAirplane>();
+        GameObject first = EnsureFirstFlyingAirplane();
+        EnsureSecondFlyingAirplane();
+        return first;
+    }
+
+    /// <summary>
+    /// Mengatur lintasan terbang tiap pesawat langit. Pesawat pertama searah jarum jam,
+    /// pesawat kedua berlawanan arah dengan lintasan, ketinggian, dan kecepatan berbeda agar tidak berimpit.
+    /// </summary>
+    private static void ConfigureFlyingAirplane(AirportFlyingAirplane comp, bool second)
+    {
+        if (comp == null) return;
+        comp.gameObject.SetActive(true);
+        comp.enabled = true;
+
+        if (!second)
+        {
+            comp.flightCenter = new Vector3(35f, 13f, 130f);
+            comp.radiusX = 95f;
+            comp.radiusZ = 120f;
+            comp.cruiseAltitude = 13f;
+            comp.flightSpeed = 26f;
+            comp.maxBankAngle = 18f;
+            comp.altitudeWobble = 1.0f;
+            comp.counterClockwise = false;
+            comp.startAngleDegrees = 0f;
+        }
+        else
+        {
+            comp.flightCenter = new Vector3(35f, 24f, 130f);
+            comp.radiusX = 150f;
+            comp.radiusZ = 95f;
+            comp.cruiseAltitude = 24f;
+            comp.flightSpeed = 21f;
+            comp.maxBankAngle = 14f;
+            comp.altitudeWobble = 1.5f;
+            comp.counterClockwise = true;
+            comp.startAngleDegrees = 150f;
+        }
+
+        comp.retractLandingGear = false;
+        comp.CleanFlightColliders();
+        comp.ResetToStartAngle();
+        comp.UpdateFlightTransform(0f);
+    }
+
+    private static GameObject EnsureSecondFlyingAirplane()
+    {
+        // Sudah punya komponen terbang? cukup konfigurasi ulang
+        foreach (var c in Object.FindObjectsByType<AirportFlyingAirplane>(FindObjectsInactive.Include))
+        {
+            if (c != null && c.gameObject.name.Contains("Plane02"))
+            {
+                ConfigureFlyingAirplane(c, true);
+                return c.gameObject;
+            }
+        }
+
+        // Cari Plane02 yang ditempatkan di langit (ketinggian > 5 m)
+        GameObject skyPlane = null;
+        foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
+        {
+            if (go != null && go.name == "Plane02" && go.transform.position.y > 5f && go.GetComponent<MeshRenderer>() != null)
+            {
+                skyPlane = go;
+                break;
+            }
+        }
+        if (skyPlane == null) return null;
+
+        skyPlane.name = "Plane02_Flying";
+        skyPlane.transform.SetParent(null, true);
+
+        AirportFlyingAirplane comp = skyPlane.GetComponent<AirportFlyingAirplane>();
+        if (comp == null) comp = skyPlane.AddComponent<AirportFlyingAirplane>();
+        ConfigureFlyingAirplane(comp, true);
+        return skyPlane;
+    }
+
+    private static GameObject EnsureFirstFlyingAirplane()
+    {
+        AirportFlyingAirplane existingComp = null;
+        foreach (var c in Object.FindObjectsByType<AirportFlyingAirplane>(FindObjectsInactive.Include))
+        {
+            if (c != null && !c.gameObject.name.Contains("Plane02"))
+            {
+                existingComp = c;
+                break;
+            }
+        }
         if (existingComp != null)
         {
-            existingComp.gameObject.SetActive(true);
-            existingComp.enabled = true;
-            existingComp.flightCenter = new Vector3(35f, 13f, 130f);
-            existingComp.radiusX = 95f;
-            existingComp.radiusZ = 120f;
-            existingComp.cruiseAltitude = 13f;
-            existingComp.flightSpeed = 26f;
-            existingComp.maxBankAngle = 18f;
-            existingComp.altitudeWobble = 1.0f;
-            existingComp.retractLandingGear = false;
-            existingComp.CleanFlightColliders();
-            existingComp.UpdateFlightTransform(0f);
+            ConfigureFlyingAirplane(existingComp, false);
             return existingComp.gameObject;
         }
 
@@ -3693,17 +3802,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         AirportFlyingAirplane flyComp = planeGo.GetComponent<AirportFlyingAirplane>();
         if (flyComp == null) flyComp = planeGo.AddComponent<AirportFlyingAirplane>();
 
-        flyComp.enabled = true;
-        flyComp.flightCenter = new Vector3(35f, 13f, 130f);
-        flyComp.radiusX = 95f;
-        flyComp.radiusZ = 120f;
-        flyComp.cruiseAltitude = 13f;
-        flyComp.flightSpeed = 26f;
-        flyComp.maxBankAngle = 18f;
-        flyComp.altitudeWobble = 1.0f;
-        flyComp.retractLandingGear = false;
-        flyComp.CleanFlightColliders();
-        flyComp.UpdateFlightTransform(0f);
+        ConfigureFlyingAirplane(flyComp, false);
 
         return planeGo;
     }

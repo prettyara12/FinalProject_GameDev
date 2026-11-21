@@ -27,6 +27,9 @@ public class DeliveryHUD : MonoBehaviour
     private Text missionClueText;
     private Text penaltyFlashText;
     private GameObject penaltyFlashRoot;
+    private GameObject bumpNoticeRoot;
+    private Text bumpNoticeText;
+    private float bumpNoticeTimer = 0f;
     private RectTransform packageSegmentsRoot;
     private readonly List<Image> packageSegments = new List<Image>();
     private float penaltyFlashTimer = 0f;
@@ -247,7 +250,8 @@ public class DeliveryHUD : MonoBehaviour
         dashboardObj = new GameObject("DeliveryDashboard", typeof(RectTransform));
         dashboardObj.transform.SetParent(transform, false);
         RectTransform dbRT = dashboardObj.GetComponent<RectTransform>();
-        HudStyle.Place(dbRT, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(W, H));
+        HudStyle.Place(dbRT, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(W, H));
+        dbRT.localScale = new Vector3(0.8f, 0.8f, 1f); // ringkas agar seluruh teks muat di layar kecil
 
         // Bayangan lembut + panel kaca gelap
         Image shadow = HudStyle.AddImage(dbRT, "Shadow", HudStyle.Glow(16f, 18f), new Color(0f, 0f, 0f, 0.45f));
@@ -331,6 +335,39 @@ public class DeliveryHUD : MonoBehaviour
 
         penaltyFlashText = HudStyle.AddLabel(penRT, "PenaltyFlashText", "", 18, new Color(1f, 0.55f, 0.55f, 1f), TextAnchor.MiddleCenter, mainFont);
         penaltyFlashRoot.SetActive(false);
+
+        // --- Pemberitahuan tabrakan ("Anda menabrak ...") di bawah notifikasi penalti ---
+        bumpNoticeRoot = new GameObject("BumpNotice", typeof(RectTransform));
+        bumpNoticeRoot.transform.SetParent(transform, false);
+        RectTransform bumpRT = (RectTransform)bumpNoticeRoot.transform;
+        HudStyle.Place(bumpRT, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(200f, 38f));
+        Image bumpBg = bumpNoticeRoot.AddComponent<Image>();
+        bumpBg.sprite = HudStyle.Rounded(14f);
+        bumpBg.type = Image.Type.Sliced;
+        bumpBg.color = new Color(0.05f, 0.066f, 0.098f, 0.94f);
+        bumpBg.raycastTarget = false;
+        Image bumpStroke = HudStyle.AddImage(bumpRT, "Stroke", HudStyle.RoundedStroke(14f, 1.2f),
+            new Color(HudStyle.Warning.r, HudStyle.Warning.g, HudStyle.Warning.b, 0.6f));
+        HudStyle.Stretch(bumpStroke.rectTransform);
+        bumpStroke.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+        HorizontalLayoutGroup bumpLayout = bumpNoticeRoot.AddComponent<HorizontalLayoutGroup>();
+        bumpLayout.padding = new RectOffset(16, 18, 8, 8);
+        bumpLayout.spacing = 10f;
+        bumpLayout.childAlignment = TextAnchor.MiddleCenter;
+        bumpLayout.childControlWidth = true;
+        bumpLayout.childControlHeight = true;
+        bumpLayout.childForceExpandWidth = false;
+        bumpLayout.childForceExpandHeight = false;
+        ContentSizeFitter bumpFit = bumpNoticeRoot.AddComponent<ContentSizeFitter>();
+        bumpFit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        bumpFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        Image bumpDot = HudStyle.AddImage(bumpRT, "Dot", HudStyle.Circle(), HudStyle.Warning, false);
+        LayoutElement bumpDotLE = bumpDot.gameObject.AddComponent<LayoutElement>();
+        bumpDotLE.preferredWidth = 9f;
+        bumpDotLE.preferredHeight = 9f;
+        bumpNoticeText = HudStyle.AddLabel(bumpRT, "BumpNoticeText", "", 15, HudStyle.TextPrimary, TextAnchor.MiddleCenter, mainFont);
+        bumpNoticeRoot.SetActive(false);
     }
 
     private void RebuildPackageSegments(int total, int delivered)
@@ -992,7 +1029,7 @@ public class DeliveryHUD : MonoBehaviour
         HudStyle.Place(chip.rectTransform, TL, TL, new Vector2(96f, -76f), new Vector2(344f, 28f));
         Image dot = HudStyle.AddImage(chip.transform, "Dot", HudStyle.Circle(), acc, false);
         HudStyle.Place(dot.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(13f, 0f), new Vector2(8f, 8f));
-        Text eye = HudStyle.AddLabel(chip.transform, "EyebrowText", "KOTA METROPOLIS  •  SIMULASI PENGANTARAN", 11, acc, TextAnchor.MiddleLeft, mainFont);
+        Text eye = HudStyle.AddLabel(chip.transform, "EyebrowText", "KOTA WONDERLAND  •  SIMULASI PENGANTARAN", 11, acc, TextAnchor.MiddleLeft, mainFont);
         HudStyle.Stretch(eye.rectTransform, 30f, 0f, 8f, 0f);
 
         // Judul besar
@@ -1336,6 +1373,15 @@ public class DeliveryHUD : MonoBehaviour
         }
 
         // Update Penalty Flash
+        if (bumpNoticeTimer > 0f)
+        {
+            bumpNoticeTimer -= Time.unscaledDeltaTime;
+            if (bumpNoticeTimer <= 0f && bumpNoticeRoot != null)
+            {
+                bumpNoticeRoot.SetActive(false);
+            }
+        }
+
         if (penaltyFlashTimer > 0f)
         {
             penaltyFlashTimer -= Time.unscaledDeltaTime;
@@ -1585,6 +1631,15 @@ public class DeliveryHUD : MonoBehaviour
                 missionClueText.text = "Batas waktu pengiriman malam ini telah berakhir.";
                 break;
         }
+    }
+
+    /// <summary>Pemberitahuan singkat saat Rian menabrak benda, mis. "Anda menabrak mobil".</summary>
+    public void ShowBumpNotice(string message)
+    {
+        if (bumpNoticeRoot == null || bumpNoticeText == null) return;
+        bumpNoticeText.text = message;
+        bumpNoticeRoot.SetActive(true);
+        bumpNoticeTimer = 1.5f;
     }
 
     public void ShowPenaltyFlash(float secondsDeducted, string message)

@@ -186,161 +186,135 @@ public class NPCDialogueOverlay : MonoBehaviour
 
         Font mainFont = GetBestDialogueFont();
 
-        // 2. OVERHEAD SPEECH BUBBLE (Proporsional, Rapi, Tebal & Tetap Sangat Jelas)
-        overheadBubbleObj = new GameObject("OverheadSpeechBubble");
+        // 2. OVERHEAD SPEECH BUBBLE (kaca gelap membulat, mengikuti desain HUD baru)
+        overheadBubbleObj = new GameObject("OverheadSpeechBubble", typeof(RectTransform));
         overheadBubbleObj.transform.SetParent(transform, false);
 
-        overheadBubbleRect = overheadBubbleObj.AddComponent<RectTransform>();
+        overheadBubbleRect = (RectTransform)overheadBubbleObj.transform;
         overheadBubbleRect.anchorMin = new Vector2(0.5f, 0.5f);
         overheadBubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
         overheadBubbleRect.pivot = new Vector2(0.5f, 0f); // Pivot di bagian bawah tengah balon
-        overheadBubbleRect.sizeDelta = new Vector2(520f, 95f); // Ukuran proporsional lega
+        overheadBubbleRect.sizeDelta = new Vector2(440f, 64f);
 
         overheadBg = overheadBubbleObj.AddComponent<Image>();
-        overheadBg.color = new Color(1f, 1f, 1f, 0.98f); // Putih bersih solid
+        overheadBg.sprite = HudStyle.Rounded(16f);
+        overheadBg.type = Image.Type.Sliced;
+        overheadBg.color = new Color(0.05f, 0.066f, 0.098f, 0.96f);
+        overheadBg.raycastTarget = false;
 
-        // Outline gelap tegas berkualitas tinggi
-        Outline bubbleOutline = overheadBubbleObj.AddComponent<Outline>();
-        bubbleOutline.effectColor = new Color(0.1f, 0.15f, 0.25f, 1f);
-        bubbleOutline.effectDistance = new Vector2(2.5f, -2.5f);
-
-        // Shadow lembut elegan di bawah balon
         Shadow bubbleShadow = overheadBubbleObj.AddComponent<Shadow>();
-        bubbleShadow.effectColor = new Color(0f, 0f, 0f, 0.35f);
+        bubbleShadow.effectColor = new Color(0f, 0f, 0f, 0.4f);
         bubbleShadow.effectDistance = new Vector2(0f, -4f);
 
-        // Segitiga penunjuk (Pointer Arrow) di bawah balon mengarah ke kepala NPC
-        GameObject arrowObj = new GameObject("BubblePointerArrow");
+        Image bubbleStroke = HudStyle.AddImage(overheadBubbleRect, "Stroke", HudStyle.RoundedStroke(16f, 1.2f),
+            new Color(HudStyle.Accent.r, HudStyle.Accent.g, HudStyle.Accent.b, 0.55f));
+        HudStyle.Stretch(bubbleStroke.rectTransform);
+
+        // Penunjuk kecil di bawah balon mengarah ke kepala NPC
+        GameObject arrowObj = new GameObject("BubblePointerArrow", typeof(RectTransform));
         arrowObj.transform.SetParent(overheadBubbleObj.transform, false);
-        arrowRect = arrowObj.AddComponent<RectTransform>();
+        arrowRect = (RectTransform)arrowObj.transform;
         arrowRect.anchorMin = new Vector2(0.5f, 0f);
         arrowRect.anchorMax = new Vector2(0.5f, 0f);
         arrowRect.pivot = new Vector2(0.5f, 0.5f);
-        arrowRect.sizeDelta = new Vector2(20f, 20f);
+        arrowRect.sizeDelta = new Vector2(14f, 14f);
         arrowRect.anchoredPosition = new Vector2(0f, 0f);
-        arrowRect.localRotation = Quaternion.Euler(0f, 0f, 45f); // Belah ketupat miring
+        arrowRect.localRotation = Quaternion.Euler(0f, 0f, 45f);
 
         Image arrowImg = arrowObj.AddComponent<Image>();
-        arrowImg.color = new Color(1f, 1f, 1f, 0.98f);
+        arrowImg.color = new Color(0.05f, 0.066f, 0.098f, 0.96f);
+        arrowImg.raycastTarget = false;
 
-        Outline arrowOutline = arrowObj.AddComponent<Outline>();
-        arrowOutline.effectColor = new Color(0.1f, 0.15f, 0.25f, 1f);
-        arrowOutline.effectDistance = new Vector2(1.8f, -1.8f);
-
-        // Teks di dalam Balon (Ukuran Seimbang, Bold, Tajam & Mudah Dibaca)
-        GameObject textObj = new GameObject("BubbleText");
+        GameObject textObj = new GameObject("BubbleText", typeof(RectTransform));
         textObj.transform.SetParent(overheadBubbleObj.transform, false);
-        RectTransform textRT = textObj.AddComponent<RectTransform>();
-        textRT.anchorMin = Vector2.zero;
-        textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = new Vector2(20f, 14f);
-        textRT.offsetMax = new Vector2(-20f, -14f);
+        RectTransform textRT = (RectTransform)textObj.transform;
+        HudStyle.Stretch(textRT, 18f, 12f, 18f, 12f);
 
         overheadText = textObj.AddComponent<Text>();
         overheadText.font = mainFont;
-        overheadText.fontSize = 17; // Ukuran proporsional, rapi dan pas di dalam balon
+        overheadText.fontSize = 15;
         overheadText.fontStyle = FontStyle.Bold;
-        overheadText.lineSpacing = 1.15f;
+        overheadText.lineSpacing = 1.12f;
         overheadText.alignment = TextAnchor.MiddleCenter;
-        overheadText.color = new Color(0.06f, 0.08f, 0.14f, 1f); // Hitam pekat kontras tinggi
+        overheadText.color = HudStyle.TextPrimary;
         overheadText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        overheadText.verticalOverflow = VerticalWrapMode.Truncate;
+        overheadText.verticalOverflow = VerticalWrapMode.Overflow;
+        overheadText.raycastTarget = false;
 
-        // 3. SUBTITLE BAR (Panel Dialog Bawah Layar Berukuran Pas & Elegan)
-        subtitleBarObj = new GameObject("SubtitleDialogueBar");
+        // 3. SUBTITLE BAR (panel dialog bawah layar: nama pembicara, isi dialog, petunjuk lanjut)
+        subtitleBarObj = new GameObject("SubtitleDialogueBar", typeof(RectTransform));
         subtitleBarObj.transform.SetParent(transform, false);
 
-        RectTransform subRT = subtitleBarObj.AddComponent<RectTransform>();
-        subRT.anchorMin = new Vector2(0.5f, 0.035f);
-        subRT.anchorMax = new Vector2(0.5f, 0.035f);
-        subRT.pivot = new Vector2(0.5f, 0f);
-        subRT.sizeDelta = new Vector2(740f, 85f); // Ukuran seimbang
+        RectTransform subRT = (RectTransform)subtitleBarObj.transform;
+        HudStyle.Place(subRT, new Vector2(0.5f, 0.035f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(700f, 108f));
 
         Image subBg = subtitleBarObj.AddComponent<Image>();
-        subBg.color = new Color(0.04f, 0.07f, 0.14f, 0.96f); // Panel gelap elegan kontras tinggi
+        subBg.sprite = HudStyle.Rounded(18f);
+        subBg.type = Image.Type.Sliced;
+        subBg.color = new Color(0.05f, 0.066f, 0.098f, 0.95f);
+        subBg.raycastTarget = false;
 
-        // Garis aksen vertikal di tepi kiri (Gaya RPG modern)
-        GameObject accentObj = new GameObject("AccentBar");
-        accentObj.transform.SetParent(subtitleBarObj.transform, false);
-        RectTransform accentRT = accentObj.AddComponent<RectTransform>();
-        accentRT.anchorMin = new Vector2(0f, 0f);
-        accentRT.anchorMax = new Vector2(0f, 1f);
-        accentRT.pivot = new Vector2(0f, 0.5f);
-        accentRT.sizeDelta = new Vector2(5f, 0f);
-        accentRT.anchoredPosition = Vector2.zero;
-        Image accentImg = accentObj.AddComponent<Image>();
-        accentImg.color = new Color(0.3f, 0.7f, 1f, 1f); // Cyan elektrik modern
-
-        // Outline border bercahaya biru modern
-        Outline subOutline = subtitleBarObj.AddComponent<Outline>();
-        subOutline.effectColor = new Color(0.35f, 0.55f, 0.95f, 0.85f);
-        subOutline.effectDistance = new Vector2(2f, -2f);
-
-        // Shadow lembut di sekeliling panel
         Shadow subShadow = subtitleBarObj.AddComponent<Shadow>();
-        subShadow.effectColor = new Color(0f, 0f, 0f, 0.6f);
-        subShadow.effectDistance = new Vector2(0f, -4f);
+        subShadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+        subShadow.effectDistance = new Vector2(0f, -6f);
+
+        Image subStroke = HudStyle.AddImage(subRT, "Stroke", HudStyle.RoundedStroke(18f, 1.2f), new Color(1f, 1f, 1f, 0.09f));
+        HudStyle.Stretch(subStroke.rectTransform);
+
+        // Titik aksen di depan nama pembicara
+        Image speakerDot = HudStyle.AddImage(subRT, "SpeakerDot", HudStyle.Circle(), HudStyle.Accent, false);
+        HudStyle.Place(speakerDot.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(24f, -23f), new Vector2(8f, 8f));
 
         // Nama Pembicara
-        GameObject spkObj = new GameObject("SpeakerName");
+        GameObject spkObj = new GameObject("SpeakerName", typeof(RectTransform));
         spkObj.transform.SetParent(subtitleBarObj.transform, false);
-        RectTransform spkRT = spkObj.AddComponent<RectTransform>();
-        spkRT.anchorMin = new Vector2(0f, 0.52f);
-        spkRT.anchorMax = new Vector2(1f, 1f);
-        spkRT.offsetMin = new Vector2(24f, 0f);
-        spkRT.offsetMax = new Vector2(-22f, -3f);
+        RectTransform spkRT = (RectTransform)spkObj.transform;
+        HudStyle.Place(spkRT, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -12f), new Vector2(360f, 22f));
 
         subtitleSpeakerText = spkObj.AddComponent<Text>();
         subtitleSpeakerText.font = mainFont;
-        subtitleSpeakerText.fontSize = 18; // Ukuran pas & jelas
+        subtitleSpeakerText.fontSize = 15;
         subtitleSpeakerText.fontStyle = FontStyle.Bold;
         subtitleSpeakerText.alignment = TextAnchor.MiddleLeft;
-        subtitleSpeakerText.color = new Color(1f, 0.85f, 0.18f, 1f); // Kuning keemasan cerah
-
-        Shadow spkShadow = spkObj.AddComponent<Shadow>();
-        spkShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
-        spkShadow.effectDistance = new Vector2(1.5f, -1.5f);
+        subtitleSpeakerText.color = HudStyle.Accent;
+        subtitleSpeakerText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        subtitleSpeakerText.raycastTarget = false;
 
         // Isi Dialog Subtitle
-        GameObject msgObj = new GameObject("SpeakerMessage");
+        GameObject msgObj = new GameObject("SpeakerMessage", typeof(RectTransform));
         msgObj.transform.SetParent(subtitleBarObj.transform, false);
-        RectTransform msgRT = msgObj.AddComponent<RectTransform>();
-        msgRT.anchorMin = new Vector2(0f, 0f);
-        msgRT.anchorMax = new Vector2(1f, 0.52f);
-        msgRT.offsetMin = new Vector2(24f, 8f);
-        msgRT.offsetMax = new Vector2(-22f, 0f);
+        RectTransform msgRT = (RectTransform)msgObj.transform;
+        HudStyle.Stretch(msgRT, 24f, 12f, 24f, 40f);
 
         subtitleMessageText = msgObj.AddComponent<Text>();
         subtitleMessageText.font = mainFont;
-        subtitleMessageText.fontSize = 18; // Ukuran proporsional, tajam & mudah dibaca
-        subtitleMessageText.fontStyle = FontStyle.Bold; // Dibuat tebal agar tetap sangat tegas terbaca
-        subtitleMessageText.lineSpacing = 1.2f;
-        subtitleMessageText.alignment = TextAnchor.MiddleLeft;
-        subtitleMessageText.color = Color.white; // Putih bersih
+        subtitleMessageText.fontSize = 15;
+        subtitleMessageText.fontStyle = FontStyle.Bold;
+        subtitleMessageText.lineSpacing = 1.15f;
+        subtitleMessageText.alignment = TextAnchor.UpperLeft;
+        subtitleMessageText.color = HudStyle.TextPrimary;
         subtitleMessageText.horizontalOverflow = HorizontalWrapMode.Wrap;
         subtitleMessageText.verticalOverflow = VerticalWrapMode.Overflow;
+        subtitleMessageText.raycastTarget = false;
 
-        Shadow msgShadow = msgObj.AddComponent<Shadow>();
-        msgShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
-        msgShadow.effectDistance = new Vector2(1.5f, -1.5f);
-
-        // Petunjuk Lanjut / Selesai Dialog
-        GameObject contObj = new GameObject("ContinuePrompt");
+        // Petunjuk Lanjut / Selesai Dialog (kanan atas panel, tidak menimpa isi dialog)
+        GameObject contObj = new GameObject("ContinuePrompt", typeof(RectTransform));
         contObj.transform.SetParent(subtitleBarObj.transform, false);
-        RectTransform contRT = contObj.AddComponent<RectTransform>();
-        contRT.anchorMin = new Vector2(1f, 0f);
-        contRT.anchorMax = new Vector2(1f, 0.45f);
-        contRT.pivot = new Vector2(1f, 0f);
-        contRT.offsetMin = new Vector2(-230f, 6f);
-        contRT.offsetMax = new Vector2(-20f, -2f);
+        RectTransform contRT = (RectTransform)contObj.transform;
+        HudStyle.Place(contRT, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -12f), new Vector2(250f, 22f));
 
         subtitleContinuePromptText = contObj.AddComponent<Text>();
         subtitleContinuePromptText.font = mainFont;
-        subtitleContinuePromptText.fontSize = 14;
+        subtitleContinuePromptText.fontSize = 12;
         subtitleContinuePromptText.fontStyle = FontStyle.Bold;
         subtitleContinuePromptText.alignment = TextAnchor.MiddleRight;
-        subtitleContinuePromptText.color = new Color(0.4f, 0.85f, 1f, 0.95f);
-        subtitleContinuePromptText.text = "Tekan [E] atau [Spasi] Lanjut ▶";
+        subtitleContinuePromptText.color = HudStyle.TextSecondary;
+        subtitleContinuePromptText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        subtitleContinuePromptText.raycastTarget = false;
+        subtitleContinuePromptText.text = "[E] / [Spasi] / Klik  Lanjut";
+
+        Image contIcon = HudStyle.AddImage(contObj.transform, "Chevron", HudStyle.Icon("chevron"), HudStyle.Accent, false);
+        HudStyle.Place(contIcon.rectTransform, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(14f, 14f));
         subtitleContinuePromptText.gameObject.SetActive(false);
 
         // Default sembunyikan saat mulai
@@ -391,18 +365,18 @@ public class NPCDialogueOverlay : MonoBehaviour
             instance.overheadText.text = line;
 
             // Hitung tinggi balon percakapan secara dinamis agar seluruh teks muat rapi di dalam kotak putih
-            float bubbleWidth = 520f;
-            float padH = 40f;
-            float padV = 28f;
+            float bubbleWidth = 440f;
+            float padH = 36f;
+            float padV = 34f;
 
             TextGenerationSettings settings = instance.overheadText.GetGenerationSettings(new Vector2(bubbleWidth - padH, 0f));
             float textH = instance.overheadText.cachedTextGeneratorForLayout.GetPreferredHeight(line, settings);
             if (textH <= 0f) textH = instance.overheadText.preferredHeight;
 
-            float bubbleHeight = Mathf.Clamp(textH + padV, 95f, 220f);
+            float bubbleHeight = Mathf.Clamp(textH + padV, 56f, 200f);
             instance.overheadBubbleRect.sizeDelta = new Vector2(bubbleWidth, bubbleHeight);
         }
-        if (instance.subtitleSpeakerText != null) instance.subtitleSpeakerText.text = "◆  " + speakerName;
+        if (instance.subtitleSpeakerText != null) instance.subtitleSpeakerText.text = speakerName;
         if (instance.subtitleMessageText != null) instance.subtitleMessageText.text = "\"" + line.Replace("\n", " ") + "\"";
 
         if (instance.overheadBubbleObj != null) instance.overheadBubbleObj.SetActive(true);
@@ -519,13 +493,13 @@ public class NPCDialogueOverlay : MonoBehaviour
         {
             if (targetSpeakerName.StartsWith("Rian", System.StringComparison.OrdinalIgnoreCase))
             {
-                subtitleSpeakerText.color = new Color(0.35f, 0.85f, 1f, 1f);
-                subtitleSpeakerText.text = "◆  " + targetSpeakerName + " [Pemain]";
+                subtitleSpeakerText.color = HudStyle.Teal;
+                subtitleSpeakerText.text = targetSpeakerName + " [Pemain]";
             }
             else
             {
-                subtitleSpeakerText.color = new Color(0.96f, 0.72f, 0.22f, 1f);
-                subtitleSpeakerText.text = "◆  " + targetSpeakerName;
+                subtitleSpeakerText.color = HudStyle.Accent;
+                subtitleSpeakerText.text = targetSpeakerName;
             }
         }
 
@@ -533,7 +507,7 @@ public class NPCDialogueOverlay : MonoBehaviour
         {
             subtitleContinuePromptText.gameObject.SetActive(true);
             bool isLast = currentSequentialIndex == currentSequentialLines.Length - 1;
-            subtitleContinuePromptText.text = isLast ? "Tekan [E] / [Spasi] / Klik Selesai ✔" : "Tekan [E] / [Spasi] / Klik Lanjut ▶";
+            subtitleContinuePromptText.text = isLast ? "[E] / [Spasi] / Klik  Selesai" : "[E] / [Spasi] / Klik  Lanjut";
         }
     }
 
