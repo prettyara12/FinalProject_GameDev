@@ -250,8 +250,8 @@ public class DeliveryHUD : MonoBehaviour
         dashboardObj = new GameObject("DeliveryDashboard", typeof(RectTransform));
         dashboardObj.transform.SetParent(transform, false);
         RectTransform dbRT = dashboardObj.GetComponent<RectTransform>();
-        HudStyle.Place(dbRT, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(W, H));
-        dbRT.localScale = new Vector3(0.8f, 0.8f, 1f); // ringkas agar seluruh teks muat di layar kecil
+        HudStyle.Place(dbRT, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(88f, -76f), new Vector2(W, H));
+        dbRT.localScale = new Vector3(0.85f, 0.85f, 1f); // ringkas + digeser ke kanan-bawah agar isinya tidak terpotong di tepi Game view
 
         // Bayangan lembut + panel kaca gelap
         Image shadow = HudStyle.AddImage(dbRT, "Shadow", HudStyle.Glow(16f, 18f), new Color(0f, 0f, 0f, 0.45f));
