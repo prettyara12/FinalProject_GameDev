@@ -36,36 +36,14 @@ public class CutsceneTrigger : MonoBehaviour
 
     private void Awake()
     {
-        if (cutsceneDirector == null)
-        {
-            cutsceneDirector = GetComponent<PlayableDirector>();
-        }
-
-        Collider col = GetComponent<Collider>();
-        if (col != null && !col.isTrigger)
-        {
-            col.isTrigger = true;
-        }
+        enabled = false;
+        playOnStart = false;
+        hasPlayed = true;
     }
 
     private void Start()
     {
-        EnsurePlayerHasController();
-
-        Camera mainCam = Camera.main;
-        if (mainCam != null)
-        {
-            var brain = mainCam.GetComponent<CinemachineBrain>();
-            if (brain != null && !playOnStart)
-            {
-                brain.enabled = false;
-            }
-        }
-
-        if (playOnStart && !hasPlayed)
-        {
-            StartCutscene();
-        }
+        enabled = false;
     }
 
     /// <summary>
@@ -105,107 +83,21 @@ public class CutsceneTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Mencoba memicu cutscene saat player menyentuh toko donat atau area trigger.
+    /// Mencoba memicu cutscene saat player menyentuh toko donat atau area trigger (dinonaktifkan).
     /// </summary>
     public void TryTrigger(GameObject hitGo)
     {
-        if (hasPlayed && playOnce) return;
-        if (hitGo == null) return;
-
-        bool isPlayer = hitGo.CompareTag(playerTag) ||
-                        hitGo.GetComponent<PlayerAvatarController>() != null ||
-                        hitGo.GetComponent<PlayerController>() != null ||
-                        hitGo.GetComponentInParent<PlayerController>() != null ||
-                        (hitGo.transform.root != null && hitGo.transform.root.CompareTag(playerTag)) ||
-                        (hitGo.transform.root != null && hitGo.transform.root.GetComponent<PlayerController>() != null);
-
-        if (isPlayer)
-        {
-            GameObject targetPlayer = hitGo.transform.root != null ? hitGo.transform.root.gameObject : hitGo;
-            StartCutscene(targetPlayer);
-        }
+        return;
     }
 
     private Coroutine cutsceneRoutine;
 
     /// <summary>
-    /// Starts the cutscene and freezes player controls.
+    /// Starts the cutscene and freezes player controls (dinonaktifkan).
     /// </summary>
     public void StartCutscene(GameObject player = null)
     {
-        if (hasPlayed && playOnce) return;
-
-        if (player != null)
-        {
-            playerObject = player;
-        }
-
-        EnsurePlayerHasController();
-
-        if (playerObject != null)
-        {
-            // Disable PlayerController during cutscene
-            if (playerController != null)
-            {
-                playerController.enabled = false;
-            }
-
-            // Hentikan langkah kaki animasi player agar berdiri tegak saat cutscene
-            Animator playerAnim = playerObject.GetComponent<Animator>();
-            if (playerAnim != null)
-            {
-                playerAnim.SetFloat("Speed_f", 0f);
-            }
-
-            // Disable workshop avatar motor during cutscene if present
-            objectMotor = playerObject.GetComponent<MovableObjectMotor>();
-            if (objectMotor != null)
-            {
-                objectMotor.enabled = false;
-            }
-        }
-
-        // Freeze workshop InputManager
-        InputManager.bCanPlayerMove = false;
-
-        // Temporarily disable ThirdPersonCamera so Cinemachine has full smooth control
-        Camera mainCam = Camera.main;
-        if (mainCam != null)
-        {
-            cachedThirdPersonCamera = mainCam.GetComponent<ThirdPersonCamera>();
-            if (cachedThirdPersonCamera != null)
-            {
-                cachedThirdPersonCamera.enabled = false;
-            }
-
-            cachedCinemachineBrain = mainCam.GetComponent<CinemachineBrain>();
-            if (cachedCinemachineBrain != null)
-            {
-                cachedCinemachineBrain.enabled = true;
-            }
-        }
-
-        if (cutsceneDirector != null)
-        {
-            hasPlayed = true;
-            cutsceneDirector.stopped += OnCutsceneStopped;
-            if (cutsceneDirector.state != PlayState.Playing)
-            {
-                cutsceneDirector.time = 0.0;
-                cutsceneDirector.Play();
-            }
-
-            if (cutsceneRoutine != null)
-            {
-                StopCoroutine(cutsceneRoutine);
-            }
-            cutsceneRoutine = StartCoroutine(CutsceneWatchdog());
-        }
-        else
-        {
-            Debug.LogWarning("[CutsceneTrigger] No PlayableDirector assigned to cutscene trigger.", this);
-            RestorePlayerControls();
-        }
+        return;
     }
 
     private System.Collections.IEnumerator CutsceneWatchdog()

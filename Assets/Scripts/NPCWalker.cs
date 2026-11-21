@@ -365,6 +365,20 @@ public class NPCWalker : MonoBehaviour
         groundY = transform.position.y;
         baseFacingRotation = transform.rotation;
 
+        // Auto-scale parameter untuk karakter berskala 1.0 (Level 2 Bandara) vs skala 0.1 (Scene 1 Kota)
+        if (transform.lossyScale.y > 0.5f)
+        {
+            if (speechBubbleHeight < 1.0f) speechBubbleHeight = 2.1f;
+            if (interactionDistance < 2.5f) interactionDistance = 4.5f;
+            if (wanderRadius < 5.0f) wanderRadius = 12.0f;
+            if (maxDistanceFromStart < 15.0f) maxDistanceFromStart = 20.0f;
+            if (walkSpeed < 1.0f) walkSpeed = 2.6f;
+            if (runSpeed < 2.0f) runSpeed = 5.5f;
+            if (obstacleDetectionDistance < 1.0f) obstacleDetectionDistance = 2.2f;
+            if (bodyRadius < 0.2f) bodyRadius = 0.35f;
+            if (waypointReachDistance < 0.3f) waypointReachDistance = 0.8f;
+        }
+
         idleActions = new int[]
         {
             AnimCheckWatch,
@@ -675,7 +689,8 @@ public class NPCWalker : MonoBehaviour
         // 1. Deteksi Rintangan di Depan (Raycast / SphereCast Sensor)
         if (enableObstacleAvoidance)
         {
-            Vector3 sensorOrigin = currentPos + Vector3.up * 0.09f;
+            float sensorHeight = transform.lossyScale.y > 0.5f ? 0.9f : 0.09f;
+            Vector3 sensorOrigin = currentPos + Vector3.up * sensorHeight;
             Collider myCol = GetComponent<Collider>();
 
             // Sensor Depan
@@ -686,7 +701,8 @@ public class NPCWalker : MonoBehaviour
                 {
                     // Cek jika rintangan adalah sesama NPC
                     NPCWalker otherWalker = hitForward.collider.GetComponent<NPCWalker>();
-                    if (otherWalker != null && hitForward.distance < 0.22f)
+                    float yieldDist = transform.lossyScale.y > 0.5f ? 1.8f : 0.22f;
+                    if (otherWalker != null && hitForward.distance < yieldDist)
                     {
                         StartCoroutine(DoYieldPause(0.8f));
                         return;
@@ -707,9 +723,13 @@ public class NPCWalker : MonoBehaviour
                     {
                         finalMoveDirection = Vector3.Slerp(moveDirection, leftDir, 0.6f).normalized;
                     }
-                    else if (hitForward.distance < 0.12f)
+                    else
                     {
-                        isPathBlocked = true;
+                        float minStopDist = transform.lossyScale.y > 0.5f ? 1.0f : 0.12f;
+                        if (hitForward.distance < minStopDist)
+                        {
+                            isPathBlocked = true;
+                        }
                     }
                 }
             }

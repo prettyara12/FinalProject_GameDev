@@ -18,6 +18,25 @@ public static class PlayerBootstrap
     private const string AnimatorControllerPath = 
         "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Animations/SimpleCharacter_5.0.controller";
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    public static void InitializeSceneLifecycleListener()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedRuntime;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedRuntime;
+    }
+
+    private static void OnSceneLoadedRuntime(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        if (scene.name.Contains("Level 2") || scene.name == "Level 2 saya")
+        {
+            SetupAirportLevel2Saya();
+        }
+        else if (scene.name == "Module 2" || scene.name == "Module 2_Stage2")
+        {
+            SetupGameProject();
+        }
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     public static void AutoSetupOnPlay()
     {
@@ -43,7 +62,24 @@ public static class PlayerBootstrap
             if (activeScene.name.Contains("Level 2") || activeScene.name == "Level 2 saya")
             {
                 SetupAirportLevel2Saya();
-                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene);
+                Debug.Log("[PlayerBootstrap] Level 2 Bandara berhasil dikonfigurasi & disimpan otomatis ke file scene!");
+            }
+            else
+            {
+                string airportPath = "Assets/Scenes/Level 2 saya/Level 2 saya.unity";
+                if (System.IO.File.Exists(airportPath))
+                {
+                    string sceneContent = System.IO.File.ReadAllText(airportPath);
+                    if (!sceneContent.Contains("AirportFlyingAirplane"))
+                    {
+                        var airportScene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(airportPath, UnityEditor.SceneManagement.OpenSceneMode.Additive);
+                        SetupAirportLevel2Saya();
+                        UnityEditor.SceneManagement.EditorSceneManager.SaveScene(airportScene);
+                        UnityEditor.SceneManagement.EditorSceneManager.CloseScene(airportScene, true);
+                        Debug.Log("[PlayerBootstrap] Level 2 Bandara berhasil dibake secara additive & disimpan!");
+                    }
+                }
             }
         };
 
@@ -52,7 +88,8 @@ public static class PlayerBootstrap
             if (scene.name.Contains("Level 2") || scene.name == "Level 2 saya")
             {
                 SetupAirportLevel2Saya();
-                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+                Debug.Log("[PlayerBootstrap] Level 2 Bandara berhasil dikonfigurasi saat scene dibuka & disimpan!");
             }
         };
     }
@@ -63,7 +100,6 @@ public static class PlayerBootstrap
         string[] subScenePaths = new string[]
         {
             "Assets/Scenes/Level 2 saya/Level 2 saya.unity",
-            "Assets/Develop 3D Mobile Games in Unity/Assets/QuizAdventure/Scenes/Level 2 saya/Level 2 saya.unity",
             "Assets/Scenes/SubScenes/SubScene_0_0.unity",
             "Assets/Scenes/SubScenes/SubScene_0_1.unity",
             "Assets/Scenes/SubScenes/SubScene_0_2.unity",
@@ -77,6 +113,15 @@ public static class PlayerBootstrap
         };
 
         bool modified = false;
+
+        // Bersihkan scene usang / duplikat Level 2 QuizAdventure jika ada
+        int obsoleteIdx = scenes.FindIndex(s => s.path.Contains("QuizAdventure") && s.path.Contains("Level 2 saya"));
+        if (obsoleteIdx >= 0)
+        {
+            scenes.RemoveAt(obsoleteIdx);
+            modified = true;
+        }
+
         foreach (var path in subScenePaths)
         {
             GUID guid = AssetDatabase.GUIDFromAssetPath(path);
@@ -97,7 +142,7 @@ public static class PlayerBootstrap
         {
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
-            Debug.Log("[PlayerBootstrap] EditorBuildSettings.scenes berhasil disinkronkan untuk seluruh 9 SubScenes!");
+            Debug.Log("[PlayerBootstrap] EditorBuildSettings.scenes berhasil disinkronkan untuk Level 2 Bandara & SubScenes!");
         }
     }
 
@@ -113,21 +158,49 @@ public static class PlayerBootstrap
         }
     }
 
-    [MenuItem("Tools/✈️ Setup Level 2 (Airport Delivery Mission)", false, -1)]
+    [MenuItem("Tools/🏆 Debug: Trigger Win Level 1 (Kurir Terpercaya)", false, -2)]
+    public static void MenuDebugTriggerWinLevel1()
+    {
+        if (!Application.isPlaying)
+        {
+            EditorUtility.DisplayDialog("Fitur Khusus Play Mode",
+                "Silakan klik tombol Play (▶) di Unity Editor terlebih dahulu!\n\n" +
+                "Saat game sedang berjalan, Anda bisa menjalankan menu ini ATAU menekan tombol [F9] pada keyboard untuk langsung memicu kemenangan Level 1 dan memunculkan tombol 'Lanjut ke Level 2 (Bandara)'.",
+                "OK");
+            return;
+        }
+
+        if (DeliveryGameManager.Instance != null)
+        {
+            DeliveryGameManager.Instance.DebugTriggerInstantWin();
+        }
+        else
+        {
+            Debug.LogWarning("[DEBUG] DeliveryGameManager tidak ditemukan di scene saat ini.");
+        }
+    }
+
+    [MenuItem("Tools/✈️ Setup & Simpan Level 2 Bandara (Bake Colliders & Pesawat Terbang)", false, -1)]
     public static void MenuSetupAirportLevel2()
     {
+        var activeScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+        if (!activeScene.name.Contains("Level 2") && activeScene.name != "Level 2 saya")
+        {
+            string airportScenePath = "Assets/Scenes/Level 2 saya/Level 2 saya.unity";
+            if (System.IO.File.Exists(airportScenePath))
+            {
+                activeScene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(airportScenePath);
+            }
+        }
+
         SetupAirportLevel2Saya();
-        MarkSceneDirtySafe();
-        EditorUtility.DisplayDialog("Setup Level 2 Bandara Siap!",
-            "Karakter Rian dan alur pengantaran 5 NPC Bandara berhasil dikonfigurasi:\n\n" +
-            "1. Rian (kurir) -> Pak Beni 2 (Pemberi Tugas)\n" +
-            "2. Naya 2 (Paket 1 - Dokumen Penerbangan)\n" +
-            "3. Dimas 2 (Paket 2 - Suku Cadang Bagasi)\n" +
-            "4. Tukang Parkir 2 (Paket 3 - Rompi & Bendera Apron)\n" +
-            "5. Pak Joko 2 (Paket 4 - Logistik Kargo)\n" +
-            "6. Clara 2 (Paket 5 - Cinderamata)\n" +
-            "7. Balik ke Pak Beni 2 -> Misi Selesai & Game Berakhir (Tamat)!\n\n" +
-            "Semua karakter menggunakan penempatan manual Anda tanpa duplikasi.",
+        UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene);
+        EditorUtility.DisplayDialog("Setup Level 2 Bandara Sukses!",
+            "Level 2 Bandara telah berhasil dikonfigurasi dan disimpan permanen ke file scene:\n\n" +
+            "✓ Pesawat terbang (Plane01) bergerak terbang maju dan memutari langit bandara.\n" +
+            "✓ Seluruh kendaraan, tangga, gedung, hanggar, dan pagar memiliki BoxCollider solid.\n" +
+            "✓ Seluruh karakter & NPC memiliki CapsuleCollider solid anti-tembus.\n" +
+            "✓ Langit biru dan sistem misi siap dimainkan!",
             "OK");
     }
 
@@ -545,11 +618,9 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         // 1. Bersihkan elemen tugas modul lama dan karakter tersembunyi
         CleanupLegacyModuleObjects();
 
-        // 2. Posisikan Rian (Player) persis seperti pada screenshot sebelumnya (di depan Mall)
+        // 2. Pertahankan posisi dan rotasi Rian (Player) persis seperti yang diatur pengguna di Scene
         if (playerGo != null)
         {
-            playerGo.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
-            playerGo.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
             PlayerController pc = playerGo.GetComponent<PlayerController>();
             if (pc != null)
             {
@@ -557,7 +628,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
                 pc.SetMovementFrozen(true);
             }
 
-            // Arahkan kamera langsung ke belakang Rian di depan mall
+            // Arahkan kamera langsung ke belakang Rian sesuai posisi & rotasinya di scene
             SetupCamera(playerGo);
         }
 
@@ -586,11 +657,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         }
         DeliveryGameManager gm = gmGo.GetComponent<DeliveryGameManager>();
         if (gm == null) gm = gmGo.AddComponent<DeliveryGameManager>();
+        if (gm != null) gm.totalTimeLimit = 360f; // 6 menit (Scene 1 & Scene 2)
 
         DeliveryHUD.EnsureInstance();
         NPCDialogueOverlay.EnsureInstance();
         GameAudioManager.EnsureInstance();
-        EnsureRianDeliveryCutsceneSystem(playerGo);
+        // Cutscene dihapus: EnsureRianDeliveryCutsceneSystem tidak lagi dijalankan
 
         Debug.Log("[PlayerBootstrap] ⭐ Game 'Kurir Terakhir' Berhasil Dikonfigurasi Lengkap!");
     }
@@ -763,13 +835,15 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             ThirdPersonCamera tpc = cam.GetComponent<ThirdPersonCamera>();
             if (tpc == null) tpc = cam.gameObject.AddComponent<ThirdPersonCamera>();
             tpc.target = playerGo.transform;
-            tpc.targetHeight = 1.5f;
-            tpc.distance = 6.0f;
-            tpc.height = 2.0f;
+            tpc.targetHeight = 1.6f;
+            tpc.distance = 13.5f;
+            tpc.height = 4.5f;
             tpc.followRearAngle = true;
             tpc.collisionRadius = 0.25f;
             tpc.viewMode = ThirdPersonCamera.CameraViewMode.ThirdPersonFollow;
             pc.playerCamera = cam;
+            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.backgroundColor = new Color(0.192f, 0.302f, 0.475f, 1f);
             if (cam.GetComponent<AudioListener>() == null) cam.gameObject.AddComponent<AudioListener>();
         }
 
@@ -948,9 +1022,10 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (gmGo == null) gmGo = new GameObject("DeliveryGameManager");
         DeliveryGameManager gm = gmGo.GetComponent<DeliveryGameManager>();
         if (gm == null) gm = gmGo.AddComponent<DeliveryGameManager>();
+        if (gm != null) gm.totalTimeLimit = 360f; // 6 menit (Scene 1 & Scene 2)
         if (gm != null)
         {
-            gm.totalTimeLimit = 600f; // 10 menit
+            gm.totalTimeLimit = 360f; // 6 menit (Scene 1 & Scene 2)
         }
 
         // Bersihkan objek radar usang di root scene jika ada
@@ -965,6 +1040,14 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         DeliveryHUD.EnsureInstance();
 
         DeliveryRadarHUD radar = Object.FindAnyObjectByType<DeliveryRadarHUD>();
+        if (radar == null)
+        {
+            DeliveryHUD hud = DeliveryHUD.Instance;
+            if (hud != null)
+            {
+                radar = DeliveryRadarHUD.Ensure(hud.transform, null);
+            }
+        }
         if (radar != null)
         {
             radar.radarWorldRange = 60f;
@@ -974,9 +1057,22 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
+        // 4. Setup Animasi 1 Pesawat Terbang Melintas di Langit Bandara (Plane01 Looping Clockwise Flyover)
+        EnsureAirportFlyingAirplane();
+
+        // 5. Setup Rintangan Fisik Solid Bandara (BoxCollider pada seluruh kendaraan, gedung, props, pagar)
+        int colliderCount = EnsureAirportEnvironmentColliders();
+        EnsureAllCharacterColliders();
+
+        // 6. Setup Langit Biru Cerah Bandara (Skybox & Camera Background)
+        EnsureAirportSky();
+
+        // 7. Setup 3 NPC Pejalan Kaki Bandara (Wandering & Menyapa Rian saat berpapasan)
+        EnsureAirportWanderingNPCs(playerGo);
+
         GameAudioManager.EnsureInstance();
 
-        Debug.Log("[PlayerBootstrap] Level 2 Bandara berhasil dikonfigurasi! Rian dan 6 NPC siap tanpa duplikasi!");
+        Debug.Log($"[PlayerBootstrap] Level 2 Bandara berhasil dikonfigurasi! Rian, 6 NPC Misi, 3 NPC Pejalan Kaki, {colliderCount} solid colliders, Pesawat Terbang, dan Langit Biru siap!");
     }
 
     private static void SetupAirportRecipientNPC(
@@ -1019,8 +1115,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         npcGo.name = exactName;
         npcGo.SetActive(true);
 
-        // Pastikan bukan Player
-        if (npcGo.CompareTag("Player")) npcGo.tag = "Untagged";
+        // Pastikan berlabel tag NPC agar PlayerController mendeteksi sebagai rintangan padat
+        npcGo.tag = "NPC";
         PlayerController pc = npcGo.GetComponent<PlayerController>();
         if (pc != null) DestroyComponentSafe(pc);
         CharacterController cc = npcGo.GetComponent<CharacterController>();
@@ -1028,14 +1124,15 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         NPCWalker walker = npcGo.GetComponent<NPCWalker>();
         if (walker != null) DestroyComponentSafe(walker);
 
-        // CapsuleCollider
+        // CapsuleCollider padat (solid, non-trigger) agar karakter Rian tidak bisa menembus NPC
         CapsuleCollider col = npcGo.GetComponent<CapsuleCollider>();
         if (col == null) col = npcGo.AddComponent<CapsuleCollider>();
         col.height = 1.8f;
         col.center = new Vector3(0f, 0.9f, 0f);
-        col.radius = 0.35f;
+        col.radius = 0.38f;
+        col.isTrigger = false;
 
-        // Rigidbody
+        // Rigidbody Kinematic agar stabil di posisinya
         Rigidbody rb = npcGo.GetComponent<Rigidbody>();
         if (rb == null) rb = npcGo.AddComponent<Rigidbody>();
         rb.isKinematic = true;
@@ -1126,6 +1223,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         if (gmGo == null) gmGo = new GameObject("DeliveryGameManager");
         DeliveryGameManager gm = gmGo.GetComponent<DeliveryGameManager>();
         if (gm == null) gm = gmGo.AddComponent<DeliveryGameManager>();
+        if (gm != null) gm.totalTimeLimit = 360f; // 6 menit (Scene 1 & Scene 2)
 
         DeliveryHUD.EnsureInstance();
         NPCDialogueOverlay.EnsureInstance();
@@ -1150,7 +1248,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             {
                 "Rian! Luar biasa kamu berhasil melewati pengiriman pertama.",
                 "Tapi sekarang giliran tantangan sesungguhnya: Kota ini memiliki tata letak jalan koridor baru dan toko-toko berada di lokasi berbeda!",
-                "Kamu harus mengantarkan 5 paket baru ke pelanggan di lokasi yang berbeda. Waktumu 7 menit! Mulailah dengan mengantar paket pertama ke Clara di Coffee Shop Koridor Utara sebelah barat."
+                "Kamu harus mengantarkan 5 paket baru ke pelanggan di lokasi yang berbeda. Waktumu 6 menit! Mulailah dengan mengantar paket pertama ke Clara di Coffee Shop Koridor Utara sebelah barat."
             },
             new string[]
             {
@@ -1159,7 +1257,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             },
             new string[]
             {
-                "Rian, cepat selesaikan pengiriman paket Level 2 sebelum batas waktu 7 menitmu habis!"
+                "Rian, cepat selesaikan pengiriman paket Level 2 sebelum batas waktu 6 menitmu habis!"
             },
             playerGo
         );
@@ -1511,7 +1609,12 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             "DollyTrack_DonutShop",
             "CM_vcam_Wide",
             "CM_vcam_Dolly",
-            "CM_vcam_Waitress"
+            "CM_vcam_Waitress",
+            "RianDeliveryCutscene_System",
+            "[MODULE8_CUTSCENE]",
+            "CM_Delivery_Shot1_PakBeni",
+            "CM_Delivery_Shot2_ClaraCoffee",
+            "CM_Delivery_Shot3_CityStreet"
         };
 
         foreach (var name in oldNames)
@@ -1531,13 +1634,29 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             ssm.SetActive(false);
         }
 
-        // Bersihkan karakter tersembunyi di antara gedung atau duplikat Tourist
+        Camera mainCam = Camera.main;
+        if (mainCam == null) mainCam = Object.FindAnyObjectByType<Camera>();
+        if (mainCam != null)
+        {
+            var brain = mainCam.GetComponent<Unity.Cinemachine.CinemachineBrain>();
+            if (brain != null) brain.enabled = false;
+        }
+
+        // Bersihkan karakter tersembunyi di antara gedung atau duplikat Tourist (JANGAN PERNAH menyentuh Player / Rian)
         GameObject[] allObjs = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var obj in allObjs)
         {
             if (obj == null) continue;
+
+            // Proteksi mutlak: Jangan pernah menghapus karakter pemain Rian
+            if (obj.CompareTag("Player") || obj.GetComponent<PlayerController>() != null ||
+                obj.name == "Rian" || obj.name.StartsWith("Rian") || obj.name.Contains("Trucker"))
+            {
+                continue;
+            }
+
             string n = obj.name;
-            if (n.Contains("Tourist") || n == "Rian (Kurir)" || n == "Rian")
+            if (n.Contains("Tourist"))
             {
                 DestroyGameObjectSafe(obj);
                 continue;
@@ -1545,7 +1664,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             Vector3 pos = obj.transform.position;
             if (pos.x >= 299f && pos.x <= 305f && pos.z >= -15f && pos.z <= -9f)
             {
-                if (n.Contains("Tourist") || n.Contains("Citizen") || obj.GetComponent<PlayerController>() != null)
+                if (n.Contains("Tourist") || n.Contains("Citizen"))
                 {
                     DestroyGameObjectSafe(obj);
                 }
@@ -1569,7 +1688,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             {
                 "Rian! Ini lima paket terakhir untuk malam ini. Semua toko dan apartemen akan segera tutup.",
                 "Label alamat beberapa paket agak basah terkena air hujan. Kamu harus membaca papan nama toko dan bertanya pada warga sekitar.",
-                "Waktumu 10 menit! Paket pertama harus sampai ke pegawai kedai kopi (Coffee Shop) di trotoar timur sebelum mereka tutup."
+                "Waktumu 6 menit! Paket pertama harus sampai ke pegawai kedai kopi (Coffee Shop) di trotoar timur sebelum mereka tutup."
             },
             new string[]
             {
@@ -1708,7 +1827,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             new string[]
             {
                 "Halo Mas Rian! Syukurlah paket dokumen pentingku sampai malam ini juga. Terima kasih banyak atas kerja kerasmu!",
-                "Semua paketmu sudah selesai terkirim! Sekarang cepatlah kembali ke Pak Beni di area parkir sebelum batas waktu 10 menitmu habis!"
+                "Semua paketmu sudah selesai terkirim! Sekarang cepatlah kembali ke Pak Beni di area parkir sebelum batas waktu 6 menitmu habis!"
             },
             new string[]
             {
@@ -2146,10 +2265,15 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
 
         if (playerGo == null)
         {
-            playerGo = new GameObject("SimplePeople_Trucker_Black");
+            playerGo = new GameObject("Rian");
+            playerGo.transform.position = new Vector3(311.26f, 0.02f, 4.94f);
+            playerGo.transform.rotation = Quaternion.Euler(0f, -45f, 0f);
         }
 
-        playerGo.name = "SimplePeople_Trucker_Black";
+        if (string.IsNullOrEmpty(playerGo.name))
+        {
+            playerGo.name = "Rian";
+        }
         playerGo.tag = "Player";
         playerGo.SetActive(true);
 
@@ -2157,7 +2281,8 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         foreach (var go in allGo)
         {
             if (go == null || go == playerGo) continue;
-            if (go.name.Contains("Tourist") || go.name == "Rian (Kurir)" || go.name == "Rian")
+            if (go.CompareTag("Player") || go.name == "Rian" || go.name.StartsWith("Rian") || go.name.Contains("Trucker")) continue;
+            if (go.name.Contains("Tourist"))
             {
                 DestroyGameObjectSafe(go);
                 continue;
@@ -2165,7 +2290,7 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             Vector3 p = go.transform.position;
             if (p.x >= 299f && p.x <= 305f && p.z >= -15f && p.z <= -9f)
             {
-                if (go.GetComponent<CharacterController>() != null || go.GetComponent<PlayerController>() != null)
+                if (go.name.Contains("Tourist") || go.name.Contains("Citizen"))
                 {
                     DestroyGameObjectSafe(go);
                 }
@@ -2186,18 +2311,13 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
 
-        // Pastikan posisi berada di depan mall (sesuai foto referensi pemain)
+        // Pertahankan posisi & rotasi Rian 100% persis sesuai dengan yang diatur pengguna di Scene
         Vector3 currentPos = playerGo.transform.position;
-        if (currentPos.z < -8.0f && currentPos.x < 305.0f)
+        if (float.IsNaN(currentPos.x) || float.IsNaN(currentPos.y) || float.IsNaN(currentPos.z))
         {
-            // Jika sebelumnya berada di lorong antara gedung, kembalikan ke depan mall
-            currentPos = new Vector3(310.18f, 0.02f, 4.34f);
+            currentPos = new Vector3(311.26f, 0.02f, 4.94f);
+            playerGo.transform.position = currentPos;
         }
-        else if (currentPos.y < 0.0f || float.IsNaN(currentPos.y))
-        {
-            currentPos.y = 0.02f;
-        }
-        playerGo.transform.position = currentPos;
         playerGo.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
         // Pastikan hanya sub-mesh Trucker yang aktif (sesuai foto referensi)
@@ -3414,6 +3534,449 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
             }
         }
         return count;
+    }
+
+    /// <summary>
+    /// Memastikan seluruh objek di Bandara Level 2 (kendaraan, truk bahan bakar, tangga pesawat, pesawat darat,
+    /// gedung terminal, hanggar, pagar, dan props) memiliki BoxCollider padat (solid)
+    /// sehingga karakter Rian tidak bisa menembus benda apapun di sekitarnya.
+    /// </summary>
+    public static int EnsureAirportEnvironmentColliders()
+    {
+        int count = 0;
+        MeshRenderer[] renderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Exclude);
+        foreach (var mr in renderers)
+        {
+            if (mr == null) continue;
+            GameObject go = mr.gameObject;
+            if (go == null) continue;
+
+            // Abaikan Rian, karakter NPC, kamera, lampu, dan pesawat yang sedang terbang di langit
+            if (go.CompareTag("Player") || go.CompareTag("NPC")) continue;
+            if (go.GetComponent<AirportFlyingAirplane>() != null || go.GetComponentInParent<AirportFlyingAirplane>() != null || go.name.Contains("Plane01") || go.name.Contains("Flying")) continue;
+            if (go.GetComponent<Animator>() != null || go.GetComponentInParent<Animator>() != null) continue;
+            if (go.name.Contains("Camera") || go.name.Contains("Light")) continue;
+
+            string n = go.name.ToLower();
+            string p = go.transform.parent != null ? go.transform.parent.name.ToLower() : "";
+
+            // Abaikan permukaan lantai aspal / runway / ground datar (tebal <= 8 cm)
+            bool isGroundOrFloor = 
+                n.Contains("road") || n.Contains("jalan") || n.Contains("runway") || 
+                n.Contains("ground_concrete") || n.Contains("concrete_ground") ||
+                n.Contains("asphalt") || n.Contains("grass") || n.Contains("floor") ||
+                n.Contains("tile") || n.Contains("marking") || n.Contains("line") ||
+                p.Contains("runway") || p.Contains("grass") || p.Contains("ground");
+
+            if (isGroundOrFloor && mr.bounds.size.y <= 0.08f)
+            {
+                continue;
+            }
+
+            // Seluruh rintangan fisik bandara
+            bool isAirportObstacle =
+                p.Contains("vehicles") || p.Contains("buildings") || p.Contains("props") || p.Contains("fence") ||
+                n.Contains("veh_") || n.Contains("plane") || n.Contains("truck") || n.Contains("car") ||
+                n.Contains("bus") || n.Contains("van") || n.Contains("fuel") || n.Contains("stair") ||
+                n.Contains("cart") || n.Contains("trailer") || n.Contains("tug") || n.Contains("tractor") ||
+                n.Contains("building") || n.Contains("terminal") || n.Contains("hangar") || n.Contains("tower") ||
+                n.Contains("fence") || n.Contains("gate") || n.Contains("prop_") || n.Contains("barrier") ||
+                n.Contains("cone") || n.Contains("chock") || n.Contains("light") || n.Contains("pole") ||
+                mr.bounds.size.y >= 0.08f;
+
+            if (isAirportObstacle)
+            {
+                Collider col = go.GetComponent<Collider>();
+                if (col == null)
+                {
+                    MeshFilter mf = go.GetComponent<MeshFilter>();
+                    BoxCollider box = go.AddComponent<BoxCollider>();
+                    if (mf != null && mf.sharedMesh != null)
+                    {
+                        box.center = mf.sharedMesh.bounds.center;
+                        box.size = mf.sharedMesh.bounds.size;
+                    }
+                    col = box;
+                    count++;
+                }
+                if (col != null)
+                {
+                    col.isTrigger = false;
+                }
+            }
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Memastikan 1 pesawat komersial (Plane01) yang ditempatkan di scene sedang terbang melintas
+    /// di langit bandara Level 2 secara looping searah jarum jam (clockwise).
+    /// </summary>
+    public static GameObject EnsureAirportFlyingAirplane()
+    {
+        AirportFlyingAirplane existingComp = Object.FindAnyObjectByType<AirportFlyingAirplane>();
+        if (existingComp != null)
+        {
+            existingComp.gameObject.SetActive(true);
+            existingComp.enabled = true;
+            existingComp.flightCenter = new Vector3(35f, 13f, 130f);
+            existingComp.radiusX = 95f;
+            existingComp.radiusZ = 120f;
+            existingComp.cruiseAltitude = 13f;
+            existingComp.flightSpeed = 26f;
+            existingComp.maxBankAngle = 18f;
+            existingComp.altitudeWobble = 1.0f;
+            existingComp.retractLandingGear = false;
+            existingComp.CleanFlightColliders();
+            existingComp.UpdateFlightTransform(0f);
+            return existingComp.gameObject;
+        }
+
+        // Cari Plane01 yang sudah ditempatkan di scene oleh user
+        GameObject planeGo = null;
+        GameObject[] allGos = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var go in allGos)
+        {
+            if (go == null) continue;
+            if (go.name == "AirportFlyingAirplane" || 
+                (go.name.StartsWith("Plane01") && (go.transform.position.y > 2f || go.transform.localPosition.y > 2f)))
+            {
+                planeGo = go;
+                break;
+            }
+        }
+
+        // Fallback jika belum ada di scene
+        if (planeGo == null)
+        {
+            foreach (var go in allGos)
+            {
+                if (go != null && go.name.StartsWith("Plane01"))
+                {
+                    planeGo = go;
+                    break;
+                }
+            }
+        }
+
+#if UNITY_EDITOR
+        if (planeGo == null)
+        {
+            string prefabPath = "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleAirport/_Prefabs/Vehicles/Plane01.prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab != null)
+            {
+                planeGo = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            }
+        }
+#endif
+        if (planeGo == null)
+        {
+            planeGo = new GameObject("Plane01_Flying");
+        }
+
+        planeGo.name = "Plane01_Flying";
+        planeGo.SetActive(true);
+        // Lepas dari parent Vehicles agar independen di koordinat world
+        planeGo.transform.SetParent(null, true);
+
+        // Bersihkan BoxCollider yang mungkin terpasang oleh setup lingkungan
+        Collider[] existingCols = planeGo.GetComponentsInChildren<Collider>(true);
+        foreach (var col in existingCols)
+        {
+            if (col != null)
+            {
+                col.isTrigger = true;
+            }
+        }
+
+        AirportFlyingAirplane flyComp = planeGo.GetComponent<AirportFlyingAirplane>();
+        if (flyComp == null) flyComp = planeGo.AddComponent<AirportFlyingAirplane>();
+
+        flyComp.enabled = true;
+        flyComp.flightCenter = new Vector3(35f, 13f, 130f);
+        flyComp.radiusX = 95f;
+        flyComp.radiusZ = 120f;
+        flyComp.cruiseAltitude = 13f;
+        flyComp.flightSpeed = 26f;
+        flyComp.maxBankAngle = 18f;
+        flyComp.altitudeWobble = 1.0f;
+        flyComp.retractLandingGear = false;
+        flyComp.CleanFlightColliders();
+        flyComp.UpdateFlightTransform(0f);
+
+        return planeGo;
+    }
+
+    /// <summary>
+    /// Memastikan langit di Level 2 Bandara berwarna biru cerah alami:
+    /// - Memasang Default-Skybox (Skybox/Procedural) pada RenderSettings.
+    /// - Mengatur warna latar kamera (Camera Clear Flags) ke Skybox dengan fallback biru langit cerah.
+    /// - Menyelaraskan Ambient Mode ke Skybox agar pencahayaan lingkungan bernuansa siang cerah.
+    /// </summary>
+    public static void EnsureAirportSky()
+    {
+        Camera cam = Camera.main;
+        if (cam != null)
+        {
+            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.backgroundColor = new Color(0.192f, 0.302f, 0.475f, 1f);
+        }
+
+#if UNITY_EDITOR
+        if (RenderSettings.skybox == null)
+        {
+            Material defaultSkybox = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Skybox.mat");
+            if (defaultSkybox != null)
+            {
+                RenderSettings.skybox = defaultSkybox;
+            }
+        }
+#endif
+
+        if (RenderSettings.skybox == null)
+        {
+            Shader skyShader = Shader.Find("Skybox/Procedural");
+            if (skyShader != null)
+            {
+                Material skyMat = new Material(skyShader);
+                skyMat.name = "AirportSkybox_Procedural";
+                skyMat.SetColor("_SkyTint", new Color(0.5f, 0.75f, 1f, 1f));
+                skyMat.SetColor("_GroundColor", new Color(0.37f, 0.35f, 0.35f, 1f));
+                skyMat.SetFloat("_AtmosphereThickness", 1.0f);
+                skyMat.SetFloat("_Exposure", 1.1f);
+                RenderSettings.skybox = skyMat;
+            }
+        }
+
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Skybox;
+        RenderSettings.ambientIntensity = 1.0f;
+    }
+
+    /// <summary>
+    /// Setup 3 NPC Pejalan Kaki Bandara Level 2 ("Level 2 saya"):
+    /// 1. Penumpang Bandara (HouseWife_White) di area gate/tangga pesawat (boarding stairs).
+    /// 2. Dokter Bandara (Doctor_White) di area taxiway/runway.
+    /// 3. Pengunjung Hanggar (BeachBabe_White) di area hanggar jet tempur.
+    /// Berjalan santai (FreeWander) dengan sensor anti-tabrakan, dan ketika bertemu Rian:
+    /// NPC berhenti, menoleh menghadap Rian, melambaikan tangan, dan menampilkan balon dialog menyapa Rian.
+    /// </summary>
+    public static void EnsureAirportWanderingNPCs(GameObject playerGo)
+    {
+        // 1. Penumpang Bandara (Image 1: Dekat Tangga Pesawat / Luggage Ramp)
+        GameObject npc1 = FindOrSpawnAirportWanderer(
+            "NPC_Penumpang_Bandara",
+            new string[] { "HouseWife", "Penumpang", "Turis", "Child" },
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_HouseWife_White.prefab",
+            new Vector3(48f, 0.05f, 158f),
+            Quaternion.Euler(0f, 180f, 0f)
+        );
+        ConfigureAirportWanderingNPC(
+            npc1, playerGo,
+            "NPC_Penumpang_Bandara",
+            "Penumpang Bandara",
+            "Halo Kak Rian! Wah, seru sekali melihat pesawat besar di bandara ini!",
+            12f
+        );
+
+        // 2. Dokter / Tim Medis Bandara (Image 2: Di Taxiway / Runway dekat tanda 19 L)
+        GameObject npc2 = FindOrSpawnAirportWanderer(
+            "NPC_Dokter_Bandara",
+            new string[] { "Doctor", "Medic", "Dokter", "Nurse" },
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_Doctor_White.prefab",
+            new Vector3(28f, 0.05f, 175f),
+            Quaternion.Euler(0f, 90f, 0f)
+        );
+        ConfigureAirportWanderingNPC(
+            npc2, playerGo,
+            "NPC_Dokter_Bandara",
+            "Dokter Bandara",
+            "Halo Rian! Tetap jaga kesehatan dan stamina ya selama bertugas di bandara!",
+            14f
+        );
+
+        // 3. Pengunjung Hanggar (Image 3: Dekat Dinding Hanggar dan Jet Tempur)
+        GameObject npc3 = FindOrSpawnAirportWanderer(
+            "NPC_Pengunjung_Hanggar",
+            new string[] { "BeachBabe", "Runner", "Hanggar", "Girl", "Visitor" },
+            "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimplePeople/Prefabs/SimplePeople_BeachBabe_White.prefab",
+            new Vector3(12f, 0.05f, 148f),
+            Quaternion.Euler(0f, 45f, 0f)
+        );
+        ConfigureAirportWanderingNPC(
+            npc3, playerGo,
+            "NPC_Pengunjung_Hanggar",
+            "Pengunjung Hanggar",
+            "Halo Kurir! Keren sekali ya deretan jet tempur dan pesawat di hanggar ini!",
+            10f
+        );
+
+        // Scan tambahan: jika user menempatkan karakter baru di scene dengan nama lain,
+        // pastikan mereka otomatis dilengkapi NPCWalker & tidak T-pose!
+        GameObject[] allObjects = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
+        foreach (var go in allObjects)
+        {
+            if (go == null || go.CompareTag("Player")) continue;
+            string n = go.name;
+            // Abaikan 6 penerima misi paket bandara
+            if (n.Contains("Pak Beni") || n.Contains("Naya") || n.Contains("Dimas") ||
+                n.Contains("Tukang Parkir") || n.Contains("Pak Joko") || n.Contains("Clara") ||
+                go.GetComponent<DeliveryRecipient>() != null)
+            {
+                continue;
+            }
+
+            // Jika karakter SimplePeople / SimpleCitizens lain yang belum punya NPCWalker
+            if (go.GetComponent<Animator>() != null || n.StartsWith("SimplePeople") || n.StartsWith("SimpleCitizens"))
+            {
+                NPCWalker w = go.GetComponent<NPCWalker>();
+                if (w == null)
+                {
+                    ConfigureAirportWanderingNPC(
+                        go, playerGo,
+                        go.name,
+                        "Warga Bandara",
+                        "Halo Rian! Semangat bertugas di Bandara Internasional!",
+                        10f
+                    );
+                }
+            }
+        }
+    }
+
+    private static GameObject FindOrSpawnAirportWanderer(
+        string exactName,
+        string[] fallbackKeywords,
+        string prefabPath,
+        Vector3 defaultPos,
+        Quaternion defaultRot)
+    {
+        // 1. Cari berdasarkan nama exact
+        GameObject go = GameObject.Find(exactName);
+        if (go != null) return go;
+
+        // 2. Cari karakter yang sudah ada di scene berdasarkan keyword
+        GameObject[] allGos = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var g in allGos)
+        {
+            if (g == null || g.CompareTag("Player") || g.GetComponent<DeliveryRecipient>() != null) continue;
+            string gn = g.name.ToLower();
+            foreach (var kw in fallbackKeywords)
+            {
+                if (gn.Contains(kw.ToLower()))
+                {
+                    return g;
+                }
+            }
+        }
+
+        // 3. Jika belum ada di scene, instansiasi dari prefab
+#if UNITY_EDITOR
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefab != null)
+        {
+            go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            go.name = exactName;
+            go.transform.position = defaultPos;
+            go.transform.rotation = defaultRot;
+            go.transform.localScale = Vector3.one;
+            return go;
+        }
+#endif
+
+        return null;
+    }
+
+    private static void ConfigureAirportWanderingNPC(
+        GameObject npcGo,
+        GameObject playerGo,
+        string exactName,
+        string displayName,
+        string greetingLine,
+        float wanderRadius = 12f)
+    {
+        if (npcGo == null) return;
+        npcGo.name = exactName;
+        npcGo.tag = "NPC";
+        npcGo.SetActive(true);
+
+        // Hapus script PlayerController jika ada
+        PlayerController pc = npcGo.GetComponent<PlayerController>();
+        if (pc != null) DestroyComponentSafe(pc);
+        CharacterController cc = npcGo.GetComponent<CharacterController>();
+        if (cc != null) DestroyComponentSafe(cc);
+
+        // Pastikan tidak ada DeliveryRecipient agar tidak bentrok dengan misi pengantaran paket
+        DeliveryRecipient dr = npcGo.GetComponent<DeliveryRecipient>();
+        if (dr != null) DestroyComponentSafe(dr);
+
+        // Pastikan Rigidbody Kinematic
+        Rigidbody rb = npcGo.GetComponent<Rigidbody>();
+        if (rb == null) rb = npcGo.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        // Pastikan CapsuleCollider padat (solid)
+        CapsuleCollider col = npcGo.GetComponent<CapsuleCollider>();
+        if (col == null) col = npcGo.AddComponent<CapsuleCollider>();
+        col.height = 1.8f;
+        col.radius = 0.38f;
+        col.center = new Vector3(0f, 0.9f, 0f);
+        col.isTrigger = false;
+
+        // Animator (Menghilangkan T-Pose)
+        Animator anim = npcGo.GetComponent<Animator>();
+        if (anim == null) anim = npcGo.AddComponent<Animator>();
+        anim.applyRootMotion = false;
+        anim.enabled = true;
+
+#if UNITY_EDITOR
+        if (anim.runtimeAnimatorController == null)
+        {
+            RuntimeAnimatorController ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/Develop 3D Mobile Games in Unity/Assets/SimpleWorldVol1/SimpleCitizens/Models/SimpleCitizens.controller");
+            if (ctrl == null)
+            {
+                ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
+            }
+            if (ctrl != null) anim.runtimeAnimatorController = ctrl;
+        }
+#endif
+
+        EnsureCorrectCharacterMesh(npcGo);
+        AutoEnsureCharacterMaterial(npcGo);
+
+        // Konfigurasi NPCWalker (FreeWander & Greeting)
+        NPCWalker walker = npcGo.GetComponent<NPCWalker>();
+        if (walker == null) walker = npcGo.AddComponent<NPCWalker>();
+
+        walker.navMode = NPCWalker.NavigationMode.FreeWander;
+        walker.wanderRadius = wanderRadius;
+        walker.maxDistanceFromStart = wanderRadius * 1.8f;
+        walker.walkSpeed = 2.6f;
+        walker.runSpeed = 5.5f;
+        walker.rotationSpeed = 8.0f;
+        walker.idleChance = 0.25f;
+        walker.sitChance = 0f;
+        walker.runChance = 0.15f;
+        walker.turnPauseTime = 0.8f;
+
+        // Sensor Anti-Tabrakan
+        walker.enableObstacleAvoidance = true;
+        walker.obstacleDetectionDistance = 2.2f;
+        walker.bodyRadius = 0.35f;
+
+        // Interaksi Menyapa Pemain
+        walker.enablePlayerInteraction = true;
+        walker.interactionDistance = 4.5f;
+        walker.speechBubbleHeight = 2.1f;
+        walker.characterDisplayName = displayName;
+        walker.characterLine = greetingLine;
+        if (playerGo != null) walker.playerTarget = playerGo.transform;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying) EditorUtility.SetDirty(npcGo);
+#endif
     }
 
     /// <summary>

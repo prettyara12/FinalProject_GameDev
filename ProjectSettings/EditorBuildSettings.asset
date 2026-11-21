@@ -47,8 +47,5 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Level 2 saya/Level 2 saya.unity
     guid: d15f870e107f4524b9c90eff7406096a
-  - enabled: 1
-    path: Assets/Develop 3D Mobile Games in Unity/Assets/QuizAdventure/Scenes/Level 2 saya/Level 2 saya.unity
-    guid: e8cd8de42e3e40a42b2afcc4a14dbaee
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

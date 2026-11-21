@@ -197,6 +197,20 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        // Safety Unfreeze: Jika game sedang berjalan aktif tanpa dialog atau menu, pastikan pemain tidak terkunci
+        if (isMovementFrozen)
+        {
+            bool hasBlockingUI = false;
+            if (DeliveryHUD.Instance != null && DeliveryHUD.Instance.IsMainMenuOpen) hasBlockingUI = true;
+            if (NPCDialogueOverlay.IsDialogueActive) hasBlockingUI = true;
+            if (RianDeliveryCutscene.Instance != null && RianDeliveryCutscene.Instance.IsPlaying) hasBlockingUI = true;
+
+            if (!hasBlockingUI && DeliveryGameManager.Instance != null && DeliveryGameManager.Instance.IsGameStarted)
+            {
+                isMovementFrozen = false;
+            }
+        }
+
         HandleMovement();
     }
 
@@ -210,8 +224,11 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
-        // Kunci input jika sedang kuis, transisi portal, atau dialog aktif
-        if (!InputManager.bCanPlayerMove || isMovementFrozen)
+        // Pastikan input selalu aktif
+        InputManager.bCanPlayerMove = true;
+
+        // Kunci input hanya jika sedang mode jeda / dialog aktif
+        if (isMovementFrozen)
         {
             if (animator != null && hasParamSpeedF)
             {
@@ -415,7 +432,7 @@ public class PlayerController : MonoBehaviour
 
     /// <summary>
     /// Menggerakkan karakter dengan swept-capsule cast dan pantulan geser (wall slide).
-    /// Menjamin 100% karakter tidak bisa menembus dinding, planter, pagar, pohon, atau bangunan apapun.
+    /// Menjamin 100% karakter tidak bisa menembus dinding, planter, pagar, pohon, kendaraan, atau karakter NPC apapun.
     /// </summary>
     private void MoveWithCollision(Vector3 horizontalStep)
     {
@@ -439,23 +456,30 @@ public class PlayerController : MonoBehaviour
             Vector3 pt1 = transform.position + Vector3.up * bottomY;
             Vector3 pt2 = transform.position + Vector3.up * topY;
 
+            // Gunakan castRadius yang sedikit lebih kecil dari bodyRadius (r - 0.02f)
+            // agar jika kapsul sudah bersentuhan dengan dinding/NPC, cast TIDAK gagal (false) akibat penetrasi awal
+            float castRadius = Mathf.Max(0.08f, r - 0.02f);
+
             RaycastHit hit;
             bool hasHit = Physics.CapsuleCast(
-                pt1, pt2, r, moveDir, out hit,
-                moveDist + skinWidth, obstacleMask, QueryTriggerInteraction.Ignore
+                pt1, pt2, castRadius, moveDir, out hit,
+                moveDist + skinWidth + 0.02f, obstacleMask, QueryTriggerInteraction.Ignore
             );
 
-            // Abaikan collider milik diri sendiri atau trigger
-            if (hasHit && (hit.collider.isTrigger || hit.collider == ownCapsule || hit.collider.transform.IsChildOf(transform)))
+            // Abaikan collider milik diri sendiri, trigger, atau permukaan jalan/tanah datar
+            if (hasHit)
             {
-                hasHit = false;
+                if (hit.collider.isTrigger || hit.collider == ownCapsule || hit.collider.transform.IsChildOf(transform) || !IsObstacle(hit.collider))
+                {
+                    hasHit = false;
+                }
             }
 
             // Pengecekan tambahan di level kaki (feet level) agar objek rendah/beton/divider tidak luput
             if (!hasHit)
             {
                 Vector3 feetOrigin = transform.position + Vector3.up * (maxStepHeight + 0.01f);
-                if (Physics.SphereCast(feetOrigin, r * 0.75f, moveDir, out RaycastHit lowHit, moveDist + skinWidth, obstacleMask, QueryTriggerInteraction.Ignore))
+                if (Physics.SphereCast(feetOrigin, castRadius * 0.8f, moveDir, out RaycastHit lowHit, moveDist + skinWidth + 0.02f, obstacleMask, QueryTriggerInteraction.Ignore))
                 {
                     if (!lowHit.collider.isTrigger && lowHit.collider != ownCapsule && !lowHit.collider.transform.IsChildOf(transform) && IsObstacle(lowHit.collider))
                     {
@@ -465,12 +489,12 @@ public class PlayerController : MonoBehaviour
                 }
             }
 
-            if (hasHit)
+            if (hasHit && hit.collider != null)
             {
                 lastBlockedObstacle = hit.collider.gameObject.name;
                 lastBlockedTime = Time.time;
 
-                // Maju sampai batas aman tepat sebelum dinding
+                // Maju sampai batas aman tepat sebelum rintangan
                 float safeDist = Mathf.Max(0f, hit.distance - skinWidth);
                 transform.position += moveDir * safeDist;
 
@@ -512,10 +536,34 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                transform.position += moveRemaining;
+                // Verifikasi proactive: pastikan posisi target bebas dari benturan rintangan padat apapun
+                Vector3 targetPos = transform.position + moveRemaining;
+                Vector3 targetPt1 = targetPos + Vector3.up * bottomY;
+                Vector3 targetPt2 = targetPos + Vector3.up * topY;
+
+                Collider[] targetOverlaps = Physics.OverlapCapsule(targetPt1, targetPt2, r * 0.88f, obstacleMask, QueryTriggerInteraction.Ignore);
+                bool blocked = false;
+                for (int i = 0; i < targetOverlaps.Length; i++)
+                {
+                    Collider col = targetOverlaps[i];
+                    if (col != null && !col.isTrigger && col != ownCapsule && !col.transform.IsChildOf(transform) && IsObstacle(col))
+                    {
+                        blocked = true;
+                        lastBlockedObstacle = col.gameObject.name;
+                        lastBlockedTime = Time.time;
+                        break;
+                    }
+                }
+
+                if (!blocked)
+                {
+                    transform.position = targetPos;
+                }
                 break;
             }
         }
+
+        DepenetrateObstaclesOnly();
     }
 
     private void DepenetrateObstaclesOnly()
@@ -523,33 +571,36 @@ public class PlayerController : MonoBehaviour
         if (ownCapsule == null) ownCapsule = GetComponent<CapsuleCollider>();
         if (ownCapsule == null) return;
 
-        Vector3 worldCenter = transform.TransformPoint(ownCapsule.center);
-        float worldHeight = ownCapsule.height * Mathf.Abs(transform.lossyScale.y);
-
-        Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.85f, obstacleMask, QueryTriggerInteraction.Ignore);
-
-        for (int i = 0; i < overlaps.Length; i++)
+        for (int pass = 0; pass < 2; pass++)
         {
-            Collider other = overlaps[i];
-            if (other == null || other.isTrigger || other == ownCapsule || other.transform.IsChildOf(transform))
-                continue;
+            Vector3 worldCenter = transform.TransformPoint(ownCapsule.center);
+            float worldHeight = ownCapsule.height * Mathf.Abs(transform.lossyScale.y);
 
-            if (IsObstacle(other))
+            Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.85f, obstacleMask, QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < overlaps.Length; i++)
             {
-                if (Physics.ComputePenetration(
-                    ownCapsule, transform.position, transform.rotation,
-                    other, other.transform.position, other.transform.rotation,
-                    out Vector3 direction, out float distance))
+                Collider other = overlaps[i];
+                if (other == null || other.isTrigger || other == ownCapsule || other.transform.IsChildOf(transform))
+                    continue;
+
+                if (IsObstacle(other))
                 {
-                    if (distance > 0.0001f)
+                    if (Physics.ComputePenetration(
+                        ownCapsule, transform.position, transform.rotation,
+                        other, other.transform.position, other.transform.rotation,
+                        out Vector3 direction, out float distance))
                     {
-                        Vector3 push = new Vector3(direction.x, 0f, direction.z);
-                        if (push.sqrMagnitude > 0.00001f)
+                        if (distance > 0.0001f)
                         {
-                            push.Normalize();
-                            transform.position += push * (distance + 0.002f);
-                            lastBlockedObstacle = other.gameObject.name;
-                            lastBlockedTime = Time.time;
+                            Vector3 push = new Vector3(direction.x, 0f, direction.z);
+                            if (push.sqrMagnitude > 0.00001f)
+                            {
+                                push.Normalize();
+                                transform.position += push * (distance + 0.003f);
+                                lastBlockedObstacle = other.gameObject.name;
+                                lastBlockedTime = Time.time;
+                            }
                         }
                     }
                 }
@@ -566,43 +617,46 @@ public class PlayerController : MonoBehaviour
         if (ownCapsule == null) ownCapsule = GetComponent<CapsuleCollider>();
         if (ownCapsule == null) return;
 
-        Vector3 worldCenter = transform.TransformPoint(ownCapsule.center);
-        float worldHeight = ownCapsule.height * Mathf.Abs(transform.lossyScale.y);
-
-        Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.85f, obstacleMask, QueryTriggerInteraction.Ignore);
-
-        for (int i = 0; i < overlaps.Length; i++)
+        for (int pass = 0; pass < 2; pass++)
         {
-            Collider other = overlaps[i];
-            if (other == null || other.isTrigger || other == ownCapsule || other.transform.IsChildOf(transform))
-                continue;
+            Vector3 worldCenter = transform.TransformPoint(ownCapsule.center);
+            float worldHeight = ownCapsule.height * Mathf.Abs(transform.lossyScale.y);
 
-            bool isObstacle = IsObstacle(other);
+            Collider[] overlaps = Physics.OverlapSphere(worldCenter, worldHeight * 0.85f, obstacleMask, QueryTriggerInteraction.Ignore);
 
-            if (Physics.ComputePenetration(
-                ownCapsule, transform.position, transform.rotation,
-                other, other.transform.position, other.transform.rotation,
-                out Vector3 direction, out float distance))
+            for (int i = 0; i < overlaps.Length; i++)
             {
-                if (distance > 0.0001f)
+                Collider other = overlaps[i];
+                if (other == null || other.isTrigger || other == ownCapsule || other.transform.IsChildOf(transform))
+                    continue;
+
+                bool isObstacle = IsObstacle(other);
+
+                if (Physics.ComputePenetration(
+                    ownCapsule, transform.position, transform.rotation,
+                    other, other.transform.position, other.transform.rotation,
+                    out Vector3 direction, out float distance))
                 {
-                    // Penetrasi murni ke lantai / tanah datar -> dorong ke atas
-                    if (!isObstacle && direction.y > 0.75f)
+                    if (distance > 0.0001f)
                     {
-                        transform.position += Vector3.up * distance;
-                        if (verticalVelocity < 0f) verticalVelocity = 0f;
-                        isGrounded = true;
-                    }
-                    else
-                    {
-                        // SELURUH RINTANGAN (beton, rumah, orang, mobil, pagar, dsb) SELALU DIDORONG KELUAR SECARA HORIZONTAL!
-                        Vector3 push = new Vector3(direction.x, 0f, direction.z);
-                        if (push.sqrMagnitude > 0.00001f)
+                        // Penetrasi murni ke lantai / tanah datar -> dorong ke atas
+                        if (!isObstacle && direction.y > 0.75f)
                         {
-                            push.Normalize();
-                            transform.position += push * (distance + 0.002f);
-                            lastBlockedObstacle = other.gameObject.name;
-                            lastBlockedTime = Time.time;
+                            transform.position += Vector3.up * distance;
+                            if (verticalVelocity < 0f) verticalVelocity = 0f;
+                            isGrounded = true;
+                        }
+                        else if (isObstacle)
+                        {
+                            // SELURUH RINTANGAN (beton, rumah, orang, mobil, pagar, dsb) SELALU DIDORONG KELUAR SECARA HORIZONTAL!
+                            Vector3 push = new Vector3(direction.x, 0f, direction.z);
+                            if (push.sqrMagnitude > 0.00001f)
+                            {
+                                push.Normalize();
+                                transform.position += push * (distance + 0.003f);
+                                lastBlockedObstacle = other.gameObject.name;
+                                lastBlockedTime = Time.time;
+                            }
                         }
                     }
                 }
@@ -618,20 +672,38 @@ public class PlayerController : MonoBehaviour
     {
         if (col == null || col.isTrigger) return false;
 
-        // Orang / Karakter / NPC
-        if (col.GetComponentInParent<Animator>() != null || col.CompareTag("NPC") || col.CompareTag("Player"))
-            return true;
-
         string n = col.gameObject.name.ToLower();
         string p = col.transform.parent != null ? col.transform.parent.name.ToLower() : "";
 
-        // Beton, pembatas, planter, barrier
-        if (n.Contains("planter") || n.Contains("divider") || n.Contains("barrier") || 
-            n.Contains("curb") || n.Contains("beton") || n.Contains("seawall") || 
-            p.Contains("planter") || p.Contains("divider") || p.Contains("barrier"))
-            return true;
+        // 1. Permukaan Tanah, Jalan, Trotoar, Lantai, Rumput, Tempat Parkir, dan Objek Geometry Plane (BUKAN RINTANGAN)
+        bool isWalkableSurface = 
+            n == "plane" || n.StartsWith("plane_") || n.EndsWith("_plane") || n.Contains("dirt") ||
+            p == "plane" || p.StartsWith("plane_") || p.Contains("dirt") ||
+            n.Contains("road") || n.Contains("jalan") || n.Contains("asphalt") || n.Contains("aspal") || 
+            n.Contains("ground") || n.Contains("terrain") || n.Contains("sidewalk") || n.Contains("trotoar") || 
+            n.Contains("grass") || n.Contains("tile") || n.Contains("floor") || n.Contains("runway") ||
+            n.Contains("apron") || n.Contains("taxiway") || p.Contains("ground") || p.Contains("terrain") ||
+            p.Contains("runway") || p.Contains("sidewalk") ||
+            n.Contains("carpark") || n.Contains("parking") || n.Contains("parkir") ||
+            p.Contains("carpark") || p.Contains("parking") || p.Contains("parkir") ||
+            n.Contains("plaza") || n.Contains("walkway") || n.Contains("pavement");
 
-        // Rumah, gedung, bangunan, toko, pos
+        if (isWalkableSurface)
+        {
+            return false;
+        }
+
+        // 2. Orang / Karakter / NPC (termasuk seluruh penerima paket Bandara & Kota)
+        if (col.GetComponentInParent<Animator>() != null || 
+            col.CompareTag("NPC") || 
+            col.CompareTag("Player") ||
+            col.GetComponentInParent<DeliveryRecipient>() != null ||
+            col.GetComponent<DeliveryRecipient>() != null)
+        {
+            return true;
+        }
+
+        // 3. Bangunan, gedung, toko, pos, terminal, hangar bandara
         if (n.Contains("building") || n.Contains("bangunan") || n.Contains("house") || 
             n.Contains("rumah") || n.Contains("shop") || n.Contains("store") || 
             n.Contains("office") || n.Contains("station") || n.Contains("fire") || 
@@ -642,32 +714,50 @@ public class PlayerController : MonoBehaviour
             n.Contains("warehouse") || n.Contains("hangar") || n.Contains("tower") || 
             n.Contains("apartment") || n.Contains("terminal") || n.Contains("baber") || 
             n.Contains("barber") || n.Contains("donut") || n.Contains("burger") ||
-            p.Contains("building") || p.Contains("bangunan") || p.Contains("house"))
+            n.Contains("concourse") || n.Contains("gate") || n.Contains("gangway") ||
+            p.Contains("building") || p.Contains("bangunan") || p.Contains("house") ||
+            p.Contains("terminal") || p.Contains("hangar"))
+        {
             return true;
+        }
 
-        // Kendaraan (mobil, truk, bus)
+        // 4. Kendaraan & Pesawat darat (mobil, truk, bus, pesawat darat bandara, truk bahan bakar, tangga)
         if (n.Contains("veh_") || n.Contains("car") || n.Contains("truck") || 
             n.Contains("bus") || n.Contains("van") || n.Contains("cop") || 
             n.Contains("ambo") || n.Contains("ute") || n.Contains("taxi") || 
-            p.Contains("cars") || p.Contains("veh"))
+            n.Contains("aircraft") || n.Contains("airplane") || n.Contains("plane0") || n.Contains("plane_0") ||
+            n.Contains("jet") || n.Contains("fighter") || n.Contains("fuel") ||
+            n.Contains("cart") || n.Contains("trailer") || n.Contains("stair") ||
+            n.Contains("tug") || n.Contains("tractor") || n.Contains("baggage") ||
+            p.Contains("cars") || p.Contains("veh") || p.Contains("vehicles") || p.Contains("aircraft"))
+        {
             return true;
+        }
 
-        // Pagar, tembok, pohon, batu, tiang, dsb.
+        // 5. Pagar, tembok, pohon, batu, tiang, dsb.
         if (n.Contains("wall") || n.Contains("dinding") || n.Contains("fence") || 
             n.Contains("pagar") || n.Contains("tree") || n.Contains("pohon") || 
             n.Contains("palm") || n.Contains("rock") || n.Contains("batu") || 
             n.Contains("bench") || n.Contains("bin") || n.Contains("trash") || 
             n.Contains("dumpster") || n.Contains("post") || n.Contains("pole") || 
             n.Contains("hydrant") || n.Contains("memorial") || n.Contains("statue") ||
-            p.Contains("wall") || p.Contains("pagar") || p.Contains("pohon"))
+            n.Contains("prop_") || n.Contains("cone") || n.Contains("chock") ||
+            p.Contains("wall") || p.Contains("pagar") || p.Contains("pohon") ||
+            p.Contains("fence") || p.Contains("props"))
+        {
             return true;
+        }
 
-        // Objek dengan tinggi > 3.5 cm di world space yang bukan tanah/jalan/trotoar datar
-        bool isGroundName = n.Contains("road") || n.Contains("jalan") || n.Contains("asphalt") || 
-                            n.Contains("aspal") || n.Contains("ground") || n.Contains("plane") || 
-                            n.Contains("sidewalk") || n.Contains("trotoar") || n.Contains("grass") || 
-                            n.Contains("tile") || n.Contains("floor") || n.Contains("runway");
-        if (!isGroundName && col.bounds.size.y > 0.035f)
+        // 6. Beton, pembatas, planter, barrier
+        if (n.Contains("planter") || n.Contains("divider") || n.Contains("barrier") || 
+            n.Contains("curb") || n.Contains("beton") || n.Contains("seawall") || 
+            p.Contains("planter") || p.Contains("divider") || p.Contains("barrier"))
+        {
+            return true;
+        }
+
+        // 7. Objek fisik yang berdiri di atas tanah dengan ketebalan vertikal nyata > 8 cm
+        if (col.bounds.size.y > 0.08f)
         {
             return true;
         }

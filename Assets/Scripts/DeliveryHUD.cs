@@ -59,6 +59,13 @@ public class DeliveryHUD : MonoBehaviour
     private bool isMainMenuOpen = true;
     public bool IsMainMenuOpen => isMainMenuOpen;
 
+    // Layar Transisi Antar Level
+    private GameObject transitionOverlayObj;
+    private Text transitionTitleText;
+    private Text transitionSubText;
+    private Text transitionStatusText;
+    private bool isTransitioning = false;
+
     // Radar HUD Kompas Dinamis (Pojok Kanan Atas)
     private GameObject radarObj;
     private DeliveryRadarHUD radarComponent;
@@ -224,6 +231,7 @@ public class DeliveryHUD : MonoBehaviour
         BuildInteractPrompt();
         BuildMapModal();
         BuildEndingModal();
+        BuildTransitionOverlay();
         BuildMainMenu();
         BuildHowToPlayModal();
         BuildRadarHUD();
@@ -278,7 +286,7 @@ public class DeliveryHUD : MonoBehaviour
         timerText.alignment = TextAnchor.MiddleLeft;
         timerText.horizontalOverflow = HorizontalWrapMode.Overflow;
         timerText.verticalOverflow = VerticalWrapMode.Overflow;
-        timerText.text = "⏱ 10:00";
+        timerText.text = "⏱ 06:00";
 
         // Package Counter Text
         GameObject pkgGo = new GameObject("PackageCounterText", typeof(RectTransform));
@@ -803,10 +811,7 @@ public class DeliveryHUD : MonoBehaviour
         nextLevelButton.onClick.AddListener(() =>
         {
             if (Time.unscaledTime - endingModalOpenTime < 0.6f) return;
-            GameAudioManager.Instance?.PlayUIClick();
-            Time.timeScale = 1f;
-            string nextSceneName = Application.CanStreamedLevelBeLoaded("Level 2 saya") ? "Level 2 saya" : "Module 2_Stage2";
-            UnityEngine.SceneManagement.SceneManager.LoadScene(nextSceneName);
+            StartLevel2Transition();
         });
 
         GameObject nextTxtGo = new GameObject("ButtonText");
@@ -823,11 +828,154 @@ public class DeliveryHUD : MonoBehaviour
         nextTxt.fontStyle = FontStyle.Bold;
         nextTxt.color = Color.white;
         nextTxt.alignment = TextAnchor.MiddleCenter;
-        nextTxt.text = "Lanjut ke Level 2 ▶";
+        nextTxt.text = "Lanjut ke Level 2 (Bandara) ▶";
 
         nextLevelButton.gameObject.SetActive(false);
 
         endingModalObj.SetActive(false);
+    }
+
+    private void BuildTransitionOverlay()
+    {
+        transitionOverlayObj = new GameObject("TransitionOverlay", typeof(RectTransform));
+        transitionOverlayObj.transform.SetParent(transform, false);
+
+        RectTransform toRT = transitionOverlayObj.GetComponent<RectTransform>();
+        toRT.anchorMin = Vector2.zero;
+        toRT.anchorMax = Vector2.one;
+        toRT.offsetMin = Vector2.zero;
+        toRT.offsetMax = Vector2.zero;
+
+        Image bg = transitionOverlayObj.AddComponent<Image>();
+        bg.color = new Color(0.03f, 0.05f, 0.08f, 0.98f);
+
+        GameObject centerCard = new GameObject("TransitionCard", typeof(RectTransform));
+        centerCard.transform.SetParent(transitionOverlayObj.transform, false);
+        RectTransform cRT = centerCard.GetComponent<RectTransform>();
+        cRT.anchorMin = new Vector2(0.5f, 0.5f);
+        cRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cRT.pivot = new Vector2(0.5f, 0.5f);
+        cRT.sizeDelta = new Vector2(620f, 260f);
+
+        Image cImg = centerCard.AddComponent<Image>();
+        cImg.color = new Color(0.06f, 0.09f, 0.15f, 0.98f);
+
+        Outline cOutline = centerCard.AddComponent<Outline>();
+        cOutline.effectColor = new Color(0.18f, 0.65f, 0.40f, 0.7f);
+        cOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        // Header Strip Emerald
+        GameObject strip = new GameObject("Strip", typeof(RectTransform));
+        strip.transform.SetParent(centerCard.transform, false);
+        RectTransform sRT = strip.GetComponent<RectTransform>();
+        sRT.anchorMin = new Vector2(0f, 1f);
+        sRT.anchorMax = new Vector2(1f, 1f);
+        sRT.pivot = new Vector2(0.5f, 1f);
+        sRT.anchoredPosition = Vector2.zero;
+        sRT.sizeDelta = new Vector2(0f, 4f);
+        Image sImg = strip.AddComponent<Image>();
+        sImg.color = new Color(0.18f, 0.78f, 0.40f, 1f);
+
+        // Judul Transisi
+        GameObject titleGo = new GameObject("TitleText", typeof(RectTransform));
+        titleGo.transform.SetParent(centerCard.transform, false);
+        RectTransform tRT = titleGo.GetComponent<RectTransform>();
+        tRT.anchorMin = new Vector2(0f, 1f);
+        tRT.anchorMax = new Vector2(1f, 1f);
+        tRT.pivot = new Vector2(0.5f, 1f);
+        tRT.anchoredPosition = new Vector2(0f, -38f);
+        tRT.sizeDelta = new Vector2(0f, 46f);
+
+        transitionTitleText = titleGo.AddComponent<Text>();
+        transitionTitleText.font = mainFont;
+        transitionTitleText.fontSize = 24;
+        transitionTitleText.fontStyle = FontStyle.Bold;
+        transitionTitleText.color = new Color(0.25f, 0.88f, 0.55f, 1f);
+        transitionTitleText.alignment = TextAnchor.MiddleCenter;
+        transitionTitleText.text = "✈️ MENUJU BANDARA KOTA...";
+
+        // Subteks Deskripsi
+        GameObject subGo = new GameObject("SubText", typeof(RectTransform));
+        subGo.transform.SetParent(centerCard.transform, false);
+        RectTransform subRT = subGo.GetComponent<RectTransform>();
+        subRT.anchorMin = new Vector2(0f, 1f);
+        subRT.anchorMax = new Vector2(1f, 1f);
+        subRT.pivot = new Vector2(0.5f, 1f);
+        subRT.anchoredPosition = new Vector2(0f, -95f);
+        subRT.sizeDelta = new Vector2(0f, 48f);
+
+        transitionSubText = subGo.AddComponent<Text>();
+        transitionSubText.font = mainFont;
+        transitionSubText.fontSize = 15;
+        transitionSubText.color = new Color(0.85f, 0.90f, 0.96f, 1f);
+        transitionSubText.alignment = TextAnchor.MiddleCenter;
+        transitionSubText.text = "Selamat! Seluruh paket di Kota berhasil terkirim tepat waktu.\nMenyiapkan rute tugas pengantaran Level 2 di Bandara...";
+
+        // Status Loading Berjalan
+        GameObject statusGo = new GameObject("StatusText", typeof(RectTransform));
+        statusGo.transform.SetParent(centerCard.transform, false);
+        RectTransform stRT = statusGo.GetComponent<RectTransform>();
+        stRT.anchorMin = new Vector2(0f, 0f);
+        stRT.anchorMax = new Vector2(1f, 0f);
+        stRT.pivot = new Vector2(0.5f, 0f);
+        stRT.anchoredPosition = new Vector2(0f, 24f);
+        stRT.sizeDelta = new Vector2(0f, 30f);
+
+        transitionStatusText = statusGo.AddComponent<Text>();
+        transitionStatusText.font = mainFont;
+        transitionStatusText.fontSize = 14;
+        transitionStatusText.fontStyle = FontStyle.Italic;
+        transitionStatusText.color = new Color(0.60f, 0.72f, 0.84f, 1f);
+        transitionStatusText.alignment = TextAnchor.MiddleCenter;
+        transitionStatusText.text = "Memuat scene Bandara, harap tunggu...";
+
+        transitionOverlayObj.SetActive(false);
+    }
+
+    public void StartLevel2Transition()
+    {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        if (nextLevelButton != null) nextLevelButton.interactable = false;
+        GameAudioManager.Instance?.PlayUIClick();
+
+        if (transitionOverlayObj != null)
+        {
+            transitionOverlayObj.transform.SetAsLastSibling();
+            transitionOverlayObj.SetActive(true);
+        }
+
+        StartCoroutine(TransitionToLevel2Routine());
+    }
+
+    private System.Collections.IEnumerator TransitionToLevel2Routine()
+    {
+        Time.timeScale = 1f;
+
+        // Animasikan status loading selama ~1 detik
+        float elapsed = 0f;
+        string[] dots = new string[] { ".", "..", "..." };
+        int dotIdx = 0;
+
+        while (elapsed < 1.0f)
+        {
+            yield return new WaitForSecondsRealtime(0.25f);
+            elapsed += 0.25f;
+            dotIdx = (dotIdx + 1) % dots.Length;
+            if (transitionStatusText != null)
+            {
+                transitionStatusText.text = "Memuat scene Bandara" + dots[dotIdx];
+            }
+        }
+
+        string targetScene = "Assets/Scenes/Level 2 saya/Level 2 saya.unity";
+        if (!Application.CanStreamedLevelBeLoaded(targetScene))
+        {
+            targetScene = "Level 2 saya";
+        }
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene(targetScene);
     }
 
     private void BuildMainMenu()
@@ -935,25 +1083,10 @@ public class DeliveryHUD : MonoBehaviour
             new Color(0.85f, 0.45f, 0.08f, 1f), new Color(0.96f, 0.58f, 0.12f, 1f), new Color(0.68f, 0.32f, 0.04f, 1f),
             new Color(1f, 0.75f, 0.35f, 0.35f), 16, () =>
             {
-                bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
-                if (!isAirport && RianDeliveryCutscene.Instance != null && !RianDeliveryCutscene.Instance.HasPlayed)
+                HideMainMenu();
+                if (DeliveryGameManager.Instance != null)
                 {
-                    isMainMenuOpen = false;
-                    if (mainMenuObj != null) mainMenuObj.SetActive(false);
-                    SetDashboardVisible(false);
-                    SetRadarVisible(false);
-                    RianDeliveryCutscene.Instance.StartCutscene();
-                }
-                else
-                {
-                    if (DeliveryGameManager.Instance != null)
-                    {
-                        DeliveryGameManager.Instance.StartGame();
-                    }
-                    else
-                    {
-                        HideMainMenu();
-                    }
+                    DeliveryGameManager.Instance.StartGame();
                 }
             });
 
@@ -1139,7 +1272,7 @@ public class DeliveryHUD : MonoBehaviour
             "  • <b>[M]</b>               : Membuka denah peta kota & lokasi pertokoan\n\n" +
             "<b><color=#F59E0B>ATURAN PERMAINAN & MISI:</color></b>\n" +
             "  1. Ambil 5 paket dari Pak Beni di depan Mall untuk memulai pengantaran.\n" +
-            "  2. Antarkan seluruh 5 paket ke toko yang sesuai sebelum batas waktu 10 menit habis.\n" +
+            "  2. Antarkan seluruh 5 paket ke toko yang sesuai sebelum batas waktu 6 menit habis.\n" +
             "  3. Hati-hati menyeberang jalan raya! Terserempet mobil mengurangi sisa waktu (-5 dtk).\n" +
             "  4. Salah memberikan paket ke orang yang salah akan terkena penalti waktu (-20 dtk).\n" +
             "  5. Jika ada paket terjatuh di jalan, tanyakan lokasinya ke Petugas Parkir!";
@@ -1206,14 +1339,14 @@ public class DeliveryHUD : MonoBehaviour
         isMainMenuOpen = false;
         if (mainMenuObj != null) mainMenuObj.SetActive(false);
         if (dashboardObj != null) dashboardObj.SetActive(true);
-        if (radarObj != null && (RianDeliveryCutscene.Instance == null || !RianDeliveryCutscene.Instance.IsPlaying))
+        if (radarObj != null)
         {
             radarObj.SetActive(true);
         }
         if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
 
         PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
-        if (pc != null && (RianDeliveryCutscene.Instance == null || !RianDeliveryCutscene.Instance.IsPlaying))
+        if (pc != null)
         {
             pc.SetMovementFrozen(false);
         }
@@ -1437,7 +1570,7 @@ public class DeliveryHUD : MonoBehaviour
             {
                 case DeliveryMissionState.Prolog:
                     missionTitleText.text = "Tujuan: Temui Pak Beni di Pos Pengiriman (Level 2)";
-                    missionClueText.text = "Ambil 5 paket baru dari Pak Beni di Center Plaza depan Mall. Perhatikan denah koridor baru [M] dan selesaikan sebelum batas waktu 7 menit habis!";
+                    missionClueText.text = "Ambil 5 paket baru dari Pak Beni di Center Plaza depan Mall. Perhatikan denah koridor baru [M] dan selesaikan sebelum batas waktu 6 menit habis!";
                     break;
                 case DeliveryMissionState.Package1_CoffeeShop:
                     missionTitleText.text = "Tujuan: Clara di Coffee Shop (Koridor Utara Barat)";
@@ -1642,14 +1775,19 @@ public class DeliveryHUD : MonoBehaviour
             if (ending == GameEnding.Ending1_KurirTerpercaya)
             {
                 bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
-                bool hasStage2 = !isAirport && (Application.CanStreamedLevelBeLoaded("Level 2 saya") || Application.CanStreamedLevelBeLoaded("Module 2_Stage2"));
+                bool hasStage2 = !isAirport && (
+                    Application.CanStreamedLevelBeLoaded("Assets/Scenes/Level 2 saya/Level 2 saya.unity") ||
+                    Application.CanStreamedLevelBeLoaded("Level 2 saya") ||
+                    Application.CanStreamedLevelBeLoaded("Module 2_Stage2")
+                );
                 if (nextLevelButton != null)
                 {
                     nextLevelButton.gameObject.SetActive(hasStage2);
+                    nextLevelButton.interactable = true;
                     if (nextLevelButtonRect != null && hasStage2)
                     {
                         nextLevelButtonRect.anchoredPosition = new Vector2(-225f, 32f);
-                        nextLevelButtonRect.sizeDelta = new Vector2(205f, 48f);
+                        nextLevelButtonRect.sizeDelta = new Vector2(215f, 48f);
                     }
                 }
                 if (restartButtonRect != null)
@@ -1659,7 +1797,7 @@ public class DeliveryHUD : MonoBehaviour
                 }
                 if (mainMenuButtonRect != null)
                 {
-                    mainMenuButtonRect.anchoredPosition = hasStage2 ? new Vector2(215f, 32f) : new Vector2(115f, 32f);
+                    mainMenuButtonRect.anchoredPosition = hasStage2 ? new Vector2(225f, 32f) : new Vector2(115f, 32f);
                     mainMenuButtonRect.sizeDelta = hasStage2 ? new Vector2(185f, 48f) : new Vector2(210f, 48f);
                 }
 
@@ -1672,8 +1810,9 @@ public class DeliveryHUD : MonoBehaviour
                 {
                     endingStoryText.text =
                         "Semua lima paket berhasil diantarkan dengan benar sebelum waktu habis!\n\n" +
-                        "Rian menyelesaikan tugas malam itu dengan sempurna dan membuktikan dedikasinya.\n" +
-                        "Mulai besok, Rian resmi mendapat kepercayaan penuh untuk diangkat menjadi kurir tetap di kawasan kota ini!";
+                        "Rian menyelesaikan tugas malam di Kota dengan sempurna dan membuktikan dedikasinya.\n" +
+                        "Tugas pengantaran berikutnya telah menanti: Level 2 Bandara!\n" +
+                        "Klik tombol 'Lanjut ke Level 2 (Bandara)' di bawah untuk memulai tugas pengantaran di bandara.";
                 }
             }
             else

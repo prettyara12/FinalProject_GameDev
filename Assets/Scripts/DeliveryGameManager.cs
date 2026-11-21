@@ -33,8 +33,8 @@ public class DeliveryGameManager : MonoBehaviour
     public static DeliveryGameManager Instance => instance;
 
     [Header("=== Game Configuration ===")]
-    [Tooltip("Total batas waktu permainan dalam detik (10 menit = 600 detik).")]
-    public float totalTimeLimit = 600f;
+    [Tooltip("Total batas waktu permainan dalam detik (6 menit = 360 detik).")]
+    public float totalTimeLimit = 360f;
 
     [Tooltip("Penalti waktu saat salah menyerahkan paket ke NPC (detik).")]
     public float wrongDeliveryPenalty = 20f;
@@ -43,7 +43,7 @@ public class DeliveryGameManager : MonoBehaviour
     public float carHitPenalty = 5f;
 
     [Header("=== Runtime Status ===")]
-    [SerializeField] private float timeRemaining = 600f;
+    [SerializeField] private float timeRemaining = 360f;
     [SerializeField] private int packagesDelivered = 0;
     [SerializeField] private int totalPackages = 5;
     [SerializeField] private int wrongDeliveryCount = 0;
@@ -53,6 +53,10 @@ public class DeliveryGameManager : MonoBehaviour
     [SerializeField] private bool isDroppedPackagePickedUp = false;
     [SerializeField] private DeliveryMissionState currentState = DeliveryMissionState.Prolog;
     [SerializeField] private GameEnding finalEnding = GameEnding.None;
+
+    private Vector3 initialScenePlayerPosition;
+    private Quaternion initialScenePlayerRotation;
+    private bool hasCapturedScenePlayerTransform = false;
 
     public float TimeRemaining => timeRemaining;
     public int PackagesDelivered => packagesDelivered;
@@ -90,15 +94,18 @@ public class DeliveryGameManager : MonoBehaviour
             return;
         }
 
-        bool isStage2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
-        totalTimeLimit = isStage2 ? 420f : 600f; // 7 menit di Stage 2, 10 menit di Stage 1
+        totalTimeLimit = 360f; // 6 menit di seluruh level
         timeRemaining = totalTimeLimit;
         isGameStarted = false;
         isTimerRunning = false;
+
+        CaptureScenePlayerTransform();
     }
 
     private void Start()
     {
+        CaptureScenePlayerTransform();
+
         // Jangan jalankan timer otomatis sebelum pemain menekan 'Mulai Permainan' di Main Menu
         if (!isGameStarted)
         {
@@ -106,10 +113,22 @@ public class DeliveryGameManager : MonoBehaviour
         }
     }
 
+    public void CaptureScenePlayerTransform()
+    {
+        if (hasCapturedScenePlayerTransform) return;
+        PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+        if (player != null)
+        {
+            initialScenePlayerPosition = player.transform.position;
+            initialScenePlayerRotation = player.transform.rotation;
+            hasCapturedScenePlayerTransform = true;
+            Debug.Log($"[DeliveryGameManager] Posisi & rotasi Rian di Scene berhasil disimpan: {initialScenePlayerPosition}, rotasi: {initialScenePlayerRotation.eulerAngles}");
+        }
+    }
+
     public void StartGame()
     {
-        bool isStage2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
-        totalTimeLimit = isStage2 ? 420f : 600f;
+        totalTimeLimit = 360f; // 6 menit di seluruh level
         isGameStarted = true;
         timeRemaining = totalTimeLimit;
         packagesDelivered = 0;
@@ -119,17 +138,29 @@ public class DeliveryGameManager : MonoBehaviour
         finalEnding = GameEnding.None;
         isTimerRunning = true;
 
-        // Posisikan kembali Rian (Player) ke depan Mall & aktifkan kontrol (hanya pada scene kota)
+        // Posisikan Rian (Player) sesuai posisi di Scene & aktifkan kontrol
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         bool isAirportLevel2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
         if (player != null)
         {
-            if (!isAirportLevel2)
+            if (hasCapturedScenePlayerTransform)
             {
-                player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
-                player.transform.rotation = Quaternion.identity;
+                player.transform.position = initialScenePlayerPosition;
+                player.transform.rotation = initialScenePlayerRotation;
             }
             player.SetMovementFrozen(false);
+
+            Camera cam = Camera.main;
+            if (cam != null)
+            {
+                ThirdPersonCamera tpc = cam.GetComponent<ThirdPersonCamera>();
+                if (tpc != null)
+                {
+                    tpc.target = player.transform;
+                    tpc.enabled = true;
+                    tpc.SnapToTarget();
+                }
+            }
         }
 
         if (isAirportLevel2)
@@ -172,6 +203,15 @@ public class DeliveryGameManager : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
+        // Debug Shortcut F9: Langsung selesaikan seluruh pengantaran & picu Ending 1 (Kurir Terpercaya)
+        if (Input.GetKeyDown(KeyCode.F9) && finalEnding == GameEnding.None)
+        {
+            DebugTriggerInstantWin();
+            return;
+        }
+#endif
+
         if (!isTimerRunning || finalEnding != GameEnding.None) return;
 
         // Timer terus berjalan kecuali saat permainan telah selesai
@@ -184,6 +224,18 @@ public class DeliveryGameManager : MonoBehaviour
         {
             HandleTimeExpired();
         }
+    }
+
+    /// <summary>
+    /// Shortcut pengujian / demonstrasi dosen: Memicu instant win Kurir Terpercaya.
+    /// Memungkinkan penguji langsung melihat layar kemenangan dan menguji transisi ke Level 2 Bandara.
+    /// </summary>
+    public void DebugTriggerInstantWin()
+    {
+        packagesDelivered = totalPackages;
+        OnPackageProgressChanged?.Invoke(packagesDelivered, totalPackages);
+        TriggerEnding(GameEnding.Ending1_KurirTerpercaya);
+        Debug.Log("[DEBUG] Instant win Kurir Terpercaya berhasil dipicu (Level 1 selesai)! Layar kemenangan aktif.");
     }
 
     public void ApplyWrongDeliveryPenalty()
@@ -535,13 +587,13 @@ public class DeliveryGameManager : MonoBehaviour
             {
                 "Kotak paket kardus berhasil diambil dari jalan dekat toko donat!",
                 "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Hunian Deretan Timur.",
-                "Cepat antarkan ke Naya sebelum batas waktu 7 menit habis!"
+                "Cepat antarkan ke Naya sebelum batas waktu 6 menit habis!"
             }
             : new string[]
             {
                 "Kotak paket kardus berhasil diambil dari jalan aspal!",
                 "Paket sekarang sudah berada bersamamu. Alamat tujuan: Naya di Gedung Apartemen.",
-                "Cepat antarkan ke Naya sebelum batas waktu 10 menit habis!"
+                "Cepat antarkan ke Naya sebelum batas waktu 6 menit habis!"
             };
 
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
@@ -622,12 +674,15 @@ public class DeliveryGameManager : MonoBehaviour
             DeliveryHUD.Instance.ShowMainMenu();
         }
 
-        // Posisikan kembali Rian (Player) ke depan Mall & bekukan kontrol
+        // Posisikan kembali Rian (Player) ke posisi awal scene & bekukan kontrol
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         if (player != null)
         {
-            player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
-            player.transform.rotation = Quaternion.identity;
+            if (hasCapturedScenePlayerTransform)
+            {
+                player.transform.position = initialScenePlayerPosition;
+                player.transform.rotation = initialScenePlayerRotation;
+            }
             player.SetMovementFrozen(true);
         }
 
@@ -649,8 +704,7 @@ public class DeliveryGameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        bool isStage2 = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Module 2_Stage2";
-        totalTimeLimit = isStage2 ? 420f : 600f;
+        totalTimeLimit = 360f; // 6 menit (Scene 1 & Scene 2)
 
         // 1. Reset status misi, paket, penalti, dan timer
         finalEnding = GameEnding.None;
@@ -671,20 +725,14 @@ public class DeliveryGameManager : MonoBehaviour
             DeliveryHUD.Instance.HideMainMenu();
         }
 
-        // 3. Posisikan kembali Rian (Player) ke titik awal & unfreeze kontrol
+        // 3. Posisikan kembali Rian (Player) ke posisi awal scene & unfreeze kontrol
         PlayerController player = Object.FindAnyObjectByType<PlayerController>();
         if (player != null)
         {
-            bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
-            if (isAirport)
+            if (hasCapturedScenePlayerTransform)
             {
-                player.transform.position = new Vector3(35f, 0.05f, 138.27f);
-                player.transform.rotation = Quaternion.Euler(0f, 40f, 0f);
-            }
-            else
-            {
-                player.transform.position = new Vector3(310.18f, 0.02f, 4.34f);
-                player.transform.rotation = Quaternion.identity;
+                player.transform.position = initialScenePlayerPosition;
+                player.transform.rotation = initialScenePlayerRotation;
             }
             player.SetMovementFrozen(false);
         }

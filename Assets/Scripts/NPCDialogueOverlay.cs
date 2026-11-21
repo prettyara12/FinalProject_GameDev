@@ -350,13 +350,19 @@ public class NPCDialogueOverlay : MonoBehaviour
 
     public static void ShowDialogue(NPCWalker speaker, string speakerName, string line, bool show)
     {
-        float offset = (speaker != null && speaker.isSittingPermanently) ? 0.11f : 0.20f;
+        float scaleMul = (speaker != null && speaker.transform.lossyScale.y > 0.5f) ? 10f : 1f;
+        float offset = (speaker != null && speaker.isSittingPermanently) ? 0.11f * scaleMul : (speaker != null && speaker.speechBubbleHeight > 1.0f ? speaker.speechBubbleHeight : 0.20f * scaleMul);
         ShowDialogue(speaker != null ? speaker.transform : null, speakerName, line, show, offset);
         if (instance != null) instance.activeSpeaker = show ? speaker : null;
     }
 
     public static void ShowDialogue(Transform speakerTransform, string speakerName, string line, bool show, float heightOffset = 0.20f)
     {
+        if (speakerTransform != null && speakerTransform.lossyScale.y > 0.5f && heightOffset < 1.0f)
+        {
+            heightOffset *= 10f;
+        }
+
         // 1. Jika hanya ingin menyembunyikan dialog, jangan pernah panggil EnsureInstance() atau buat objek baru
         if (!show)
         {

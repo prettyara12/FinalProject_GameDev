@@ -78,9 +78,12 @@ public class ThirdPersonCamera : MonoBehaviour
         {
             if (target.lossyScale.y > 0.5f)
             {
-                targetHeight = 1.5f;
-                distance = 6.5f;
-                height = 2.0f;
+                // Skala 1.0 (Level 2 Bandara): Rasio jarak & ketinggian kamera identik dengan Scene 1 Module 2
+                // Module 2 (skala 0.1): distance 1.35m (7.5x tinggi karakter), height 0.45m (2.5x tinggi karakter)
+                // Level 2 (skala 1.0): distance 13.5m (7.5x tinggi karakter), height 4.5m (2.5x tinggi karakter)
+                targetHeight = 1.6f;
+                distance = 13.5f;
+                height = 4.5f;
                 collisionRadius = 0.25f;
             }
             // Mulai dari belakang pemain
@@ -116,11 +119,11 @@ public class ThirdPersonCamera : MonoBehaviour
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (Mathf.Abs(scroll) > 0.001f)
             {
-                float maxDist = (target != null && target.lossyScale.y > 0.5f) ? 14.0f : 4.0f;
-                float minDist = (target != null && target.lossyScale.y > 0.5f) ? 1.5f : 0.4f;
-                float maxHeight = (target != null && target.lossyScale.y > 0.5f) ? 5.0f : 1.8f;
-                float minHeight = (target != null && target.lossyScale.y > 0.5f) ? 0.5f : 0.15f;
-                float scrollMultiplier = (target != null && target.lossyScale.y > 0.5f) ? 3.0f : 1.5f;
+                float maxDist = (target != null && target.lossyScale.y > 0.5f) ? 28.0f : 4.0f;
+                float minDist = (target != null && target.lossyScale.y > 0.5f) ? 3.5f : 0.4f;
+                float maxHeight = (target != null && target.lossyScale.y > 0.5f) ? 9.0f : 1.8f;
+                float minHeight = (target != null && target.lossyScale.y > 0.5f) ? 1.2f : 0.15f;
+                float scrollMultiplier = (target != null && target.lossyScale.y > 0.5f) ? 4.5f : 1.5f;
                 distance = Mathf.Clamp(distance - scroll * scrollMultiplier, minDist, maxDist);
                 height = Mathf.Clamp(height - scroll * (scrollMultiplier * 0.35f), minHeight, maxHeight);
             }

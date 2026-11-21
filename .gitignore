@@ -62,3 +62,6 @@ sysinfo.txt
 *.aab
 *.unitypackage
 *.app
+
+# Antigravity / MCP config
+.mcp.json

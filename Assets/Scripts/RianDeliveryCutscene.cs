@@ -43,28 +43,90 @@ public class RianDeliveryCutscene : MonoBehaviour
 
     private bool isPlaying = false;
     private bool hasPlayed = false;
+    private Coroutine cutsceneRoutine;
+    private int startFrame = -1;
 
     private string currentSpeaker = "";
     private string currentDialogue = "";
 
+    // Narasi garis besar cerita "Kurir Terakhir" (sinkron dengan 3 shot Timeline ±30 detik):
+    // Shot 1 (0–11s) Pos pengiriman Pak Beni, Shot 2 (11–20.4s) kawasan pertokoan, Shot 3 (20.4–30s) jalan kota.
+    private struct SubtitleBeat
+    {
+        public double start;
+        public double end;
+        public string speaker;
+        public string line;
+        public SubtitleBeat(double start, double end, string speaker, string line)
+        {
+            this.start = start; this.end = end; this.speaker = speaker; this.line = line;
+        }
+    }
+
+    private static readonly SubtitleBeat[] storyBeats =
+    {
+        // Shot 1: Pos pengiriman — Pak Beni menyerahkan lima paket terakhir
+        new SubtitleBeat(0.0, 3.6, "Narator",
+            "Sore itu, toko-toko di kawasan kota mulai bersiap tutup. Rian, kurir muda, baru tiba di pos pengiriman."),
+        new SubtitleBeat(3.6, 7.4, "Pak Beni (Bagian Pengiriman)",
+            "\"Rian, ini lima paket terakhir hari ini. Semuanya harus sampai sebelum jam operasional berakhir!\""),
+        new SubtitleBeat(7.4, 11.0, "Pak Beni (Bagian Pengiriman)",
+            "\"Hati-hati, labelnya terkena air hujan. Beberapa nama dan alamat penerima tidak terbaca jelas.\""),
+
+        // Shot 2: Kawasan pertokoan — mencari penerima yang tepat
+        new SubtitleBeat(11.0, 14.2, "Rian (Kurir)",
+            "\"Kalau begitu, saya akan bertanya pada pegawai toko, petugas parkir, dan warga sekitar.\""),
+        new SubtitleBeat(14.2, 17.4, "Narator",
+            "Tujuan Rian tersebar di seluruh kota: coffee shop, drug store, fire station, hingga gedung apartemen."),
+        new SubtitleBeat(17.4, 20.4, "Narator",
+            "Setiap paket harus dicocokkan dengan nama penerima yang benar. Salah kirim hanya akan membuang waktu."),
+
+        // Shot 3: Jalan kota — rintangan & tujuan akhir
+        new SubtitleBeat(20.4, 23.6, "Narator",
+            "Jalanan kota ramai kendaraan, dan satu paket bisa saja terjatuh di area parkir."),
+        new SubtitleBeat(23.6, 26.8, "Pak Beni (Bagian Pengiriman)",
+            "\"Antarkan kelima paket tepat waktu, dan kau resmi menjadi kurir tetap kami.\""),
+        new SubtitleBeat(26.8, 30.5, "Rian (Kurir)",
+            "\"Siap, Pak! Semua paket akan sampai ke orang yang tepat sebelum waktu habis!\""),
+    };
+
+    private CinemachineVirtualCameraBase[] cutsceneCameras;
+
     private void Awake()
     {
         _instance = this;
+        playOnStart = false;
+        isPlaying = false;
+        hasPlayed = true;
 
         if (cutsceneDirector == null)
         {
             cutsceneDirector = GetComponent<PlayableDirector>();
         }
+        if (cutsceneDirector != null)
+        {
+            cutsceneDirector.Stop();
+        }
+
+        cutsceneCameras = GetComponentsInChildren<CinemachineVirtualCameraBase>(true);
+        SetCutsceneCamerasActive(false);
+
+        enabled = false;
+    }
+
+    private void SetCutsceneCamerasActive(bool active)
+    {
+        if (cutsceneCameras == null) return;
+        foreach (var vcam in cutsceneCameras)
+        {
+            if (vcam != null) vcam.gameObject.SetActive(active);
+        }
     }
 
     private void Start()
     {
-        FindRequiredReferences();
-
-        if (playOnStart && !hasPlayed)
-        {
-            StartCutscene();
-        }
+        // Cutscene telah dihapus dari game: langsung nonaktifkan
+        enabled = false;
     }
 
     private void FindRequiredReferences()
@@ -102,57 +164,30 @@ public class RianDeliveryCutscene : MonoBehaviour
     }
 
     /// <summary>
-    /// Memulai pemutaran Cutscene Sinematik.
+    /// Memulai pemutaran Cutscene Sinematik (Dinonaktifkan: langsung masuk gameplay).
     /// </summary>
     public void StartCutscene()
     {
-        if (isPlaying) return;
-        if (playOnce && hasPlayed) return;
+        EndCutscene();
+    }
 
-        FindRequiredReferences();
-
-        isPlaying = true;
-
-        // Bekukan kontrol pemain selama cutscene
-        if (playerController != null)
+    private System.Collections.IEnumerator CutsceneWatchdog(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        if (isPlaying)
         {
-            playerController.SetMovementFrozen(true);
+            Debug.Log("[RianDeliveryCutscene] ⏱️ Watchdog cutscene selesai (durasi tercapai), otomatis masuk gameplay.");
+            EndCutscene();
         }
-
-        // Matikan ThirdPersonCamera sementara agar Cinemachine memegang kendali kamera utama
-        if (thirdPersonCamera != null)
-        {
-            thirdPersonCamera.enabled = false;
-        }
-
-        // Aktifkan CinemachineBrain
-        if (cinemachineBrain != null)
-        {
-            cinemachineBrain.enabled = true;
-        }
-
-        // Sembunyikan dashboard HUD & Radar selama cutscene diputar
-        if (DeliveryHUD.Instance != null)
-        {
-            DeliveryHUD.Instance.SetDashboardVisible(false);
-            DeliveryHUD.Instance.SetRadarVisible(false);
-        }
-
-        // Mulai PlayableDirector
-        if (cutsceneDirector != null)
-        {
-            cutsceneDirector.time = 0;
-            cutsceneDirector.stopped -= OnDirectorStopped;
-            cutsceneDirector.stopped += OnDirectorStopped;
-            cutsceneDirector.Play();
-        }
-
-        Debug.Log("[RianDeliveryCutscene] 🎬 Cutscene Rian Mengantar Paket Dimulai (Durasi: 10 Detik)!");
     }
 
     private void Update()
     {
         if (!isPlaying) return;
+
+        // Abaikan input & deteksi akhir pada frame yang sama dengan awal cutscene
+        // (mis. tombol Spasi yang dipakai menekan "Mulai Permainan" tidak boleh langsung men-skip).
+        if (Time.frameCount <= startFrame) return;
 
         // 1. Deteksi input Skip ([Spasi] atau [Esc])
         if (allowSkip && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)))
@@ -161,33 +196,33 @@ public class RianDeliveryCutscene : MonoBehaviour
             return;
         }
 
-        // 2. Sinkronisasi Teks Subtitle Dialog berdasarkan waktu pemutaran (Timeline Time)
+        // 2. Deteksi otomatis jika timeline selesai atau berhenti
+        //    (durasi harus valid; durasi 0 membuat cutscene langsung dianggap selesai)
+        if (cutsceneDirector != null && cutsceneDirector.duration > 0.1)
+        {
+            if (cutsceneDirector.time >= cutsceneDirector.duration - 0.05 ||
+                (cutsceneDirector.time > 0.5 && cutsceneDirector.state != PlayState.Playing))
+            {
+                EndCutscene();
+                return;
+            }
+        }
+
+        // 3. Sinkronisasi Teks Subtitle Dialog berdasarkan waktu pemutaran (Timeline Time)
         if (cutsceneDirector != null && showSubtitles)
         {
             double t = cutsceneDirector.time;
 
-            if (t >= 0.0 && t < 3.5)
+            currentSpeaker = "";
+            currentDialogue = "";
+            foreach (var beat in storyBeats)
             {
-                // Shot 1: Pak Beni menyerahkan paket
-                currentSpeaker = "Pak Beni (Pusat Pengiriman)";
-                currentDialogue = "\"Rian! Ini lima paket terakhir malam ini. Antarkan segera sebelum semua toko dan apartemen tutup!\"";
-            }
-            else if (t >= 3.5 && t < 7.0)
-            {
-                // Shot 2: Clara di Coffee Shop menerima paket
-                currentSpeaker = "Clara (Coffee Shop)";
-                currentDialogue = "\"Terima kasih banyak, Mas Rian! Paket biji kopinya sampai tepat waktu sebelum kedai kami tutup.\"";
-            }
-            else if (t >= 7.0 && t <= 10.0)
-            {
-                // Shot 3: Rian berlari melintasi jalan kota melanjutkan misi
-                currentSpeaker = "Rian (Kurir)";
-                currentDialogue = "\"Siap, Pak! Seluruh paket warga kota akan saya antarkan tepat waktu malam ini!\"";
-            }
-            else
-            {
-                currentSpeaker = "";
-                currentDialogue = "";
+                if (t >= beat.start && t < beat.end)
+                {
+                    currentSpeaker = beat.speaker;
+                    currentDialogue = beat.line;
+                    break;
+                }
             }
         }
     }
@@ -227,18 +262,27 @@ public class RianDeliveryCutscene : MonoBehaviour
         currentSpeaker = "";
         currentDialogue = "";
 
-        // Nonaktifkan CinemachineBrain
+        if (cutsceneRoutine != null)
+        {
+            StopCoroutine(cutsceneRoutine);
+            cutsceneRoutine = null;
+        }
+
+        if (cutsceneDirector != null)
+        {
+            cutsceneDirector.stopped -= OnDirectorStopped;
+            if (cutsceneDirector.state == PlayState.Playing)
+            {
+                cutsceneDirector.Stop();
+            }
+        }
+
+        // Nonaktifkan CinemachineBrain & kamera virtual cutscene
         if (cinemachineBrain != null)
         {
             cinemachineBrain.enabled = false;
         }
-
-        // Pulihkan ThirdPersonCamera
-        if (thirdPersonCamera != null)
-        {
-            thirdPersonCamera.enabled = true;
-            thirdPersonCamera.SnapToTarget();
-        }
+        SetCutsceneCamerasActive(false);
 
         // Pulihkan kendali Player
         if (playerController != null)
@@ -247,10 +291,14 @@ public class RianDeliveryCutscene : MonoBehaviour
         }
 
         // Mulai gameplay & aktifkan timer DeliveryGameManager
+        // (StartGame memindahkan Rian ke posisi awal, jadi kamera dipulihkan SETELAH ini)
         if (DeliveryGameManager.Instance != null && !DeliveryGameManager.Instance.IsGameStarted)
         {
             DeliveryGameManager.Instance.StartGame();
         }
+
+        // Pulihkan ThirdPersonCamera agar langsung fokus ke Rian
+        RestoreGameplayCamera();
 
         // Tampilkan dashboard dan radar HUD
         if (DeliveryHUD.Instance != null)
@@ -258,62 +306,107 @@ public class RianDeliveryCutscene : MonoBehaviour
             DeliveryHUD.Instance.OnCutsceneFinished();
         }
 
+        // Ulangi penguncian kamera di akhir frame berikutnya, setelah Timeline/Cinemachine
+        // selesai mengevaluasi frame terakhirnya, supaya kamera tidak tertinggal di shot cutscene.
+        if (isActiveAndEnabled)
+        {
+            StartCoroutine(RestoreCameraAfterFrames());
+        }
+
         Debug.Log("[RianDeliveryCutscene] ✅ Cutscene Selesai! Kamera dan kendali pemain telah dipulihkan.");
+    }
+
+    private void RestoreGameplayCamera()
+    {
+        if (cinemachineBrain != null && cinemachineBrain.enabled)
+        {
+            cinemachineBrain.enabled = false;
+        }
+
+        if (thirdPersonCamera == null)
+        {
+            FindRequiredReferences();
+        }
+
+        if (thirdPersonCamera != null)
+        {
+            thirdPersonCamera.viewMode = ThirdPersonCamera.CameraViewMode.ThirdPersonFollow;
+            if (thirdPersonCamera.target == null)
+            {
+                thirdPersonCamera.FindPlayerTarget();
+            }
+            if (thirdPersonCamera.target == null)
+            {
+                // Fallback: gunakan Rian (PlayerController) walau tag/namanya berubah atau sedang nonaktif
+                PlayerController rian = playerController;
+                if (rian == null)
+                {
+                    var all = UnityEngine.Object.FindObjectsByType<PlayerController>(FindObjectsInactive.Include);
+                    if (all.Length > 0) rian = all[0];
+                }
+                if (rian != null)
+                {
+                    Debug.LogWarning($"[RianDeliveryCutscene] 🔍 Fallback target ke '{rian.name}': activeSelf={rian.gameObject.activeSelf}, " +
+                                     $"activeInHierarchy={rian.gameObject.activeInHierarchy}, tag={rian.tag}, pos={rian.transform.position}");
+                    if (!rian.gameObject.activeSelf) rian.gameObject.SetActive(true);
+                    thirdPersonCamera.target = rian.transform;
+                }
+            }
+            thirdPersonCamera.enabled = true;
+            thirdPersonCamera.SnapToTarget();
+        }
+    }
+
+    private System.Collections.IEnumerator RestoreCameraAfterFrames()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            yield return new WaitForEndOfFrame();
+            if (isPlaying) yield break; // cutscene diputar ulang
+            RestoreGameplayCamera();
+        }
+
+        if (thirdPersonCamera != null)
+        {
+            Transform t = thirdPersonCamera.target;
+            Debug.Log($"[RianDeliveryCutscene] 🎥 Kamera gameplay: enabled={thirdPersonCamera.enabled}, mode={thirdPersonCamera.viewMode}, " +
+                      $"target={(t != null ? t.name : "NULL")}, brainAktif={(cinemachineBrain != null && cinemachineBrain.enabled)}");
+
+            if (t == null)
+            {
+                // Diagnosa: kenapa Rian tidak ditemukan?
+                var all = UnityEngine.Object.FindObjectsByType<PlayerController>(FindObjectsInactive.Include);
+                Debug.LogWarning($"[RianDeliveryCutscene] 🔍 Rian tidak ditemukan. playerController ref={(playerController != null ? playerController.name : "NULL")}, jumlah PlayerController di scene={all.Length}");
+                foreach (var pc in all)
+                {
+                    Transform p = pc.transform.parent;
+                    Debug.LogWarning($"[RianDeliveryCutscene] 🔍 PlayerController '{pc.name}': activeSelf={pc.gameObject.activeSelf}, activeInHierarchy={pc.gameObject.activeInHierarchy}, " +
+                                     $"tag={pc.tag}, parent={(p != null ? p.name : "-")}, pos={pc.transform.position}");
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[RianDeliveryCutscene] ThirdPersonCamera tidak ditemukan pada Main Camera — kamera tidak bisa kembali ke Rian.");
+        }
     }
 
     private void OnGUI()
     {
-        if (!isPlaying) return;
+        // Cutscene dihapus dari game: tidak menampilkan UI skip atau subtitle
+    }
 
-        // 1. Tampilkan Tombol / Petunjuk Skip di Kanan Atas
-        if (allowSkip)
+    private void OnDestroy()
+    {
+        if (cutsceneDirector != null)
         {
-            GUIStyle skipStyle = new GUIStyle(GUI.skin.box);
-            skipStyle.fontSize = 13;
-            skipStyle.fontStyle = FontStyle.Bold;
-            skipStyle.normal.textColor = Color.yellow;
-            skipStyle.alignment = TextAnchor.MiddleCenter;
-
-            Rect skipRect = new Rect(Screen.width - 200, 18, 180, 36);
-            if (GUI.Button(skipRect, "⏩ Lewati [Spasi]", skipStyle))
-            {
-                SkipCutscene();
-                return;
-            }
+            cutsceneDirector.stopped -= OnDirectorStopped;
         }
 
-        // 2. Tampilkan Kotak Subtitle Sinematik di Bagian Bawah Layar
-        if (showSubtitles && !string.IsNullOrEmpty(currentDialogue))
+        if (cutsceneRoutine != null)
         {
-            float boxWidth = Mathf.Min(820f, Screen.width - 40f);
-            float boxHeight = 75f;
-            float boxX = (Screen.width - boxWidth) * 0.5f;
-            float boxY = Screen.height - boxHeight - 28f;
-
-            // Latar belakang transparan gelap
-            GUIStyle bgStyle = new GUIStyle(GUI.skin.box);
-            Texture2D blackTex = Texture2D.blackTexture;
-            bgStyle.normal.background = blackTex;
-
-            GUI.color = new Color(0f, 0f, 0f, 0.78f);
-            GUI.Box(new Rect(boxX, boxY, boxWidth, boxHeight), GUIContent.none, bgStyle);
-            GUI.color = Color.white;
-
-            // Nama Pembicara
-            GUIStyle nameStyle = new GUIStyle();
-            nameStyle.fontSize = 14;
-            nameStyle.fontStyle = FontStyle.Bold;
-            nameStyle.normal.textColor = new Color(1f, 0.85f, 0.2f);
-            nameStyle.alignment = TextAnchor.MiddleLeft;
-            GUI.Label(new Rect(boxX + 16, boxY + 8, boxWidth - 32, 20), currentSpeaker, nameStyle);
-
-            // Isi Dialog
-            GUIStyle textStyle = new GUIStyle();
-            textStyle.fontSize = 14;
-            textStyle.wordWrap = true;
-            textStyle.normal.textColor = Color.white;
-            textStyle.alignment = TextAnchor.UpperLeft;
-            GUI.Label(new Rect(boxX + 16, boxY + 30, boxWidth - 32, 40), currentDialogue, textStyle);
+            StopCoroutine(cutsceneRoutine);
+            cutsceneRoutine = null;
         }
     }
 }
