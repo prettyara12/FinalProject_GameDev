@@ -24,15 +24,10 @@ namespace DeliveryGame.Editor
             SetupCutsceneInModule2();
         }
 
-        [InitializeOnLoadMethod]
-        public static void AutoRunOnLoad()
-        {
-            EditorApplication.delayCall += () =>
-            {
-                if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-                SetupCutsceneInModule2();
-            };
-        }
+        // Catatan: auto-run saat editor memuat ulang script DINONAKTIFKAN.
+        // Sebelumnya fungsi ini membuka "Module 2" (OpenSceneMode.Single) di setiap compile,
+        // sehingga scene lain yang sedang terbuka (mis. Level 2) bisa tertutup tanpa disimpan,
+        // dan menimpa konfigurasi cutscene. Jalankan manual lewat menu Tools jika diperlukan.
 
         public static void SetupCutsceneInModule2()
         {

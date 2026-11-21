@@ -1083,6 +1083,26 @@ public class DeliveryHUD : MonoBehaviour
             new Color(0.85f, 0.45f, 0.08f, 1f), new Color(0.96f, 0.58f, 0.12f, 1f), new Color(0.68f, 0.32f, 0.04f, 1f),
             new Color(1f, 0.75f, 0.35f, 0.35f), 16, () =>
             {
+                bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
+                if (!isAirport && !KurirIntroCutscene.HasPlayedThisSession)
+                {
+                    // Putar cutscene pembuka 15 detik dulu, gameplay dimulai setelah selesai / dilewati
+                    isMainMenuOpen = false;
+                    if (mainMenuObj != null) mainMenuObj.SetActive(false);
+                    if (howToPlayModalObj != null) howToPlayModalObj.SetActive(false);
+                    SetDashboardVisible(false);
+                    SetRadarVisible(false);
+                    KurirIntroCutscene.Play(() =>
+                    {
+                        HideMainMenu();
+                        if (DeliveryGameManager.Instance != null)
+                        {
+                            DeliveryGameManager.Instance.StartGame();
+                        }
+                    });
+                    return;
+                }
+
                 HideMainMenu();
                 if (DeliveryGameManager.Instance != null)
                 {
@@ -1427,7 +1447,7 @@ public class DeliveryHUD : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (isMainMenuOpen)
+        if (isMainMenuOpen || KurirIntroCutscene.IsPlaying)
         {
             if (interactPromptObj != null) interactPromptObj.SetActive(false);
             hasInteractableThisFrame = false;

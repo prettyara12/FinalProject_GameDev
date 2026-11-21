@@ -204,6 +204,7 @@ public class PlayerController : MonoBehaviour
             if (DeliveryHUD.Instance != null && DeliveryHUD.Instance.IsMainMenuOpen) hasBlockingUI = true;
             if (NPCDialogueOverlay.IsDialogueActive) hasBlockingUI = true;
             if (RianDeliveryCutscene.Instance != null && RianDeliveryCutscene.Instance.IsPlaying) hasBlockingUI = true;
+            if (KurirIntroCutscene.IsPlaying) hasBlockingUI = true;
 
             if (!hasBlockingUI && DeliveryGameManager.Instance != null && DeliveryGameManager.Instance.IsGameStarted)
             {
