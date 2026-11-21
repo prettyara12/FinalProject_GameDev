@@ -49,6 +49,7 @@ public static class ObstacleNaming
         new Rule("pembatas antrean", "ticket", "divider"),
         new Rule("loket tiket", "ticket"),
         new Rule("landai bagasi", "luggage", "ramp"),
+        new Rule("vending machine", "vending"),
         new Rule("koper", "luggage"),
         new Rule("koper", "suitcase"),
         new Rule("tas bagasi", "bag"),

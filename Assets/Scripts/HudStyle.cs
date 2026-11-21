@@ -268,6 +268,14 @@ public static class HudStyle
                 float b = SdSegment(x, y, 16f, 48f, 48f, 16f) - 4f;
                 return Mathf.Min(a, b);
             }
+            case "drop":
+            {
+                float dx = Mathf.Abs(x - 32f);
+                float circle = Vector2.Distance(new Vector2(x, y), new Vector2(32f, 24f)) - 17f;
+                float w = 17f * Mathf.Clamp01((57f - y) / 33f);
+                float tri = Mathf.Max(dx - w, Mathf.Max(24f - y, y - 57f));
+                return Mathf.Min(circle, tri);
+            }
             case "minus":
                 return SdSegment(x, y, 14f, 32f, 50f, 32f) - 4.4f;
             case "plus":

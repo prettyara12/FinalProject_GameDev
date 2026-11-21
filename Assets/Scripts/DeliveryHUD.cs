@@ -28,6 +28,11 @@ public class DeliveryHUD : MonoBehaviour
     private Text penaltyFlashText;
     private GameObject penaltyFlashRoot;
     private GameObject bumpNoticeRoot;
+    private Image thirstFill;
+    private Image thirstIcon;
+    private Text thirstLabel;
+    private PlayerController thirstPlayer;
+    private float thirstTrackWidth = 110f;
     private Text bumpNoticeText;
     private float bumpNoticeTimer = 0f;
     private RectTransform packageSegmentsRoot;
@@ -310,6 +315,20 @@ public class DeliveryHUD : MonoBehaviour
         HudStyle.Place(mapKey, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 12f), new Vector2(24f, 24f));
         Text mapHintText = HudStyle.AddLabel(panel.transform, "MapHintText", "Denah Kota", 11, HudStyle.TextSecondary, TextAnchor.MiddleLeft, mainFont);
         HudStyle.Place(mapHintText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(48f, 12f), new Vector2(200f, 24f));
+
+        // --- Indikator haus (kanan bawah panel): ikon tetes + bar hidrasi ---
+        Image thirstTrack = HudStyle.AddImage(panel.transform, "ThirstTrack", HudStyle.Rounded(3f), new Color(1f, 1f, 1f, 0.10f));
+        HudStyle.Place(thirstTrack.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-16f, 21f), new Vector2(thirstTrackWidth, 6f));
+        thirstFill = HudStyle.AddImage(thirstTrack.transform, "ThirstFill", HudStyle.Rounded(3f), HudStyle.Teal);
+        thirstFill.rectTransform.anchorMin = new Vector2(0f, 0f);
+        thirstFill.rectTransform.anchorMax = new Vector2(0f, 1f);
+        thirstFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+        thirstFill.rectTransform.offsetMin = Vector2.zero;
+        thirstFill.rectTransform.offsetMax = new Vector2(thirstTrackWidth, 0f);
+        thirstIcon = HudStyle.AddImage(panel.transform, "ThirstIcon", HudStyle.Icon("drop"), HudStyle.Teal, false);
+        HudStyle.Place(thirstIcon.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-16f - thirstTrackWidth - 8f, 15f), new Vector2(18f, 18f));
+        thirstLabel = HudStyle.AddLabel(panel.transform, "ThirstLabel", "", 11, HudStyle.Danger, TextAnchor.MiddleRight, mainFont);
+        HudStyle.Place(thirstLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-16f - thirstTrackWidth - 30f, 14f), new Vector2(90f, 20f));
 
         // --- Notifikasi penalti (pill merah di tengah atas) ---
         penaltyFlashRoot = new GameObject("PenaltyFlash", typeof(RectTransform));
@@ -1150,6 +1169,8 @@ public class DeliveryHUD : MonoBehaviour
             return;
         }
 
+        UpdateThirstUI();
+
         // Toggle Peta [M]
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -1216,6 +1237,28 @@ public class DeliveryHUD : MonoBehaviour
 
         hasInteractableThisFrame = false;
         currentInteractablePriority = 0;
+    }
+
+    private void UpdateThirstUI()
+    {
+        if (thirstFill == null) return;
+        if (thirstPlayer == null) thirstPlayer = Object.FindAnyObjectByType<PlayerController>();
+        if (thirstPlayer == null) return;
+
+        float h = thirstPlayer.Hydration01;
+        thirstFill.rectTransform.offsetMax = new Vector2(h * thirstTrackWidth, 0f);
+
+        Color c = h > 0.4f ? HudStyle.Teal : (h > 0.15f ? HudStyle.Warning : HudStyle.Danger);
+        if (thirstPlayer.IsExhausted)
+        {
+            // berkedip saat benar-benar kehausan
+            float blink = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f));
+            c = new Color(HudStyle.Danger.r, HudStyle.Danger.g, HudStyle.Danger.b, blink);
+        }
+        thirstFill.color = c;
+        thirstIcon.color = c;
+        thirstLabel.text = thirstPlayer.IsExhausted ? "KEHAUSAN" : (thirstPlayer.IsThirsty ? "HAUS" : "");
+        thirstLabel.color = c;
     }
 
     public void RegisterNearbyInteractable(string actionLabel, System.Action onInteract, int priority = 0)

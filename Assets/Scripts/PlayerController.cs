@@ -20,6 +20,39 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Jump height.")]
     public float jumpHeight = 0.25f;
 
+    [Header("=== Haus (Hidrasi) ===")]
+    [Tooltip("Hidrasi maksimum. Turun saat Rian bergerak, terutama saat berlari.")]
+    public float maxHydration = 100f;
+
+    [Tooltip("Hidrasi saat ini. Naik saat membeli minuman di vending machine.")]
+    public float hydration = 100f;
+
+    [Tooltip("Penurunan hidrasi per detik saat berjalan.")]
+    public float walkThirstPerSecond = 0.35f;
+
+    [Tooltip("Penurunan hidrasi per detik saat berlari.")]
+    public float sprintThirstPerSecond = 1.8f;
+
+    [Tooltip("Penurunan hidrasi per detik saat diam.")]
+    public float idleThirstPerSecond = 0.08f;
+
+    [Tooltip("Di bawah nilai ini Rian haus: kecepatan lari menurun bertahap sampai sama dengan berjalan.")]
+    public float thirstyThreshold = 40f;
+
+    public float Hydration01 => maxHydration > 0f ? Mathf.Clamp01(hydration / maxHydration) : 0f;
+    public bool IsThirsty => hydration <= thirstyThreshold;
+    public bool IsExhausted => hydration <= 0.5f;
+    private bool thirstWarned;
+    private bool exhaustedWarned;
+
+    /// <summary>Menambah hidrasi (mis. setelah membeli minuman).</summary>
+    public void Drink(float amount)
+    {
+        hydration = Mathf.Clamp(hydration + amount, 0f, maxHydration);
+        if (hydration > thirstyThreshold) thirstWarned = false;
+        if (hydration > 0.5f) exhaustedWarned = false;
+    }
+
     [Header("=== References ===")]
     [Tooltip("Reference to the camera to move relative to view direction.")]
     public Camera playerCamera;
@@ -230,6 +263,7 @@ public class PlayerController : MonoBehaviour
             bool hasBlockingUI = false;
             if (DeliveryHUD.Instance != null && DeliveryHUD.Instance.IsMainMenuOpen) hasBlockingUI = true;
             if (NPCDialogueOverlay.IsDialogueActive) hasBlockingUI = true;
+            if (VendingMenu.IsOpen) hasBlockingUI = true;
             if (RianDeliveryCutscene.Instance != null && RianDeliveryCutscene.Instance.IsPlaying) hasBlockingUI = true;
             if (KurirIntroCutscene.IsPlaying) hasBlockingUI = true;
 
@@ -240,6 +274,27 @@ public class PlayerController : MonoBehaviour
         }
 
         HandleMovement();
+    }
+
+    /// <summary>Menurunkan hidrasi selama permainan berjalan dan memberi peringatan saat mulai haus.</summary>
+    private void UpdateHydration(bool moving, bool sprinting)
+    {
+        DeliveryGameManager gm = DeliveryGameManager.Instance;
+        if (gm == null || !gm.IsGameStarted) return;
+
+        float rate = sprinting ? sprintThirstPerSecond : (moving ? walkThirstPerSecond : idleThirstPerSecond);
+        hydration = Mathf.Max(0f, hydration - rate * Time.deltaTime);
+
+        if (!thirstWarned && hydration <= thirstyThreshold)
+        {
+            thirstWarned = true;
+            DeliveryHUD.Instance?.ShowBumpNotice("Rian mulai haus. Lari melambat, cari vending machine!");
+        }
+        if (!exhaustedWarned && IsExhausted)
+        {
+            exhaustedWarned = true;
+            DeliveryHUD.Instance?.ShowBumpNotice("Rian kehausan! Tidak bisa berlari. Beli minuman di vending machine.");
+        }
     }
 
     private void OnDisable()
@@ -281,6 +336,9 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) vertical = -1f;
 
         bool isSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        // Haus: tanpa hidrasi Rian tidak bisa berlari, hanya berjalan
+        if (IsExhausted) isSprinting = false;
 
         // 2. Calculate movement direction relative to camera
         Vector3 moveDirection = Vector3.zero;
@@ -350,7 +408,12 @@ public class PlayerController : MonoBehaviour
         }
 
         // 3. Determine current speed
-        float targetSpeed = (isSprinting ? sprintSpeed : walkSpeed) * (hazardStumbleTimer > 0f ? 0.45f : 1.0f);
+        // Saat haus, kecepatan lari turun bertahap mendekati kecepatan jalan
+        float sprintFactor = thirstyThreshold > 0f ? Mathf.Clamp01(hydration / thirstyThreshold) : 1f;
+        float effectiveSprint = Mathf.Lerp(walkSpeed * 1.05f, sprintSpeed, sprintFactor);
+        UpdateHydration(inputMagnitude > 0.05f, isSprinting);
+
+        float targetSpeed = (isSprinting ? effectiveSprint : walkSpeed) * (hazardStumbleTimer > 0f ? 0.45f : 1.0f);
         float currentMoveSpeed = targetSpeed * inputMagnitude;
 
         // 4. Smooth rotation towards movement direction
@@ -449,7 +512,7 @@ public class PlayerController : MonoBehaviour
             float animSpeed = 0f;
             if (inputMagnitude > 0.05f)
             {
-                animSpeed = isSprinting ? 1.0f : 0.45f;
+                animSpeed = isSprinting ? Mathf.Lerp(0.55f, 1.0f, sprintFactor) : 0.45f;
             }
 
             if (hasParamSpeedF) animator.SetFloat(ParamSpeedF, animSpeed);

@@ -238,6 +238,20 @@ public class DeliveryGameManager : MonoBehaviour
         Debug.Log("[DEBUG] Instant win Kurir Terpercaya berhasil dipicu (Level 1 selesai)! Layar kemenangan aktif.");
     }
 
+    /// <summary>Mengurangi sisa waktu sebagai biaya suatu aksi (mis. membeli minuman di vending machine).</summary>
+    public void SpendTime(float seconds)
+    {
+        if (finalEnding != GameEnding.None || !isGameStarted) return;
+
+        timeRemaining = Mathf.Max(0f, timeRemaining - Mathf.Max(0f, seconds));
+        OnTimerTick?.Invoke(timeRemaining);
+
+        if (timeRemaining <= 0f)
+        {
+            HandleTimeExpired();
+        }
+    }
+
     public void ApplyWrongDeliveryPenalty()
     {
         if (finalEnding != GameEnding.None) return;

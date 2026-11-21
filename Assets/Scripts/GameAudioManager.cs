@@ -36,6 +36,7 @@ public class GameAudioManager : MonoBehaviour
     private AudioClip jumpClip;
     private AudioClip landClip;
     private AudioClip whooshClip;
+    private AudioClip drinkClip;
     private AudioClip endWinClip;
     private AudioClip endLoseClip;
     private AudioClip[] walkSteps;
@@ -112,6 +113,7 @@ public class GameAudioManager : MonoBehaviour
     public void PlayLand(float volume = 0.6f) { PlayClip(landClip, volume); }
     public void PlayBump(float volume = 0.7f) { PlayClip(trafficPenaltyClip, volume * 0.8f); }
     public void PlayWhoosh(float volume = 0.55f) { PlayClip(whooshClip, volume); }
+    public void PlayDrink(float volume = 0.8f) { PlayClip(drinkClip, volume); }
     public void PlayEnding(bool success, float volume = 0.9f) { PlayClip(success ? endWinClip : endLoseClip, volume); }
 
     /// <summary>Langkah kaki. running = true memakai bunyi lari yang lebih cepat dan bertenaga.</summary>
@@ -208,6 +210,19 @@ public class GameAudioManager : MonoBehaviour
                 float n = (float)(rng.NextDouble() * 2.0 - 1.0);
                 lp += cutoff * (n - lp);
                 b[i] += lp * swell * 3.2f;
+            }
+        });
+
+        drinkClip = Synth("Drink", 0.7f, b =>
+        {
+            // bunyi kaleng jatuh kecil, lalu tiga tegukan bergelembung
+            Tone(b, 0f, 0.12f, 220f, 140f, 0.55f, 0.002f, 0.045f, Wave.Triangle);
+            Noise(b, 0f, 0.08f, 0.35f, 0.02f, 0.25f, 51);
+            for (int i = 0; i < 3; i++)
+            {
+                float t0 = 0.2f + i * 0.14f;
+                Tone(b, t0, 0.11f, 480f - i * 40f, 250f - i * 20f, 0.45f, 0.004f, 0.05f, Wave.Sine);
+                Tone(b, t0 + 0.02f, 0.08f, 720f, 380f, 0.18f, 0.003f, 0.03f, Wave.Sine);
             }
         });
 
