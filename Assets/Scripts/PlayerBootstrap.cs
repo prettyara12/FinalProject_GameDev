@@ -636,6 +636,9 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
         SetupKurirRecipients(playerGo);
         EnsureAllCharacterColliders();
 
+        // 3b. Pria berbaju merah (No. 05) di tepi jalan ikut berjalan menyusuri trotoar
+        EnsureWanderingStreetMan(playerGo);
+
         // 4. Setup Objek Paket Jatuh di Area Parkir (Misi 4)
         SetupDroppedPackageItem();
 
@@ -2945,6 +2948,40 @@ Klik Play (▶) lalu tekan [W] untuk mencoba!",
     /// <summary>
     /// Mengonfigurasi komponen dan parameter NPC pejalan kaki.
     /// </summary>
+    /// <summary>
+    /// Pria berbaju merah (SimplePeople_StreetMan_Black) sebelumnya hanya berdiri diam.
+    /// Dipasangi NPCWalker dengan jalur trotoar agar berjalan bolak-balik seperti warga lainnya.
+    /// </summary>
+    private static void EnsureWanderingStreetMan(GameObject playerGo)
+    {
+        GameObject street = GameObject.Find("SimplePeople_StreetMan_Black");
+        if (street == null || street.GetComponent<DeliveryRecipient>() != null) return;
+
+        NPCWaypointPath path = null;
+        GameObject pathsRoot = GameObject.Find("NPC_Paths");
+        if (pathsRoot != null)
+        {
+            Transform t = pathsRoot.transform.Find("SidewalkPath_03");
+            if (t != null) path = t.GetComponent<NPCWaypointPath>();
+        }
+        if (path == null)
+        {
+            path = EnsureSidewalkPath("Path_StreetMan_Patrol", 301.7f, -38.7f, 21.3f, Color.red);
+        }
+        if (path == null) return;
+
+        NPCWalker existing = street.GetComponent<NPCWalker>();
+        if (existing != null && existing.enabled && existing.navMode != NPCWalker.NavigationMode.Stationary) return;
+
+        ConfigureNPC(street, playerGo, path, 0.32f, "Halo Rian! Semangat mengantar paketnya ya!");
+        NPCWalker walker = street.GetComponent<NPCWalker>();
+        if (walker != null)
+        {
+            walker.enabled = true;
+            walker.randomStartPoint = false;
+        }
+    }
+
     private static void ConfigureNPC(GameObject npcGo, GameObject playerGo, NPCWaypointPath path, float speed, string dialogText)
     {
         // Hapus PlayerController jika ada di NPC

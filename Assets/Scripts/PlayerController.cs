@@ -90,6 +90,7 @@ public class PlayerController : MonoBehaviour
     private string lastBlockedObstacle = null;
     private float lastBlockedTime = -999f;
     private bool isTryingToMove = false;
+    private float airTime = 0f;
     private string lastBumpLabel = null;
     private float lastBumpNoticeTime = -999f;
 
@@ -109,6 +110,7 @@ public class PlayerController : MonoBehaviour
 
         lastBumpLabel = label;
         lastBumpNoticeTime = Time.time;
+        GameAudioManager.Instance?.PlayBump();
         if (DeliveryHUD.Instance != null)
         {
             DeliveryHUD.Instance.ShowBumpNotice("Anda menabrak " + label);
@@ -380,6 +382,7 @@ public class PlayerController : MonoBehaviour
             {
                 verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 isGrounded = false;
+                GameAudioManager.Instance?.PlayJump();
                 if (animator != null && hasParamJumpB) animator.SetBool(ParamJumpB, true);
             }
             else
@@ -422,6 +425,17 @@ public class PlayerController : MonoBehaviour
         // 9. Ground Snap (Menempel di tanah/trotoar secara akurat)
         SnapToGround();
 
+        // Suara mendarat setelah benar-benar melayang di udara
+        if (!isGrounded)
+        {
+            airTime += Time.deltaTime;
+        }
+        else
+        {
+            if (airTime > 0.18f) GameAudioManager.Instance?.PlayLand();
+            airTime = 0f;
+        }
+
         // 10. Anti-Tembus Dinding: Selesaikan penetrasi setelah bergerak (100% aman)
         ResolveDepenetration();
 
@@ -449,7 +463,7 @@ public class PlayerController : MonoBehaviour
             if (footstepTimer <= 0f)
             {
                 footstepTimer = stepInterval;
-                GameAudioManager.Instance?.PlayFootstep(isSprinting ? 0.45f : 0.35f);
+                GameAudioManager.Instance?.PlayFootstep(isSprinting ? 0.6f : 0.42f, isSprinting);
             }
         }
         else

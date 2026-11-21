@@ -65,6 +65,11 @@ public static class AirportColorizer
 
         var rootColor = new System.Collections.Generic.Dictionary<Transform, Color>();
         Texture2D paletteTex = LoadPaletteTexture(baseMat);
+        if (paletteTex == null)
+        {
+            Debug.LogWarning("[AirportColorizer] Tekstur palet tidak bisa dibaca; pewarnaan dilewati.");
+            return 0;
+        }
 
         foreach (Renderer r in renderers)
         {

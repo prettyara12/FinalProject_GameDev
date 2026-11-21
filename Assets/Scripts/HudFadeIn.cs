@@ -43,3 +43,25 @@ public class HudFadeIn : MonoBehaviour
         if (slideTarget != null) slideTarget.anchoredPosition = basePos + slide * (1f - e);
     }
 }
+
+/// <summary>Bar pemuatan tanpa persentase: balok kecil bolak-balik di dalam track (waktu unscaled).</summary>
+public class HudLoadingBar : MonoBehaviour
+{
+    public RectTransform track;
+    private RectTransform self;
+
+    private void Awake()
+    {
+        self = (RectTransform)transform;
+    }
+
+    private void Update()
+    {
+        if (track == null) return;
+        if (self == null) self = (RectTransform)transform;
+        float range = Mathf.Max(0f, track.rect.width - self.rect.width);
+        float t = Mathf.PingPong(Time.unscaledTime * 0.9f, 1f);
+        float e = t * t * (3f - 2f * t);
+        self.anchoredPosition = new Vector2(e * range, 0f);
+    }
+}

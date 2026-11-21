@@ -369,7 +369,7 @@ public static class HudStyle
     }
 
     // ======================================================================= BUTTON
-    public enum ButtonKind { Primary, Secondary, Ghost }
+    public enum ButtonKind { Primary, Secondary, Ghost, Success }
 
     public static Button AddButton(Transform parent, string name, string text, ButtonKind kind, Vector2 size,
         Font font, int fontSize, Action onClick, bool arrow = false)
@@ -380,6 +380,9 @@ public static class HudStyle
         {
             case ButtonKind.Primary:
                 normal = Accent; hover = AccentHover; pressed = AccentPressed; textColor = OnAccent; stroke = Color.clear; break;
+            case ButtonKind.Success:
+                normal = Success; hover = new Color32(0x7B, 0xE8, 0xA0, 255); pressed = new Color32(0x36, 0xB8, 0x66, 255);
+                textColor = OnAccent; stroke = Color.clear; break;
             case ButtonKind.Secondary:
                 normal = new Color(1f, 1f, 1f, 0.035f); hover = new Color(1f, 1f, 1f, 0.10f); pressed = new Color(1f, 1f, 1f, 0.02f);
                 textColor = TextPrimary; stroke = new Color(1f, 1f, 1f, 0.11f); break;

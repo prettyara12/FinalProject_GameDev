@@ -67,6 +67,7 @@ public class KurirIntroCutscene : MonoBehaviour
     private float time;
     private bool playing;
     private float originalFov;
+    private int lastShotIndex = -1;
 
     // UI
     private GameObject canvasGo;
@@ -142,6 +143,7 @@ public class KurirIntroCutscene : MonoBehaviour
 
         time = 0f;
         playing = true;
+        GameAudioManager.Instance?.PlayWhoosh();
         Apply(0f);
         Debug.Log("[KurirIntroCutscene] 🎬 Cutscene pembuka Kurir Terakhir dimulai (15 detik).");
     }
@@ -268,6 +270,13 @@ public class KurirIntroCutscene : MonoBehaviour
         // Pilih shot aktif
         Shot shot = shots[shots.Length - 1];
         foreach (var sh in shots) { if (t >= sh.start && t < sh.end) { shot = sh; break; } }
+
+        int shotIdx = System.Array.IndexOf(shots, shot);
+        if (shotIdx != lastShotIndex)
+        {
+            if (lastShotIndex >= 0) GameAudioManager.Instance?.PlayWhoosh(0.4f);
+            lastShotIndex = shotIdx;
+        }
 
         float k = Mathf.Clamp01((t - shot.start) / Mathf.Max(0.01f, shot.end - shot.start));
         float e = k * k * (3f - 2f * k); // smoothstep
