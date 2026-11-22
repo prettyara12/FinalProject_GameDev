@@ -396,6 +396,10 @@ public class DeliveryHUD : MonoBehaviour
         if (packageSegmentsRoot == null) return;
         total = Mathf.Max(1, total);
 
+        // BuildUI bisa dipanggil ulang (mis. saat setup di Editor) dan menghancurkan segmen lama:
+        // buang referensi yang sudah hancur agar tidak memicu MissingReferenceException.
+        packageSegments.RemoveAll(seg => seg == null);
+
         if (packageSegments.Count != total)
         {
             foreach (Image s in packageSegments)
@@ -639,15 +643,15 @@ public class DeliveryHUD : MonoBehaviour
 
         // Eyebrow: "ENDING 1" dalam pill
         Image chip = HudStyle.AddPanel(cp, "EndingChip", 13f, new Color(1f, 1f, 1f, 0.05f), HudStyle.Stroke);
-        HudStyle.Place(chip.rectTransform, TC, TC, new Vector2(0f, -34f), new Vector2(150f, 26f));
+        HudStyle.Place(chip.rectTransform, TC, TC, new Vector2(0f, -26f), new Vector2(250f, 50f));
         endingDotImage = HudStyle.AddImage(chip.transform, "Dot", HudStyle.Circle(), HudStyle.Accent, false);
-        HudStyle.Place(endingDotImage.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(8f, 8f));
-        endingEyebrowText = HudStyle.AddLabel(chip.transform, "EndingEyebrow", "ENDING 1", 11, HudStyle.Accent, TextAnchor.MiddleCenter, mainFont);
-        HudStyle.Stretch(endingEyebrowText.rectTransform, 22f, 0f, 8f, 0f);
+        HudStyle.Place(endingDotImage.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(12f, 12f));
+        endingEyebrowText = HudStyle.AddLabel(chip.transform, "EndingEyebrow", "ENDING 1", 26, HudStyle.Accent, TextAnchor.MiddleCenter, mainFont);
+        HudStyle.Stretch(endingEyebrowText.rectTransform, 34f, 0f, 14f, 0f);
 
         // Judul
         endingTitleText = HudStyle.AddLabel(cp, "EndingTitle", "Kurir Terpercaya", 34, HudStyle.TextPrimary, TextAnchor.MiddleCenter, mainFont);
-        HudStyle.Place(endingTitleText.rectTransform, TC, TC, new Vector2(0f, -88f), new Vector2(CW - 80f, 50f));
+        HudStyle.Place(endingTitleText.rectTransform, TC, TC, new Vector2(0f, -100f), new Vector2(CW - 80f, 50f));
         Shadow titleShadow = endingTitleText.gameObject.AddComponent<Shadow>();
         titleShadow.effectColor = new Color(0f, 0f, 0f, 0.45f);
         titleShadow.effectDistance = new Vector2(0f, -3f);
@@ -655,11 +659,11 @@ public class DeliveryHUD : MonoBehaviour
         // Narasi
         endingStoryText = HudStyle.AddLabel(cp, "EndingStory", "Epilog permainan...", 15, HudStyle.TextSecondary, TextAnchor.UpperCenter, mainFont, FontStyle.Normal, true);
         endingStoryText.lineSpacing = 1.3f;
-        HudStyle.Place(endingStoryText.rectTransform, TC, TC, new Vector2(0f, -150f), new Vector2(CW - 120f, 136f));
+        HudStyle.Place(endingStoryText.rectTransform, TC, TC, new Vector2(0f, -162f), new Vector2(CW - 120f, 128f));
 
         // Statistik
         Image statsBg = HudStyle.AddPanel(cp, "EndingStatsPanel", 14f, new Color(1f, 1f, 1f, 0.04f), HudStyle.Stroke);
-        HudStyle.Place(statsBg.rectTransform, TC, TC, new Vector2(0f, -302f), new Vector2(CW - 120f, 52f));
+        HudStyle.Place(statsBg.rectTransform, TC, TC, new Vector2(0f, -318f), new Vector2(CW - 120f, 52f));
         endingStatsText = HudStyle.AddLabel(statsBg.transform, "EndingStats", "Sisa waktu 00:00   Paket 5/5   Salah alamat 0", 14, HudStyle.TextPrimary, TextAnchor.MiddleCenter, mainFont);
         HudStyle.Stretch(endingStatsText.rectTransform, 12f, 0f, 12f, 0f);
 
