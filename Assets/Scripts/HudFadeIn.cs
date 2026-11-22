@@ -65,3 +65,23 @@ public class HudLoadingBar : MonoBehaviour
         self.anchoredPosition = new Vector2(e * range, 0f);
     }
 }
+
+/// <summary>Pembawa coroutine sederhana yang tidak ikut hancur saat scene berganti.</summary>
+public class HudRunner : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    // Tugasnya selesai setelah scene tujuan termuat
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        Destroy(gameObject, 0.5f);
+    }
+}

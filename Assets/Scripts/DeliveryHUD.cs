@@ -778,10 +778,27 @@ public class DeliveryHUD : MonoBehaviour
             transitionOverlayObj.SetActive(true);
         }
 
-        StartCoroutine(TransitionToLevel2Routine());
+        // Dijalankan lewat runner yang tidak ikut hancur agar pemuatan scene tidak bisa terhenti di tengah jalan
+        GameObject runner = new GameObject("Level2TransitionRunner");
+        DontDestroyOnLoad(runner);
+        runner.AddComponent<HudRunner>().StartCoroutine(TransitionToLevel2Routine(runner));
     }
 
-    private System.Collections.IEnumerator TransitionToLevel2Routine()
+    private static bool Level2Available(out string loadPath)
+    {
+        const string scenePath = "Assets/Scenes/Level 2 saya/Level 2 saya.unity";
+        if (Application.CanStreamedLevelBeLoaded(scenePath)) { loadPath = scenePath; return true; }
+        if (Application.CanStreamedLevelBeLoaded("Level 2 saya")) { loadPath = "Level 2 saya"; return true; }
+        if (Application.CanStreamedLevelBeLoaded("Module 2_Stage2")) { loadPath = "Module 2_Stage2"; return true; }
+#if UNITY_EDITOR
+        // Di Editor, scene yang belum masuk Build Settings tetap bisa dimuat saat Play
+        if (System.IO.File.Exists(scenePath)) { loadPath = scenePath; return true; }
+#endif
+        loadPath = null;
+        return false;
+    }
+
+    private System.Collections.IEnumerator TransitionToLevel2Routine(GameObject runner)
     {
         Time.timeScale = 1f;
 
@@ -801,13 +818,30 @@ public class DeliveryHUD : MonoBehaviour
             }
         }
 
-        string targetScene = "Assets/Scenes/Level 2 saya/Level 2 saya.unity";
-        if (!Application.CanStreamedLevelBeLoaded(targetScene))
+        if (!Level2Available(out string targetScene))
         {
-            targetScene = "Level 2 saya";
+            // Gagal: tampilkan pesan, lalu pulihkan tombol agar pemain bisa mencoba lagi
+            Debug.LogError("[DeliveryHUD] Scene Level 2 (bandara) tidak ditemukan di Build Settings.");
+            if (transitionStatusText != null) transitionStatusText.text = "Scene bandara tidak ditemukan. Periksa Build Settings.";
+            yield return new WaitForSecondsRealtime(2.5f);
+            if (transitionOverlayObj != null) transitionOverlayObj.SetActive(false);
+            if (nextLevelButton != null) nextLevelButton.interactable = true;
+            isTransitioning = false;
+            if (runner != null) Destroy(runner);
+            yield break;
         }
 
+#if UNITY_EDITOR
+        if (!Application.CanStreamedLevelBeLoaded(targetScene))
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(targetScene,
+                new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
+            if (runner != null) Destroy(runner);
+            yield break;
+        }
+#endif
         UnityEngine.SceneManagement.SceneManager.LoadScene(targetScene);
+        if (runner != null) Destroy(runner, 0.1f);
     }
 
     private void BuildMainMenu()
@@ -1606,11 +1640,7 @@ public class DeliveryHUD : MonoBehaviour
             if (ending == GameEnding.Ending1_KurirTerpercaya)
             {
                 bool isAirport = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Level 2");
-                bool hasStage2 = !isAirport && (
-                    Application.CanStreamedLevelBeLoaded("Assets/Scenes/Level 2 saya/Level 2 saya.unity") ||
-                    Application.CanStreamedLevelBeLoaded("Level 2 saya") ||
-                    Application.CanStreamedLevelBeLoaded("Module 2_Stage2")
-                );
+                bool hasStage2 = !isAirport && Level2Available(out _);
                 if (nextLevelButton != null)
                 {
                     nextLevelButton.gameObject.SetActive(hasStage2);
