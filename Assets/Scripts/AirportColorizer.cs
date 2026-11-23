@@ -48,6 +48,8 @@ public static class AirportColorizer
     /// <summary>Mewarnai pesawat dan memperbaiki material kosong. Mengembalikan jumlah renderer yang diubah.</summary>
     public static int Apply()
     {
+        // Pewarnaan hanya di editor (edit mode); scene sudah menyimpan hasilnya.
+        if (Application.isPlaying) return 0;
         Material baseMat = AssetDatabase.LoadAssetAtPath<Material>(BaseMaterialPath);
         if (baseMat == null)
         {
@@ -200,6 +202,7 @@ public static class AirportColorizer
             Mesh mesh = mf.sharedMesh;
             if (mesh == null) continue;
             if (mf.name.ToLowerInvariant().Contains("wheel")) continue;
+            if (!mesh.isReadable) continue;
             Vector2[] uvs = mesh.uv;
             for (int i = 0; i < uvs.Length; i++)
             {
